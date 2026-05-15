@@ -1,0 +1,86 @@
+{
+  "active_plan": "C:\\Users\\zhengjiyong\\code\\epay\\.sisyphus\\plans\\epay.md",
+  "started_at": "2026-05-14T07:44:00.960Z",
+  "session_ids": [
+    "ses_1db75d799ffeP8G5Ti6LyRsvIA"
+  ],
+  "session_origins": {
+    "ses_1db75d799ffeP8G5Ti6LyRsvIA": "direct"
+  },
+  "plan_name": "epay",
+  "agent": "atlas",
+  "task_sessions": {
+    "todo:1": {
+      "task_key": "todo:1",
+      "task_label": "1",
+      "task_title": "项目脚手架 — Go 模块、目录结构、Dockerfile",
+      "session_id": "ses_1da8bcf16ffedHCOIsdw0QMbSp",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-05-14T08:17:13.207Z"
+    },
+    "todo:5": {
+      "task_key": "todo:5",
+      "task_label": "5",
+      "task_title": "Provider 接口定义 — Payment Provider 抽象层",
+      "session_id": "ses_1da6027ddffeD4bljQeso1cHKP",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-05-14T08:42:43.731Z"
+    },
+    "todo:7": {
+      "task_key": "todo:7",
+      "task_label": "7",
+      "task_title": "支付宝 Provider — 扫码/跳转支付实现",
+      "session_id": "ses_1da5015cfffeGSUIEmI3fq7kcr",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-05-14T09:03:45.232Z"
+    },
+    "todo:9": {
+      "task_key": "todo:9",
+      "task_label": "9",
+      "task_title": "支付 Service — 订单创建/查询/回调处理",
+      "session_id": "ses_1da198ccaffem68Bis2lWQAkaU",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-05-14T10:01:16.649Z"
+    },
+    "todo:13": {
+      "task_key": "todo:13",
+      "task_label": "13",
+      "task_title": "Vue3 项目搭建 — Vite + NaiveUI + Tailwind + 路由",
+      "session_id": "ses_1d9fb0398ffe6jwhUMEcms6PkE",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-05-14T10:29:11.397Z"
+    },
+    "todo:14": {
+      "task_key": "todo:14",
+      "task_label": "14",
+      "task_title": "管理后台页面 — 登录/商户管理/订单/提现审核/系统配置",
+      "session_id": "ses_1d9d9d380ffeVgNxPHhoVbysp9",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-05-14T11:06:53.772Z"
+    },
+    "todo:17": {
+      "task_key": "todo:17",
+      "task_label": "17",
+      "task_title": "Merchant API — 商户端后端接口",
+      "session_id": "ses_1d9bc9270ffejvXNiyadzc6J5l",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-05-14T11:36:56.117Z"
+    },
+    "todo:18": {
+      "task_key": "todo:18",
+      "task_label": "18",
+      "task_title": "Docker Compose — 完整部署配置",
+      "session_id": "ses_1d9b88456ffeHFAngtSeMXfFuy",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-05-14T11:56:27.013Z"
+    }
+  }
+}

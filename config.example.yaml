@@ -1,0 +1,90 @@
+# ============================================================
+# epay — Example Configuration
+# ============================================================
+# Copy this file to config.yaml and fill in your values.
+# Environment variables override these values:
+#   e.g. SERVER_HOST=0.0.0.0, DATABASE_PASSWORD=secret
+# ============================================================
+
+server:
+  # Listen address
+  host: "0.0.0.0"
+  # Listen port
+  port: 8080
+  # Gin mode: debug / release / test
+  mode: "release"
+
+database:
+  # PostgreSQL host
+  host: "localhost"
+  # PostgreSQL port
+  port: 5432
+  # Database user
+  user: "postgres"
+  # Database password (use env var DATABASE_PASSWORD in production)
+  password: ""
+  # Database name
+  dbname: "epay"
+  # SSL mode: disable / allow / prefer / require / verify-ca / verify-full
+  sslmode: "prefer"
+
+redis:
+  # Redis connection address (host:port)
+  addr: "localhost:6379"
+  # Redis password (leave empty if none)
+  password: ""
+  # Redis database index
+  db: 0
+
+# Alipay payment gateway configuration
+alipay:
+  # Your Alipay application ID
+  app_id: ""
+  # Your application private key (PKCS#1 or PKCS#8 PEM)
+  private_key: ""
+  # Alipay public key for verifying notifications
+  public_key: ""
+  # Async notification callback URL (must be externally accessible)
+  notify_url: "https://your-domain.com/api/alipay/notify"
+  # Sync return URL (user redirected here after payment)
+  return_url: "https://your-domain.com/order/result"
+
+# WeChat Pay payment gateway configuration
+wxpay:
+  # WeChat Pay application ID
+  app_id: ""
+  # Merchant ID
+  mch_id: ""
+  # Merchant private key (PKCS#1 or PKCS#8 PEM)
+  private_key: ""
+  # API v3 key (32-byte symmetric key)
+  apiv3_key: ""
+  # WeChat Pay public key (for verifying notifications)
+  public_key: ""
+  # WeChat Pay public key ID (from WeChat Pay platform)
+  public_key_id: ""
+  # Certificate serial number
+  serial_no: ""
+  # Payment notification callback URL
+  notify_url: "https://your-domain.com/api/wxpay/notify"
+
+# JWT authentication
+jwt:
+  # JWT signing secret (at least 32 characters in production)
+  secret: "your-jwt-secret-at-least-32-chars-long"
+  # Token expiration in hours
+  expire_hour: 24
+
+# Admin bootstrap
+admin:
+  # Default admin password (created on first startup)
+  default_password: "admin123"
+
+# Default business parameters
+default:
+  # Alipay official rate (e.g. 0.006 = 0.6%)
+  official_alipay_rate: 0.006
+  # WeChat Pay official rate (e.g. 0.006 = 0.6%)
+  official_wxpay_rate: 0.006
+  # Default platform commission rate (e.g. 0.009 = 0.9%)
+  default_platform_rate: 0.009

@@ -1,0 +1,58 @@
+# Binaries
+/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of go coverage
+*.out
+
+# Go workspace
+go.work
+go.work.sum
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Frontend
+node_modules/
+frontend/dist/
+
+# Docker volumes
+postgres_data/
+redis_data/
+
+# Server runtime files
+epay-stdout.txt
+epay-stderr.txt
+epay.pid
+
+# Sisyphus evidence (keep plans and boulder)
+.sisyphus/evidence/
+.sisyphus/drafts/
+.sisyphus/notepads/
+
+# Docker
+.dockerignore
+
+# Temp
+/tmp/
+.ace-tool/
