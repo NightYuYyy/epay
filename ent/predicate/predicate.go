@@ -18,6 +18,9 @@ type Order func(*sql.Selector)
 // PlatformConfig is the predicate function for platformconfig builders.
 type PlatformConfig func(*sql.Selector)
 
+// Refund is the predicate function for refund builders.
+type Refund func(*sql.Selector)
+
 // Settlement is the predicate function for settlement builders.
 type Settlement func(*sql.Selector)
 

@@ -1,11 +1,9 @@
 package payment
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"math"
 	"net/http"
@@ -17,6 +15,7 @@ import (
 	"epay/ent/merchant"
 	"epay/ent/order"
 	"epay/internal/config"
+	easypay "epay/internal/handler/easypay"
 	"epay/internal/provider"
 
 	goredis "github.com/redis/go-redis/v9"
@@ -27,14 +26,6 @@ const (
 	amountTolerance      = 0.01
 	defaultOrderExpireIn = 30 * time.Minute
 )
-
-var merchantNotifyRetryIntervals = []time.Duration{
-	10 * time.Second,
-	60 * time.Second,
-	10 * time.Minute,
-	30 * time.Minute,
-	60 * time.Minute,
-}
 
 type PaymentService struct {
 	ent *ent.Client
@@ -328,52 +319,29 @@ func (s *PaymentService) syncPendingOrder(ctx context.Context, ord *ent.Order, e
 	return ord, nil
 }
 
-func (s *PaymentService) forwardMerchantCallback(ctx context.Context, ord *ent.Order, notification *provider.PaymentNotification) {
+// forwardMerchantCallback dispatches an asynchronous notification to the
+// merchant's notify_url using the rainbow-EasyPay GET + signed-form contract.
+// Signing algorithm is selected by ord.Version (0 → MD5 with merchant.Pkey,
+// 1 → RSA with the platform private key).
+func (s *PaymentService) forwardMerchantCallback(ctx context.Context, ord *ent.Order, _ *provider.PaymentNotification) {
 	if ord == nil || strings.TrimSpace(ord.NotifyURL) == "" {
 		return
 	}
-	payload := map[string]any{
-		"out_trade_no": ord.OrderNo,
-		"trade_no":     firstNonEmpty(ord.TradeNo, notificationTradeNo(notification)),
-		"money":        formatAmount(ord.Amount),
-		"status":       provider.ProviderStatusSuccess,
-		"paid_at":      time.Now().Format(time.RFC3339),
-	}
-	if ord.PaidAt != nil {
-		payload["paid_at"] = ord.PaidAt.Format(time.RFC3339)
-	}
-	body, err := json.Marshal(payload)
+	merch, err := s.ent.Merchant.Query().Where(merchant.ID(ord.MerchantID)).First(ctx)
 	if err != nil {
-		log.Printf("[payment] marshal merchant notify payload: %v", err)
+		log.Printf("[payment] notify lookup merchant %s: %v", ord.OrderNo, err)
 		return
 	}
-	client := &http.Client{Timeout: 10 * time.Second}
-	for attempt := 0; attempt <= len(merchantNotifyRetryIntervals); attempt++ {
-		if attempt > 0 {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(merchantNotifyRetryIntervals[attempt-1]):
-			}
-		}
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, ord.NotifyURL, bytes.NewReader(body))
-		if err != nil {
-			log.Printf("[payment] build merchant notify request %s: %v", ord.OrderNo, err)
-			return
-		}
-		req.Header.Set("Content-Type", "application/json")
-		resp, err := client.Do(req)
-		if err == nil && resp != nil {
-			respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-			_ = resp.Body.Close()
-			if resp.StatusCode >= 200 && resp.StatusCode < 300 && strings.TrimSpace(string(respBody)) == "success" {
-				return
-			}
-			log.Printf("[payment] merchant notify %s attempt %d failed: status=%d body=%q", ord.OrderNo, attempt+1, resp.StatusCode, string(respBody))
-			continue
-		}
-		log.Printf("[payment] merchant notify %s attempt %d error: %v", ord.OrderNo, attempt+1, err)
+	platformPriv := ""
+	if s.cfg != nil {
+		platformPriv = s.cfg.Platform.RSAPrivateKey
 	}
+	fullURL, err := easypay.BuildNotifyURL(ord, merch, platformPriv)
+	if err != nil {
+		log.Printf("[payment] notify build url %s: %v", ord.OrderNo, err)
+		return
+	}
+	easypay.DispatchNotify(ctx, &http.Client{Timeout: 10 * time.Second}, fullURL, ord.OrderNo)
 }
 
 func (s *PaymentService) newProvider(providerKey string, paymentType provider.PaymentType, configMap map[string]string) (provider.Provider, providerSnapshot, error) {

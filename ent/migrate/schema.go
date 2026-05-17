@@ -32,6 +32,11 @@ var (
 		{Name: "fee_rate", Type: field.TypeFloat64, Default: 1, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "disabled"}, Default: "active"},
 		{Name: "notify_url", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "keytype", Type: field.TypeInt, Default: 0},
+		{Name: "public_key", Type: field.TypeString, Nullable: true, Size: 2147483647, Default: ""},
+		{Name: "refund_enabled", Type: field.TypeBool, Default: false},
+		{Name: "transfer_enabled", Type: field.TypeBool, Default: false},
+		{Name: "mode", Type: field.TypeInt, Default: 0},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
@@ -55,6 +60,19 @@ var (
 		{Name: "notify_url", Type: field.TypeString},
 		{Name: "provider_snapshot", Type: field.TypeString, Nullable: true, Default: ""},
 		{Name: "paid_at", Type: field.TypeTime, Nullable: true},
+		{Name: "api_trade_no", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "buyer", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "param", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "name", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "clientip", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "return_url", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "device", Type: field.TypeString, Nullable: true, Default: "pc"},
+		{Name: "method", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "sub_openid", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "sub_appid", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "auth_code", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "refund_money", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,2)"}},
+		{Name: "version", Type: field.TypeInt, Default: 0},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "merchant_id", Type: field.TypeUUID},
@@ -67,7 +85,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "orders_merchants_orders",
-				Columns:    []*schema.Column{OrdersColumns[14]},
+				Columns:    []*schema.Column{OrdersColumns[27]},
 				RefColumns: []*schema.Column{MerchantsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -87,6 +105,35 @@ var (
 		Name:       "configs",
 		Columns:    ConfigsColumns,
 		PrimaryKey: []*schema.Column{ConfigsColumns[0]},
+	}
+	// RefundsColumns holds the columns for the "refunds" table.
+	RefundsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "refund_no", Type: field.TypeString, Unique: true},
+		{Name: "out_refund_no", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "trade_no", Type: field.TypeString},
+		{Name: "money", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,2)"}},
+		{Name: "reduce_money", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,2)"}},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"PENDING", "SUCCESS", "FAILED"}, Default: "PENDING"},
+		{Name: "message", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "finished_at", Type: field.TypeTime, Nullable: true},
+		{Name: "merchant_id", Type: field.TypeUUID},
+	}
+	// RefundsTable holds the schema information for the "refunds" table.
+	RefundsTable = &schema.Table{
+		Name:       "refunds",
+		Columns:    RefundsColumns,
+		PrimaryKey: []*schema.Column{RefundsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "refunds_merchants_refunds",
+				Columns:    []*schema.Column{RefundsColumns[11]},
+				RefColumns: []*schema.Column{MerchantsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// SettlementsColumns holds the columns for the "settlements" table.
 	SettlementsColumns = []*schema.Column{
@@ -144,6 +191,7 @@ var (
 		MerchantsTable,
 		OrdersTable,
 		ConfigsTable,
+		RefundsTable,
 		SettlementsTable,
 		WithdrawsTable,
 	}
@@ -154,6 +202,7 @@ func init() {
 	ConfigsTable.Annotation = &entsql.Annotation{
 		Table: "configs",
 	}
+	RefundsTable.ForeignKeys[0].RefTable = MerchantsTable
 	SettlementsTable.ForeignKeys[0].RefTable = MerchantsTable
 	WithdrawsTable.ForeignKeys[0].RefTable = MerchantsTable
 }

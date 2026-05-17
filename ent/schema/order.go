@@ -12,6 +12,9 @@ import (
 )
 
 // Order holds the schema definition for the Order entity.
+//
+// The `order_no` field is the merchant's out_trade_no in EasyPay terminology;
+// the column name is kept as `order_no` for backward compatibility.
 type Order struct {
 	ent.Schema
 }
@@ -60,6 +63,48 @@ func (Order) Fields() []ent.Field {
 		field.Time("paid_at").
 			Optional().
 			Nillable(),
+		// EasyPay protocol fields (aligned with rainbow-epay pre_order)
+		field.String("api_trade_no").
+			Optional().
+			Default(""),
+		field.String("buyer").
+			Optional().
+			Default(""),
+		field.String("param").
+			Optional().
+			Default(""),
+		field.String("name").
+			Optional().
+			Default(""),
+		field.String("clientip").
+			Optional().
+			Default(""),
+		field.String("return_url").
+			Optional().
+			Default(""),
+		field.String("device").
+			Optional().
+			Default("pc"),
+		field.String("method").
+			Optional().
+			Default(""),
+		field.String("sub_openid").
+			Optional().
+			Default(""),
+		field.String("sub_appid").
+			Optional().
+			Default(""),
+		field.String("auth_code").
+			Optional().
+			Default(""),
+		field.Float("refund_money").
+			SchemaType(map[string]string{
+				dialect.Postgres: "decimal(20,2)",
+			}).
+			Default(0),
+		field.Int("version").
+			Default(0).
+			Comment("0 = MD5 standard interface, 1 = RSA s=path API_INIT mode"),
 		field.Time("created_at").
 			Immutable().
 			Default(time.Now),

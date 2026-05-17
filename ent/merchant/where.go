@@ -81,6 +81,31 @@ func NotifyURL(v string) predicate.Merchant {
 	return predicate.Merchant(sql.FieldEQ(FieldNotifyURL, v))
 }
 
+// Keytype applies equality check predicate on the "keytype" field. It's identical to KeytypeEQ.
+func Keytype(v int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldEQ(FieldKeytype, v))
+}
+
+// PublicKey applies equality check predicate on the "public_key" field. It's identical to PublicKeyEQ.
+func PublicKey(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldEQ(FieldPublicKey, v))
+}
+
+// RefundEnabled applies equality check predicate on the "refund_enabled" field. It's identical to RefundEnabledEQ.
+func RefundEnabled(v bool) predicate.Merchant {
+	return predicate.Merchant(sql.FieldEQ(FieldRefundEnabled, v))
+}
+
+// TransferEnabled applies equality check predicate on the "transfer_enabled" field. It's identical to TransferEnabledEQ.
+func TransferEnabled(v bool) predicate.Merchant {
+	return predicate.Merchant(sql.FieldEQ(FieldTransferEnabled, v))
+}
+
+// Mode applies equality check predicate on the "mode" field. It's identical to ModeEQ.
+func Mode(v int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldEQ(FieldMode, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Merchant {
 	return predicate.Merchant(sql.FieldEQ(FieldCreatedAt, v))
@@ -396,6 +421,181 @@ func NotifyURLContainsFold(v string) predicate.Merchant {
 	return predicate.Merchant(sql.FieldContainsFold(FieldNotifyURL, v))
 }
 
+// KeytypeEQ applies the EQ predicate on the "keytype" field.
+func KeytypeEQ(v int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldEQ(FieldKeytype, v))
+}
+
+// KeytypeNEQ applies the NEQ predicate on the "keytype" field.
+func KeytypeNEQ(v int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldNEQ(FieldKeytype, v))
+}
+
+// KeytypeIn applies the In predicate on the "keytype" field.
+func KeytypeIn(vs ...int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldIn(FieldKeytype, vs...))
+}
+
+// KeytypeNotIn applies the NotIn predicate on the "keytype" field.
+func KeytypeNotIn(vs ...int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldNotIn(FieldKeytype, vs...))
+}
+
+// KeytypeGT applies the GT predicate on the "keytype" field.
+func KeytypeGT(v int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldGT(FieldKeytype, v))
+}
+
+// KeytypeGTE applies the GTE predicate on the "keytype" field.
+func KeytypeGTE(v int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldGTE(FieldKeytype, v))
+}
+
+// KeytypeLT applies the LT predicate on the "keytype" field.
+func KeytypeLT(v int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldLT(FieldKeytype, v))
+}
+
+// KeytypeLTE applies the LTE predicate on the "keytype" field.
+func KeytypeLTE(v int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldLTE(FieldKeytype, v))
+}
+
+// PublicKeyEQ applies the EQ predicate on the "public_key" field.
+func PublicKeyEQ(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldEQ(FieldPublicKey, v))
+}
+
+// PublicKeyNEQ applies the NEQ predicate on the "public_key" field.
+func PublicKeyNEQ(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldNEQ(FieldPublicKey, v))
+}
+
+// PublicKeyIn applies the In predicate on the "public_key" field.
+func PublicKeyIn(vs ...string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldIn(FieldPublicKey, vs...))
+}
+
+// PublicKeyNotIn applies the NotIn predicate on the "public_key" field.
+func PublicKeyNotIn(vs ...string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldNotIn(FieldPublicKey, vs...))
+}
+
+// PublicKeyGT applies the GT predicate on the "public_key" field.
+func PublicKeyGT(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldGT(FieldPublicKey, v))
+}
+
+// PublicKeyGTE applies the GTE predicate on the "public_key" field.
+func PublicKeyGTE(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldGTE(FieldPublicKey, v))
+}
+
+// PublicKeyLT applies the LT predicate on the "public_key" field.
+func PublicKeyLT(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldLT(FieldPublicKey, v))
+}
+
+// PublicKeyLTE applies the LTE predicate on the "public_key" field.
+func PublicKeyLTE(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldLTE(FieldPublicKey, v))
+}
+
+// PublicKeyContains applies the Contains predicate on the "public_key" field.
+func PublicKeyContains(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldContains(FieldPublicKey, v))
+}
+
+// PublicKeyHasPrefix applies the HasPrefix predicate on the "public_key" field.
+func PublicKeyHasPrefix(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldHasPrefix(FieldPublicKey, v))
+}
+
+// PublicKeyHasSuffix applies the HasSuffix predicate on the "public_key" field.
+func PublicKeyHasSuffix(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldHasSuffix(FieldPublicKey, v))
+}
+
+// PublicKeyIsNil applies the IsNil predicate on the "public_key" field.
+func PublicKeyIsNil() predicate.Merchant {
+	return predicate.Merchant(sql.FieldIsNull(FieldPublicKey))
+}
+
+// PublicKeyNotNil applies the NotNil predicate on the "public_key" field.
+func PublicKeyNotNil() predicate.Merchant {
+	return predicate.Merchant(sql.FieldNotNull(FieldPublicKey))
+}
+
+// PublicKeyEqualFold applies the EqualFold predicate on the "public_key" field.
+func PublicKeyEqualFold(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldEqualFold(FieldPublicKey, v))
+}
+
+// PublicKeyContainsFold applies the ContainsFold predicate on the "public_key" field.
+func PublicKeyContainsFold(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldContainsFold(FieldPublicKey, v))
+}
+
+// RefundEnabledEQ applies the EQ predicate on the "refund_enabled" field.
+func RefundEnabledEQ(v bool) predicate.Merchant {
+	return predicate.Merchant(sql.FieldEQ(FieldRefundEnabled, v))
+}
+
+// RefundEnabledNEQ applies the NEQ predicate on the "refund_enabled" field.
+func RefundEnabledNEQ(v bool) predicate.Merchant {
+	return predicate.Merchant(sql.FieldNEQ(FieldRefundEnabled, v))
+}
+
+// TransferEnabledEQ applies the EQ predicate on the "transfer_enabled" field.
+func TransferEnabledEQ(v bool) predicate.Merchant {
+	return predicate.Merchant(sql.FieldEQ(FieldTransferEnabled, v))
+}
+
+// TransferEnabledNEQ applies the NEQ predicate on the "transfer_enabled" field.
+func TransferEnabledNEQ(v bool) predicate.Merchant {
+	return predicate.Merchant(sql.FieldNEQ(FieldTransferEnabled, v))
+}
+
+// ModeEQ applies the EQ predicate on the "mode" field.
+func ModeEQ(v int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldEQ(FieldMode, v))
+}
+
+// ModeNEQ applies the NEQ predicate on the "mode" field.
+func ModeNEQ(v int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldNEQ(FieldMode, v))
+}
+
+// ModeIn applies the In predicate on the "mode" field.
+func ModeIn(vs ...int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldIn(FieldMode, vs...))
+}
+
+// ModeNotIn applies the NotIn predicate on the "mode" field.
+func ModeNotIn(vs ...int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldNotIn(FieldMode, vs...))
+}
+
+// ModeGT applies the GT predicate on the "mode" field.
+func ModeGT(v int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldGT(FieldMode, v))
+}
+
+// ModeGTE applies the GTE predicate on the "mode" field.
+func ModeGTE(v int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldGTE(FieldMode, v))
+}
+
+// ModeLT applies the LT predicate on the "mode" field.
+func ModeLT(v int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldLT(FieldMode, v))
+}
+
+// ModeLTE applies the LTE predicate on the "mode" field.
+func ModeLTE(v int) predicate.Merchant {
+	return predicate.Merchant(sql.FieldLTE(FieldMode, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Merchant {
 	return predicate.Merchant(sql.FieldEQ(FieldCreatedAt, v))
@@ -537,6 +737,29 @@ func HasWithdraws() predicate.Merchant {
 func HasWithdrawsWith(preds ...predicate.Withdraw) predicate.Merchant {
 	return predicate.Merchant(func(s *sql.Selector) {
 		step := newWithdrawsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasRefunds applies the HasEdge predicate on the "refunds" edge.
+func HasRefunds() predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, RefundsTable, RefundsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRefundsWith applies the HasEdge predicate on the "refunds" edge with a given conditions (other predicates).
+func HasRefundsWith(preds ...predicate.Refund) predicate.Merchant {
+	return predicate.Merchant(func(s *sql.Selector) {
+		step := newRefundsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -88,3 +88,23 @@ default:
   official_wxpay_rate: 0.006
   # Default platform commission rate (e.g. 0.009 = 0.9%)
   default_platform_rate: 0.009
+
+# Rainbow-EasyPay platform extensions
+# These secrets are used to sign downstream artifacts (notify callbacks for
+# version=1 RSA orders, and `s=path` API responses). The corresponding
+# public key is published to merchants so they can verify our signatures.
+platform:
+  # RSA-2048 private key — PEM or raw base64 of DER bytes.
+  # Generate with: openssl genrsa -out platform.key 2048
+  rsa_private_key: ""
+  # RSA public key (PEM or raw base64). Published to merchants.
+  # Derive from private key: openssl rsa -in platform.key -pubout
+  rsa_public_key: ""
+  # System key used to authorize platform-issued cross-merchant queries:
+  #   sign = md5(SYS_KEY + trade_no + SYS_KEY)
+  # Keep secret; ≥32 chars recommended.
+  sys_key: ""
+  # Enable merchant self-service refund via POST /api.php?act=refund.
+  # Per-merchant toggle still applies (merchant.refund_enabled).
+  user_refund_enabled: false
+

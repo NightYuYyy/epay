@@ -19,6 +19,26 @@ type Config struct {
 	JWT      JWTConfig      `mapstructure:"jwt"`
 	Admin    AdminConfig    `mapstructure:"admin"`
 	Default  DefaultConfig  `mapstructure:"default"`
+	Platform PlatformConfig `mapstructure:"platform"`
+}
+
+// PlatformConfig holds rainbow-EasyPay platform-level secrets and toggles.
+//
+//   - RSAPrivateKey: PEM (or raw base64) RSA-2048 private key used to sign
+//     downstream artifacts — notify_url callbacks for version=1 orders and
+//     `s=path` API responses. The corresponding public key is shared with
+//     merchants so they can verify our signatures.
+//   - RSAPublicKey: optional — exposed via documentation/endpoint for merchant
+//     verification.
+//   - SysKey: shared secret used for platform-issued queries
+//     (`act=order` with sign=md5(SYS_KEY + trade_no + SYS_KEY)).
+//   - UserRefundEnabled: equivalent to rainbow `$conf['user_refund']`; when
+//     false, `act=refund` rejects with "未开启商户后台自助退款".
+type PlatformConfig struct {
+	RSAPrivateKey     string `mapstructure:"rsa_private_key"`
+	RSAPublicKey      string `mapstructure:"rsa_public_key"`
+	SysKey            string `mapstructure:"sys_key"`
+	UserRefundEnabled bool   `mapstructure:"user_refund_enabled"`
 }
 
 // ServerConfig holds HTTP server settings.
@@ -234,6 +254,12 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("default.official_alipay_rate", 0.006)
 	v.SetDefault("default.official_wxpay_rate", 0.006)
 	v.SetDefault("default.default_platform_rate", 0.009)
+
+	// Platform (rainbow EasyPay extensions)
+	v.SetDefault("platform.rsa_private_key", "")
+	v.SetDefault("platform.rsa_public_key", "")
+	v.SetDefault("platform.sys_key", "")
+	v.SetDefault("platform.user_refund_enabled", false)
 }
 
 // Validate checks all required fields and value constraints.
@@ -327,4 +353,8 @@ func trimStrings(c *Config) {
 	c.JWT.Secret = strings.TrimSpace(c.JWT.Secret)
 
 	c.Admin.DefaultPassword = strings.TrimSpace(c.Admin.DefaultPassword)
+
+	c.Platform.RSAPrivateKey = strings.TrimSpace(c.Platform.RSAPrivateKey)
+	c.Platform.RSAPublicKey = strings.TrimSpace(c.Platform.RSAPublicKey)
+	c.Platform.SysKey = strings.TrimSpace(c.Platform.SysKey)
 }

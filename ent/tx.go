@@ -22,6 +22,8 @@ type Tx struct {
 	Order *OrderClient
 	// PlatformConfig is the client for interacting with the PlatformConfig builders.
 	PlatformConfig *PlatformConfigClient
+	// Refund is the client for interacting with the Refund builders.
+	Refund *RefundClient
 	// Settlement is the client for interacting with the Settlement builders.
 	Settlement *SettlementClient
 	// Withdraw is the client for interacting with the Withdraw builders.
@@ -161,6 +163,7 @@ func (tx *Tx) init() {
 	tx.Merchant = NewMerchantClient(tx.config)
 	tx.Order = NewOrderClient(tx.config)
 	tx.PlatformConfig = NewPlatformConfigClient(tx.config)
+	tx.Refund = NewRefundClient(tx.config)
 	tx.Settlement = NewSettlementClient(tx.config)
 	tx.Withdraw = NewWithdrawClient(tx.config)
 }

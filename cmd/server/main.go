@@ -5,7 +5,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"epay/internal/config"
@@ -86,9 +88,19 @@ func main() {
 	// ========================
 
 	// EasyPay protocol endpoints
-	easypayHandler := easypay.NewHandler(dbClient)
+	easypayHandler := easypay.NewHandler(
+		dbClient,
+		easypay.WithPlatformKeys(
+			cfg.Platform.RSAPrivateKey,
+			cfg.Platform.RSAPublicKey,
+			cfg.Platform.SysKey,
+		),
+		easypay.WithUserRefund(cfg.Platform.UserRefundEnabled),
+	)
 	r.POST("/mapi.php", easypayHandler.HandleMapi)
 	r.GET("/submit.php", easypayHandler.HandleSubmit)
+	r.POST("/submit.php", easypayHandler.HandleSubmit)
+	r.GET("/api.php", easypayHandler.HandleAPI)
 	r.POST("/api.php", easypayHandler.HandleAPI)
 
 	// Admin login (no auth)
@@ -262,6 +274,62 @@ func main() {
 		merchantAuthGroup.POST("/withdraws", merchantHandler.RequestWithdraw)
 		merchantAuthGroup.GET("/api-key", merchantHandler.GetAPIKey)
 		merchantAuthGroup.PUT("/notify-url", merchantHandler.UpdateNotifyURL)
+	}
+
+	// ========================
+	// Static assets + SPA fallback
+	// ========================
+	// Serves the Vue 3 SPA built by `npm run build` into frontend/dist.
+	// SPA_DIR env var can point the binary at a non-default location.
+	spaDir := os.Getenv("SPA_DIR")
+	if spaDir == "" {
+		spaDir = "frontend/dist"
+	}
+	if abs, err := filepath.Abs(spaDir); err == nil {
+		spaDir = abs
+	}
+	indexHTML := filepath.Join(spaDir, "index.html")
+	if _, err := os.Stat(indexHTML); err == nil {
+		log.Printf("[main] serving SPA from %s", spaDir)
+		// Concrete asset/static paths handled directly.
+		r.Static("/assets", filepath.Join(spaDir, "assets"))
+		// Map common favicon paths if the corresponding file exists.
+		for _, fav := range []string{"favicon.ico", "favicon.svg", "favicon.png"} {
+			path := filepath.Join(spaDir, fav)
+			if _, err := os.Stat(path); err == nil {
+				r.StaticFile("/"+fav, path)
+			}
+		}
+		// Root → admin login (matches existing Vue router default).
+		r.GET("/", func(c *gin.Context) {
+			c.Redirect(http.StatusFound, "/admin/login")
+		})
+		// Catch-all: serve index.html for unmatched browser routes (deep links
+		// like /admin/dashboard, /merchant/login). API 404s stay JSON; asset
+		// 404s (paths with file extensions) return JSON 404 too so the browser
+		// doesn't get HTML for a missing image / script.
+		r.NoRoute(func(c *gin.Context) {
+			p := c.Request.URL.Path
+			if strings.HasPrefix(p, "/api/") ||
+				p == "/mapi.php" || p == "/submit.php" || p == "/api.php" {
+				c.JSON(http.StatusNotFound, gin.H{"code": 404, "msg": "not found"})
+				return
+			}
+			fp := filepath.Join(spaDir, filepath.Clean(p))
+			if strings.HasPrefix(fp, spaDir) {
+				if info, err := os.Stat(fp); err == nil && !info.IsDir() {
+					c.File(fp)
+					return
+				}
+			}
+			if ext := filepath.Ext(p); ext != "" && ext != ".html" {
+				c.JSON(http.StatusNotFound, gin.H{"code": 404, "msg": "asset not found"})
+				return
+			}
+			c.File(indexHTML)
+		})
+	} else {
+		log.Printf("[main] SPA dist not found at %s; UI routes will 404. Build with: cd frontend && npm run build", spaDir)
 	}
 
 	// Determine port: env override > config > default 8080

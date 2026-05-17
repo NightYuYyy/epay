@@ -244,6 +244,268 @@ func (_u *OrderUpdate) ClearPaidAt() *OrderUpdate {
 	return _u
 }
 
+// SetAPITradeNo sets the "api_trade_no" field.
+func (_u *OrderUpdate) SetAPITradeNo(v string) *OrderUpdate {
+	_u.mutation.SetAPITradeNo(v)
+	return _u
+}
+
+// SetNillableAPITradeNo sets the "api_trade_no" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableAPITradeNo(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetAPITradeNo(*v)
+	}
+	return _u
+}
+
+// ClearAPITradeNo clears the value of the "api_trade_no" field.
+func (_u *OrderUpdate) ClearAPITradeNo() *OrderUpdate {
+	_u.mutation.ClearAPITradeNo()
+	return _u
+}
+
+// SetBuyer sets the "buyer" field.
+func (_u *OrderUpdate) SetBuyer(v string) *OrderUpdate {
+	_u.mutation.SetBuyer(v)
+	return _u
+}
+
+// SetNillableBuyer sets the "buyer" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableBuyer(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetBuyer(*v)
+	}
+	return _u
+}
+
+// ClearBuyer clears the value of the "buyer" field.
+func (_u *OrderUpdate) ClearBuyer() *OrderUpdate {
+	_u.mutation.ClearBuyer()
+	return _u
+}
+
+// SetParam sets the "param" field.
+func (_u *OrderUpdate) SetParam(v string) *OrderUpdate {
+	_u.mutation.SetParam(v)
+	return _u
+}
+
+// SetNillableParam sets the "param" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableParam(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetParam(*v)
+	}
+	return _u
+}
+
+// ClearParam clears the value of the "param" field.
+func (_u *OrderUpdate) ClearParam() *OrderUpdate {
+	_u.mutation.ClearParam()
+	return _u
+}
+
+// SetName sets the "name" field.
+func (_u *OrderUpdate) SetName(v string) *OrderUpdate {
+	_u.mutation.SetName(v)
+	return _u
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableName(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetName(*v)
+	}
+	return _u
+}
+
+// ClearName clears the value of the "name" field.
+func (_u *OrderUpdate) ClearName() *OrderUpdate {
+	_u.mutation.ClearName()
+	return _u
+}
+
+// SetClientip sets the "clientip" field.
+func (_u *OrderUpdate) SetClientip(v string) *OrderUpdate {
+	_u.mutation.SetClientip(v)
+	return _u
+}
+
+// SetNillableClientip sets the "clientip" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableClientip(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetClientip(*v)
+	}
+	return _u
+}
+
+// ClearClientip clears the value of the "clientip" field.
+func (_u *OrderUpdate) ClearClientip() *OrderUpdate {
+	_u.mutation.ClearClientip()
+	return _u
+}
+
+// SetReturnURL sets the "return_url" field.
+func (_u *OrderUpdate) SetReturnURL(v string) *OrderUpdate {
+	_u.mutation.SetReturnURL(v)
+	return _u
+}
+
+// SetNillableReturnURL sets the "return_url" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableReturnURL(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetReturnURL(*v)
+	}
+	return _u
+}
+
+// ClearReturnURL clears the value of the "return_url" field.
+func (_u *OrderUpdate) ClearReturnURL() *OrderUpdate {
+	_u.mutation.ClearReturnURL()
+	return _u
+}
+
+// SetDevice sets the "device" field.
+func (_u *OrderUpdate) SetDevice(v string) *OrderUpdate {
+	_u.mutation.SetDevice(v)
+	return _u
+}
+
+// SetNillableDevice sets the "device" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableDevice(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetDevice(*v)
+	}
+	return _u
+}
+
+// ClearDevice clears the value of the "device" field.
+func (_u *OrderUpdate) ClearDevice() *OrderUpdate {
+	_u.mutation.ClearDevice()
+	return _u
+}
+
+// SetMethod sets the "method" field.
+func (_u *OrderUpdate) SetMethod(v string) *OrderUpdate {
+	_u.mutation.SetMethod(v)
+	return _u
+}
+
+// SetNillableMethod sets the "method" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableMethod(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetMethod(*v)
+	}
+	return _u
+}
+
+// ClearMethod clears the value of the "method" field.
+func (_u *OrderUpdate) ClearMethod() *OrderUpdate {
+	_u.mutation.ClearMethod()
+	return _u
+}
+
+// SetSubOpenid sets the "sub_openid" field.
+func (_u *OrderUpdate) SetSubOpenid(v string) *OrderUpdate {
+	_u.mutation.SetSubOpenid(v)
+	return _u
+}
+
+// SetNillableSubOpenid sets the "sub_openid" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableSubOpenid(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetSubOpenid(*v)
+	}
+	return _u
+}
+
+// ClearSubOpenid clears the value of the "sub_openid" field.
+func (_u *OrderUpdate) ClearSubOpenid() *OrderUpdate {
+	_u.mutation.ClearSubOpenid()
+	return _u
+}
+
+// SetSubAppid sets the "sub_appid" field.
+func (_u *OrderUpdate) SetSubAppid(v string) *OrderUpdate {
+	_u.mutation.SetSubAppid(v)
+	return _u
+}
+
+// SetNillableSubAppid sets the "sub_appid" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableSubAppid(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetSubAppid(*v)
+	}
+	return _u
+}
+
+// ClearSubAppid clears the value of the "sub_appid" field.
+func (_u *OrderUpdate) ClearSubAppid() *OrderUpdate {
+	_u.mutation.ClearSubAppid()
+	return _u
+}
+
+// SetAuthCode sets the "auth_code" field.
+func (_u *OrderUpdate) SetAuthCode(v string) *OrderUpdate {
+	_u.mutation.SetAuthCode(v)
+	return _u
+}
+
+// SetNillableAuthCode sets the "auth_code" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableAuthCode(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetAuthCode(*v)
+	}
+	return _u
+}
+
+// ClearAuthCode clears the value of the "auth_code" field.
+func (_u *OrderUpdate) ClearAuthCode() *OrderUpdate {
+	_u.mutation.ClearAuthCode()
+	return _u
+}
+
+// SetRefundMoney sets the "refund_money" field.
+func (_u *OrderUpdate) SetRefundMoney(v float64) *OrderUpdate {
+	_u.mutation.ResetRefundMoney()
+	_u.mutation.SetRefundMoney(v)
+	return _u
+}
+
+// SetNillableRefundMoney sets the "refund_money" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableRefundMoney(v *float64) *OrderUpdate {
+	if v != nil {
+		_u.SetRefundMoney(*v)
+	}
+	return _u
+}
+
+// AddRefundMoney adds value to the "refund_money" field.
+func (_u *OrderUpdate) AddRefundMoney(v float64) *OrderUpdate {
+	_u.mutation.AddRefundMoney(v)
+	return _u
+}
+
+// SetVersion sets the "version" field.
+func (_u *OrderUpdate) SetVersion(v int) *OrderUpdate {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableVersion(v *int) *OrderUpdate {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *OrderUpdate) AddVersion(v int) *OrderUpdate {
+	_u.mutation.AddVersion(v)
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *OrderUpdate) SetUpdatedAt(v time.Time) *OrderUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -395,6 +657,84 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.PaidAtCleared() {
 		_spec.ClearField(order.FieldPaidAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.APITradeNo(); ok {
+		_spec.SetField(order.FieldAPITradeNo, field.TypeString, value)
+	}
+	if _u.mutation.APITradeNoCleared() {
+		_spec.ClearField(order.FieldAPITradeNo, field.TypeString)
+	}
+	if value, ok := _u.mutation.Buyer(); ok {
+		_spec.SetField(order.FieldBuyer, field.TypeString, value)
+	}
+	if _u.mutation.BuyerCleared() {
+		_spec.ClearField(order.FieldBuyer, field.TypeString)
+	}
+	if value, ok := _u.mutation.Param(); ok {
+		_spec.SetField(order.FieldParam, field.TypeString, value)
+	}
+	if _u.mutation.ParamCleared() {
+		_spec.ClearField(order.FieldParam, field.TypeString)
+	}
+	if value, ok := _u.mutation.Name(); ok {
+		_spec.SetField(order.FieldName, field.TypeString, value)
+	}
+	if _u.mutation.NameCleared() {
+		_spec.ClearField(order.FieldName, field.TypeString)
+	}
+	if value, ok := _u.mutation.Clientip(); ok {
+		_spec.SetField(order.FieldClientip, field.TypeString, value)
+	}
+	if _u.mutation.ClientipCleared() {
+		_spec.ClearField(order.FieldClientip, field.TypeString)
+	}
+	if value, ok := _u.mutation.ReturnURL(); ok {
+		_spec.SetField(order.FieldReturnURL, field.TypeString, value)
+	}
+	if _u.mutation.ReturnURLCleared() {
+		_spec.ClearField(order.FieldReturnURL, field.TypeString)
+	}
+	if value, ok := _u.mutation.Device(); ok {
+		_spec.SetField(order.FieldDevice, field.TypeString, value)
+	}
+	if _u.mutation.DeviceCleared() {
+		_spec.ClearField(order.FieldDevice, field.TypeString)
+	}
+	if value, ok := _u.mutation.Method(); ok {
+		_spec.SetField(order.FieldMethod, field.TypeString, value)
+	}
+	if _u.mutation.MethodCleared() {
+		_spec.ClearField(order.FieldMethod, field.TypeString)
+	}
+	if value, ok := _u.mutation.SubOpenid(); ok {
+		_spec.SetField(order.FieldSubOpenid, field.TypeString, value)
+	}
+	if _u.mutation.SubOpenidCleared() {
+		_spec.ClearField(order.FieldSubOpenid, field.TypeString)
+	}
+	if value, ok := _u.mutation.SubAppid(); ok {
+		_spec.SetField(order.FieldSubAppid, field.TypeString, value)
+	}
+	if _u.mutation.SubAppidCleared() {
+		_spec.ClearField(order.FieldSubAppid, field.TypeString)
+	}
+	if value, ok := _u.mutation.AuthCode(); ok {
+		_spec.SetField(order.FieldAuthCode, field.TypeString, value)
+	}
+	if _u.mutation.AuthCodeCleared() {
+		_spec.ClearField(order.FieldAuthCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.RefundMoney(); ok {
+		_spec.SetField(order.FieldRefundMoney, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedRefundMoney(); ok {
+		_spec.AddField(order.FieldRefundMoney, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(order.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(order.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(order.FieldUpdatedAt, field.TypeTime, value)
@@ -662,6 +1002,268 @@ func (_u *OrderUpdateOne) ClearPaidAt() *OrderUpdateOne {
 	return _u
 }
 
+// SetAPITradeNo sets the "api_trade_no" field.
+func (_u *OrderUpdateOne) SetAPITradeNo(v string) *OrderUpdateOne {
+	_u.mutation.SetAPITradeNo(v)
+	return _u
+}
+
+// SetNillableAPITradeNo sets the "api_trade_no" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableAPITradeNo(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetAPITradeNo(*v)
+	}
+	return _u
+}
+
+// ClearAPITradeNo clears the value of the "api_trade_no" field.
+func (_u *OrderUpdateOne) ClearAPITradeNo() *OrderUpdateOne {
+	_u.mutation.ClearAPITradeNo()
+	return _u
+}
+
+// SetBuyer sets the "buyer" field.
+func (_u *OrderUpdateOne) SetBuyer(v string) *OrderUpdateOne {
+	_u.mutation.SetBuyer(v)
+	return _u
+}
+
+// SetNillableBuyer sets the "buyer" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableBuyer(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetBuyer(*v)
+	}
+	return _u
+}
+
+// ClearBuyer clears the value of the "buyer" field.
+func (_u *OrderUpdateOne) ClearBuyer() *OrderUpdateOne {
+	_u.mutation.ClearBuyer()
+	return _u
+}
+
+// SetParam sets the "param" field.
+func (_u *OrderUpdateOne) SetParam(v string) *OrderUpdateOne {
+	_u.mutation.SetParam(v)
+	return _u
+}
+
+// SetNillableParam sets the "param" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableParam(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetParam(*v)
+	}
+	return _u
+}
+
+// ClearParam clears the value of the "param" field.
+func (_u *OrderUpdateOne) ClearParam() *OrderUpdateOne {
+	_u.mutation.ClearParam()
+	return _u
+}
+
+// SetName sets the "name" field.
+func (_u *OrderUpdateOne) SetName(v string) *OrderUpdateOne {
+	_u.mutation.SetName(v)
+	return _u
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableName(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetName(*v)
+	}
+	return _u
+}
+
+// ClearName clears the value of the "name" field.
+func (_u *OrderUpdateOne) ClearName() *OrderUpdateOne {
+	_u.mutation.ClearName()
+	return _u
+}
+
+// SetClientip sets the "clientip" field.
+func (_u *OrderUpdateOne) SetClientip(v string) *OrderUpdateOne {
+	_u.mutation.SetClientip(v)
+	return _u
+}
+
+// SetNillableClientip sets the "clientip" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableClientip(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetClientip(*v)
+	}
+	return _u
+}
+
+// ClearClientip clears the value of the "clientip" field.
+func (_u *OrderUpdateOne) ClearClientip() *OrderUpdateOne {
+	_u.mutation.ClearClientip()
+	return _u
+}
+
+// SetReturnURL sets the "return_url" field.
+func (_u *OrderUpdateOne) SetReturnURL(v string) *OrderUpdateOne {
+	_u.mutation.SetReturnURL(v)
+	return _u
+}
+
+// SetNillableReturnURL sets the "return_url" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableReturnURL(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetReturnURL(*v)
+	}
+	return _u
+}
+
+// ClearReturnURL clears the value of the "return_url" field.
+func (_u *OrderUpdateOne) ClearReturnURL() *OrderUpdateOne {
+	_u.mutation.ClearReturnURL()
+	return _u
+}
+
+// SetDevice sets the "device" field.
+func (_u *OrderUpdateOne) SetDevice(v string) *OrderUpdateOne {
+	_u.mutation.SetDevice(v)
+	return _u
+}
+
+// SetNillableDevice sets the "device" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableDevice(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetDevice(*v)
+	}
+	return _u
+}
+
+// ClearDevice clears the value of the "device" field.
+func (_u *OrderUpdateOne) ClearDevice() *OrderUpdateOne {
+	_u.mutation.ClearDevice()
+	return _u
+}
+
+// SetMethod sets the "method" field.
+func (_u *OrderUpdateOne) SetMethod(v string) *OrderUpdateOne {
+	_u.mutation.SetMethod(v)
+	return _u
+}
+
+// SetNillableMethod sets the "method" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableMethod(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetMethod(*v)
+	}
+	return _u
+}
+
+// ClearMethod clears the value of the "method" field.
+func (_u *OrderUpdateOne) ClearMethod() *OrderUpdateOne {
+	_u.mutation.ClearMethod()
+	return _u
+}
+
+// SetSubOpenid sets the "sub_openid" field.
+func (_u *OrderUpdateOne) SetSubOpenid(v string) *OrderUpdateOne {
+	_u.mutation.SetSubOpenid(v)
+	return _u
+}
+
+// SetNillableSubOpenid sets the "sub_openid" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableSubOpenid(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetSubOpenid(*v)
+	}
+	return _u
+}
+
+// ClearSubOpenid clears the value of the "sub_openid" field.
+func (_u *OrderUpdateOne) ClearSubOpenid() *OrderUpdateOne {
+	_u.mutation.ClearSubOpenid()
+	return _u
+}
+
+// SetSubAppid sets the "sub_appid" field.
+func (_u *OrderUpdateOne) SetSubAppid(v string) *OrderUpdateOne {
+	_u.mutation.SetSubAppid(v)
+	return _u
+}
+
+// SetNillableSubAppid sets the "sub_appid" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableSubAppid(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetSubAppid(*v)
+	}
+	return _u
+}
+
+// ClearSubAppid clears the value of the "sub_appid" field.
+func (_u *OrderUpdateOne) ClearSubAppid() *OrderUpdateOne {
+	_u.mutation.ClearSubAppid()
+	return _u
+}
+
+// SetAuthCode sets the "auth_code" field.
+func (_u *OrderUpdateOne) SetAuthCode(v string) *OrderUpdateOne {
+	_u.mutation.SetAuthCode(v)
+	return _u
+}
+
+// SetNillableAuthCode sets the "auth_code" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableAuthCode(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetAuthCode(*v)
+	}
+	return _u
+}
+
+// ClearAuthCode clears the value of the "auth_code" field.
+func (_u *OrderUpdateOne) ClearAuthCode() *OrderUpdateOne {
+	_u.mutation.ClearAuthCode()
+	return _u
+}
+
+// SetRefundMoney sets the "refund_money" field.
+func (_u *OrderUpdateOne) SetRefundMoney(v float64) *OrderUpdateOne {
+	_u.mutation.ResetRefundMoney()
+	_u.mutation.SetRefundMoney(v)
+	return _u
+}
+
+// SetNillableRefundMoney sets the "refund_money" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableRefundMoney(v *float64) *OrderUpdateOne {
+	if v != nil {
+		_u.SetRefundMoney(*v)
+	}
+	return _u
+}
+
+// AddRefundMoney adds value to the "refund_money" field.
+func (_u *OrderUpdateOne) AddRefundMoney(v float64) *OrderUpdateOne {
+	_u.mutation.AddRefundMoney(v)
+	return _u
+}
+
+// SetVersion sets the "version" field.
+func (_u *OrderUpdateOne) SetVersion(v int) *OrderUpdateOne {
+	_u.mutation.ResetVersion()
+	_u.mutation.SetVersion(v)
+	return _u
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableVersion(v *int) *OrderUpdateOne {
+	if v != nil {
+		_u.SetVersion(*v)
+	}
+	return _u
+}
+
+// AddVersion adds value to the "version" field.
+func (_u *OrderUpdateOne) AddVersion(v int) *OrderUpdateOne {
+	_u.mutation.AddVersion(v)
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *OrderUpdateOne) SetUpdatedAt(v time.Time) *OrderUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -843,6 +1445,84 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 	}
 	if _u.mutation.PaidAtCleared() {
 		_spec.ClearField(order.FieldPaidAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.APITradeNo(); ok {
+		_spec.SetField(order.FieldAPITradeNo, field.TypeString, value)
+	}
+	if _u.mutation.APITradeNoCleared() {
+		_spec.ClearField(order.FieldAPITradeNo, field.TypeString)
+	}
+	if value, ok := _u.mutation.Buyer(); ok {
+		_spec.SetField(order.FieldBuyer, field.TypeString, value)
+	}
+	if _u.mutation.BuyerCleared() {
+		_spec.ClearField(order.FieldBuyer, field.TypeString)
+	}
+	if value, ok := _u.mutation.Param(); ok {
+		_spec.SetField(order.FieldParam, field.TypeString, value)
+	}
+	if _u.mutation.ParamCleared() {
+		_spec.ClearField(order.FieldParam, field.TypeString)
+	}
+	if value, ok := _u.mutation.Name(); ok {
+		_spec.SetField(order.FieldName, field.TypeString, value)
+	}
+	if _u.mutation.NameCleared() {
+		_spec.ClearField(order.FieldName, field.TypeString)
+	}
+	if value, ok := _u.mutation.Clientip(); ok {
+		_spec.SetField(order.FieldClientip, field.TypeString, value)
+	}
+	if _u.mutation.ClientipCleared() {
+		_spec.ClearField(order.FieldClientip, field.TypeString)
+	}
+	if value, ok := _u.mutation.ReturnURL(); ok {
+		_spec.SetField(order.FieldReturnURL, field.TypeString, value)
+	}
+	if _u.mutation.ReturnURLCleared() {
+		_spec.ClearField(order.FieldReturnURL, field.TypeString)
+	}
+	if value, ok := _u.mutation.Device(); ok {
+		_spec.SetField(order.FieldDevice, field.TypeString, value)
+	}
+	if _u.mutation.DeviceCleared() {
+		_spec.ClearField(order.FieldDevice, field.TypeString)
+	}
+	if value, ok := _u.mutation.Method(); ok {
+		_spec.SetField(order.FieldMethod, field.TypeString, value)
+	}
+	if _u.mutation.MethodCleared() {
+		_spec.ClearField(order.FieldMethod, field.TypeString)
+	}
+	if value, ok := _u.mutation.SubOpenid(); ok {
+		_spec.SetField(order.FieldSubOpenid, field.TypeString, value)
+	}
+	if _u.mutation.SubOpenidCleared() {
+		_spec.ClearField(order.FieldSubOpenid, field.TypeString)
+	}
+	if value, ok := _u.mutation.SubAppid(); ok {
+		_spec.SetField(order.FieldSubAppid, field.TypeString, value)
+	}
+	if _u.mutation.SubAppidCleared() {
+		_spec.ClearField(order.FieldSubAppid, field.TypeString)
+	}
+	if value, ok := _u.mutation.AuthCode(); ok {
+		_spec.SetField(order.FieldAuthCode, field.TypeString, value)
+	}
+	if _u.mutation.AuthCodeCleared() {
+		_spec.ClearField(order.FieldAuthCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.RefundMoney(); ok {
+		_spec.SetField(order.FieldRefundMoney, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedRefundMoney(); ok {
+		_spec.AddField(order.FieldRefundMoney, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.Version(); ok {
+		_spec.SetField(order.FieldVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedVersion(); ok {
+		_spec.AddField(order.FieldVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(order.FieldUpdatedAt, field.TypeTime, value)

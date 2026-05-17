@@ -15,6 +15,7 @@ import (
 	"epay/ent/merchant"
 	"epay/ent/order"
 	"epay/ent/platformconfig"
+	"epay/ent/refund"
 	"epay/ent/settlement"
 	"epay/ent/withdraw"
 
@@ -40,6 +41,8 @@ type Client struct {
 	Order *OrderClient
 	// PlatformConfig is the client for interacting with the PlatformConfig builders.
 	PlatformConfig *PlatformConfigClient
+	// Refund is the client for interacting with the Refund builders.
+	Refund *RefundClient
 	// Settlement is the client for interacting with the Settlement builders.
 	Settlement *SettlementClient
 	// Withdraw is the client for interacting with the Withdraw builders.
@@ -59,6 +62,7 @@ func (c *Client) init() {
 	c.Merchant = NewMerchantClient(c.config)
 	c.Order = NewOrderClient(c.config)
 	c.PlatformConfig = NewPlatformConfigClient(c.config)
+	c.Refund = NewRefundClient(c.config)
 	c.Settlement = NewSettlementClient(c.config)
 	c.Withdraw = NewWithdrawClient(c.config)
 }
@@ -157,6 +161,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Merchant:       NewMerchantClient(cfg),
 		Order:          NewOrderClient(cfg),
 		PlatformConfig: NewPlatformConfigClient(cfg),
+		Refund:         NewRefundClient(cfg),
 		Settlement:     NewSettlementClient(cfg),
 		Withdraw:       NewWithdrawClient(cfg),
 	}, nil
@@ -182,6 +187,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Merchant:       NewMerchantClient(cfg),
 		Order:          NewOrderClient(cfg),
 		PlatformConfig: NewPlatformConfigClient(cfg),
+		Refund:         NewRefundClient(cfg),
 		Settlement:     NewSettlementClient(cfg),
 		Withdraw:       NewWithdrawClient(cfg),
 	}, nil
@@ -213,7 +219,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Admin, c.Merchant, c.Order, c.PlatformConfig, c.Settlement, c.Withdraw,
+		c.Admin, c.Merchant, c.Order, c.PlatformConfig, c.Refund, c.Settlement,
+		c.Withdraw,
 	} {
 		n.Use(hooks...)
 	}
@@ -223,7 +230,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Admin, c.Merchant, c.Order, c.PlatformConfig, c.Settlement, c.Withdraw,
+		c.Admin, c.Merchant, c.Order, c.PlatformConfig, c.Refund, c.Settlement,
+		c.Withdraw,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -240,6 +248,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Order.mutate(ctx, m)
 	case *PlatformConfigMutation:
 		return c.PlatformConfig.mutate(ctx, m)
+	case *RefundMutation:
+		return c.Refund.mutate(ctx, m)
 	case *SettlementMutation:
 		return c.Settlement.mutate(ctx, m)
 	case *WithdrawMutation:
@@ -531,6 +541,22 @@ func (c *MerchantClient) QueryWithdraws(_m *Merchant) *WithdrawQuery {
 			sqlgraph.From(merchant.Table, merchant.FieldID, id),
 			sqlgraph.To(withdraw.Table, withdraw.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, merchant.WithdrawsTable, merchant.WithdrawsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRefunds queries the refunds edge of a Merchant.
+func (c *MerchantClient) QueryRefunds(_m *Merchant) *RefundQuery {
+	query := (&RefundClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchant.Table, merchant.FieldID, id),
+			sqlgraph.To(refund.Table, refund.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchant.RefundsTable, merchant.RefundsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -845,6 +871,155 @@ func (c *PlatformConfigClient) mutate(ctx context.Context, m *PlatformConfigMuta
 	}
 }
 
+// RefundClient is a client for the Refund schema.
+type RefundClient struct {
+	config
+}
+
+// NewRefundClient returns a client for the Refund from the given config.
+func NewRefundClient(c config) *RefundClient {
+	return &RefundClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `refund.Hooks(f(g(h())))`.
+func (c *RefundClient) Use(hooks ...Hook) {
+	c.hooks.Refund = append(c.hooks.Refund, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `refund.Intercept(f(g(h())))`.
+func (c *RefundClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Refund = append(c.inters.Refund, interceptors...)
+}
+
+// Create returns a builder for creating a Refund entity.
+func (c *RefundClient) Create() *RefundCreate {
+	mutation := newRefundMutation(c.config, OpCreate)
+	return &RefundCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Refund entities.
+func (c *RefundClient) CreateBulk(builders ...*RefundCreate) *RefundCreateBulk {
+	return &RefundCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RefundClient) MapCreateBulk(slice any, setFunc func(*RefundCreate, int)) *RefundCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RefundCreateBulk{err: fmt.Errorf("calling to RefundClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RefundCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RefundCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Refund.
+func (c *RefundClient) Update() *RefundUpdate {
+	mutation := newRefundMutation(c.config, OpUpdate)
+	return &RefundUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RefundClient) UpdateOne(_m *Refund) *RefundUpdateOne {
+	mutation := newRefundMutation(c.config, OpUpdateOne, withRefund(_m))
+	return &RefundUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RefundClient) UpdateOneID(id uuid.UUID) *RefundUpdateOne {
+	mutation := newRefundMutation(c.config, OpUpdateOne, withRefundID(id))
+	return &RefundUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Refund.
+func (c *RefundClient) Delete() *RefundDelete {
+	mutation := newRefundMutation(c.config, OpDelete)
+	return &RefundDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RefundClient) DeleteOne(_m *Refund) *RefundDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RefundClient) DeleteOneID(id uuid.UUID) *RefundDeleteOne {
+	builder := c.Delete().Where(refund.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RefundDeleteOne{builder}
+}
+
+// Query returns a query builder for Refund.
+func (c *RefundClient) Query() *RefundQuery {
+	return &RefundQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRefund},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Refund entity by its id.
+func (c *RefundClient) Get(ctx context.Context, id uuid.UUID) (*Refund, error) {
+	return c.Query().Where(refund.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RefundClient) GetX(ctx context.Context, id uuid.UUID) *Refund {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMerchant queries the merchant edge of a Refund.
+func (c *RefundClient) QueryMerchant(_m *Refund) *MerchantQuery {
+	query := (&MerchantClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(refund.Table, refund.FieldID, id),
+			sqlgraph.To(merchant.Table, merchant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, refund.MerchantTable, refund.MerchantColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RefundClient) Hooks() []Hook {
+	return c.hooks.Refund
+}
+
+// Interceptors returns the client interceptors.
+func (c *RefundClient) Interceptors() []Interceptor {
+	return c.inters.Refund
+}
+
+func (c *RefundClient) mutate(ctx context.Context, m *RefundMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RefundCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RefundUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RefundUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RefundDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Refund mutation op: %q", m.Op())
+	}
+}
+
 // SettlementClient is a client for the Settlement schema.
 type SettlementClient struct {
 	config
@@ -1146,10 +1321,11 @@ func (c *WithdrawClient) mutate(ctx context.Context, m *WithdrawMutation) (Value
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Admin, Merchant, Order, PlatformConfig, Settlement, Withdraw []ent.Hook
+		Admin, Merchant, Order, PlatformConfig, Refund, Settlement, Withdraw []ent.Hook
 	}
 	inters struct {
-		Admin, Merchant, Order, PlatformConfig, Settlement, Withdraw []ent.Interceptor
+		Admin, Merchant, Order, PlatformConfig, Refund, Settlement,
+		Withdraw []ent.Interceptor
 	}
 )
 

@@ -8,6 +8,7 @@ import (
 	"epay/ent/merchant"
 	"epay/ent/order"
 	"epay/ent/predicate"
+	"epay/ent/refund"
 	"epay/ent/settlement"
 	"epay/ent/withdraw"
 	"fmt"
@@ -31,6 +32,7 @@ type MerchantQuery struct {
 	withOrders      *OrderQuery
 	withSettlements *SettlementQuery
 	withWithdraws   *WithdrawQuery
+	withRefunds     *RefundQuery
 	modifiers       []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -127,6 +129,28 @@ func (_q *MerchantQuery) QueryWithdraws() *WithdrawQuery {
 			sqlgraph.From(merchant.Table, merchant.FieldID, selector),
 			sqlgraph.To(withdraw.Table, withdraw.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, merchant.WithdrawsTable, merchant.WithdrawsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRefunds chains the current query on the "refunds" edge.
+func (_q *MerchantQuery) QueryRefunds() *RefundQuery {
+	query := (&RefundClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(merchant.Table, merchant.FieldID, selector),
+			sqlgraph.To(refund.Table, refund.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, merchant.RefundsTable, merchant.RefundsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -329,6 +353,7 @@ func (_q *MerchantQuery) Clone() *MerchantQuery {
 		withOrders:      _q.withOrders.Clone(),
 		withSettlements: _q.withSettlements.Clone(),
 		withWithdraws:   _q.withWithdraws.Clone(),
+		withRefunds:     _q.withRefunds.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -365,6 +390,17 @@ func (_q *MerchantQuery) WithWithdraws(opts ...func(*WithdrawQuery)) *MerchantQu
 		opt(query)
 	}
 	_q.withWithdraws = query
+	return _q
+}
+
+// WithRefunds tells the query-builder to eager-load the nodes that are connected to
+// the "refunds" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *MerchantQuery) WithRefunds(opts ...func(*RefundQuery)) *MerchantQuery {
+	query := (&RefundClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withRefunds = query
 	return _q
 }
 
@@ -446,10 +482,11 @@ func (_q *MerchantQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mer
 	var (
 		nodes       = []*Merchant{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			_q.withOrders != nil,
 			_q.withSettlements != nil,
 			_q.withWithdraws != nil,
+			_q.withRefunds != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -491,6 +528,13 @@ func (_q *MerchantQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mer
 		if err := _q.loadWithdraws(ctx, query, nodes,
 			func(n *Merchant) { n.Edges.Withdraws = []*Withdraw{} },
 			func(n *Merchant, e *Withdraw) { n.Edges.Withdraws = append(n.Edges.Withdraws, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withRefunds; query != nil {
+		if err := _q.loadRefunds(ctx, query, nodes,
+			func(n *Merchant) { n.Edges.Refunds = []*Refund{} },
+			func(n *Merchant, e *Refund) { n.Edges.Refunds = append(n.Edges.Refunds, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -572,6 +616,36 @@ func (_q *MerchantQuery) loadWithdraws(ctx context.Context, query *WithdrawQuery
 	}
 	query.Where(predicate.Withdraw(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(merchant.WithdrawsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.MerchantID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "merchant_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *MerchantQuery) loadRefunds(ctx context.Context, query *RefundQuery, nodes []*Merchant, init func(*Merchant), assign func(*Merchant, *Refund)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Merchant)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(refund.FieldMerchantID)
+	}
+	query.Where(predicate.Refund(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(merchant.RefundsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

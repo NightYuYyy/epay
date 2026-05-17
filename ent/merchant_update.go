@@ -7,6 +7,7 @@ import (
 	"epay/ent/merchant"
 	"epay/ent/order"
 	"epay/ent/predicate"
+	"epay/ent/refund"
 	"epay/ent/settlement"
 	"epay/ent/withdraw"
 	"errors"
@@ -115,6 +116,96 @@ func (_u *MerchantUpdate) ClearNotifyURL() *MerchantUpdate {
 	return _u
 }
 
+// SetKeytype sets the "keytype" field.
+func (_u *MerchantUpdate) SetKeytype(v int) *MerchantUpdate {
+	_u.mutation.ResetKeytype()
+	_u.mutation.SetKeytype(v)
+	return _u
+}
+
+// SetNillableKeytype sets the "keytype" field if the given value is not nil.
+func (_u *MerchantUpdate) SetNillableKeytype(v *int) *MerchantUpdate {
+	if v != nil {
+		_u.SetKeytype(*v)
+	}
+	return _u
+}
+
+// AddKeytype adds value to the "keytype" field.
+func (_u *MerchantUpdate) AddKeytype(v int) *MerchantUpdate {
+	_u.mutation.AddKeytype(v)
+	return _u
+}
+
+// SetPublicKey sets the "public_key" field.
+func (_u *MerchantUpdate) SetPublicKey(v string) *MerchantUpdate {
+	_u.mutation.SetPublicKey(v)
+	return _u
+}
+
+// SetNillablePublicKey sets the "public_key" field if the given value is not nil.
+func (_u *MerchantUpdate) SetNillablePublicKey(v *string) *MerchantUpdate {
+	if v != nil {
+		_u.SetPublicKey(*v)
+	}
+	return _u
+}
+
+// ClearPublicKey clears the value of the "public_key" field.
+func (_u *MerchantUpdate) ClearPublicKey() *MerchantUpdate {
+	_u.mutation.ClearPublicKey()
+	return _u
+}
+
+// SetRefundEnabled sets the "refund_enabled" field.
+func (_u *MerchantUpdate) SetRefundEnabled(v bool) *MerchantUpdate {
+	_u.mutation.SetRefundEnabled(v)
+	return _u
+}
+
+// SetNillableRefundEnabled sets the "refund_enabled" field if the given value is not nil.
+func (_u *MerchantUpdate) SetNillableRefundEnabled(v *bool) *MerchantUpdate {
+	if v != nil {
+		_u.SetRefundEnabled(*v)
+	}
+	return _u
+}
+
+// SetTransferEnabled sets the "transfer_enabled" field.
+func (_u *MerchantUpdate) SetTransferEnabled(v bool) *MerchantUpdate {
+	_u.mutation.SetTransferEnabled(v)
+	return _u
+}
+
+// SetNillableTransferEnabled sets the "transfer_enabled" field if the given value is not nil.
+func (_u *MerchantUpdate) SetNillableTransferEnabled(v *bool) *MerchantUpdate {
+	if v != nil {
+		_u.SetTransferEnabled(*v)
+	}
+	return _u
+}
+
+// SetMode sets the "mode" field.
+func (_u *MerchantUpdate) SetMode(v int) *MerchantUpdate {
+	_u.mutation.ResetMode()
+	_u.mutation.SetMode(v)
+	return _u
+}
+
+// SetNillableMode sets the "mode" field if the given value is not nil.
+func (_u *MerchantUpdate) SetNillableMode(v *int) *MerchantUpdate {
+	if v != nil {
+		_u.SetMode(*v)
+	}
+	return _u
+}
+
+// AddMode adds value to the "mode" field.
+func (_u *MerchantUpdate) AddMode(v int) *MerchantUpdate {
+	_u.mutation.AddMode(v)
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *MerchantUpdate) SetUpdatedAt(v time.Time) *MerchantUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -164,6 +255,21 @@ func (_u *MerchantUpdate) AddWithdraws(v ...*Withdraw) *MerchantUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddWithdrawIDs(ids...)
+}
+
+// AddRefundIDs adds the "refunds" edge to the Refund entity by IDs.
+func (_u *MerchantUpdate) AddRefundIDs(ids ...uuid.UUID) *MerchantUpdate {
+	_u.mutation.AddRefundIDs(ids...)
+	return _u
+}
+
+// AddRefunds adds the "refunds" edges to the Refund entity.
+func (_u *MerchantUpdate) AddRefunds(v ...*Refund) *MerchantUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRefundIDs(ids...)
 }
 
 // Mutation returns the MerchantMutation object of the builder.
@@ -232,6 +338,27 @@ func (_u *MerchantUpdate) RemoveWithdraws(v ...*Withdraw) *MerchantUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveWithdrawIDs(ids...)
+}
+
+// ClearRefunds clears all "refunds" edges to the Refund entity.
+func (_u *MerchantUpdate) ClearRefunds() *MerchantUpdate {
+	_u.mutation.ClearRefunds()
+	return _u
+}
+
+// RemoveRefundIDs removes the "refunds" edge to Refund entities by IDs.
+func (_u *MerchantUpdate) RemoveRefundIDs(ids ...uuid.UUID) *MerchantUpdate {
+	_u.mutation.RemoveRefundIDs(ids...)
+	return _u
+}
+
+// RemoveRefunds removes "refunds" edges to Refund entities.
+func (_u *MerchantUpdate) RemoveRefunds(v ...*Refund) *MerchantUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveRefundIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -322,6 +449,30 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.NotifyURLCleared() {
 		_spec.ClearField(merchant.FieldNotifyURL, field.TypeString)
+	}
+	if value, ok := _u.mutation.Keytype(); ok {
+		_spec.SetField(merchant.FieldKeytype, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedKeytype(); ok {
+		_spec.AddField(merchant.FieldKeytype, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.PublicKey(); ok {
+		_spec.SetField(merchant.FieldPublicKey, field.TypeString, value)
+	}
+	if _u.mutation.PublicKeyCleared() {
+		_spec.ClearField(merchant.FieldPublicKey, field.TypeString)
+	}
+	if value, ok := _u.mutation.RefundEnabled(); ok {
+		_spec.SetField(merchant.FieldRefundEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.TransferEnabled(); ok {
+		_spec.SetField(merchant.FieldTransferEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Mode(); ok {
+		_spec.SetField(merchant.FieldMode, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMode(); ok {
+		_spec.AddField(merchant.FieldMode, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(merchant.FieldUpdatedAt, field.TypeTime, value)
@@ -461,6 +612,51 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.RefundsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchant.RefundsTable,
+			Columns: []string{merchant.RefundsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRefundsIDs(); len(nodes) > 0 && !_u.mutation.RefundsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchant.RefundsTable,
+			Columns: []string{merchant.RefundsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RefundsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchant.RefundsTable,
+			Columns: []string{merchant.RefundsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{merchant.Label}
@@ -564,6 +760,96 @@ func (_u *MerchantUpdateOne) ClearNotifyURL() *MerchantUpdateOne {
 	return _u
 }
 
+// SetKeytype sets the "keytype" field.
+func (_u *MerchantUpdateOne) SetKeytype(v int) *MerchantUpdateOne {
+	_u.mutation.ResetKeytype()
+	_u.mutation.SetKeytype(v)
+	return _u
+}
+
+// SetNillableKeytype sets the "keytype" field if the given value is not nil.
+func (_u *MerchantUpdateOne) SetNillableKeytype(v *int) *MerchantUpdateOne {
+	if v != nil {
+		_u.SetKeytype(*v)
+	}
+	return _u
+}
+
+// AddKeytype adds value to the "keytype" field.
+func (_u *MerchantUpdateOne) AddKeytype(v int) *MerchantUpdateOne {
+	_u.mutation.AddKeytype(v)
+	return _u
+}
+
+// SetPublicKey sets the "public_key" field.
+func (_u *MerchantUpdateOne) SetPublicKey(v string) *MerchantUpdateOne {
+	_u.mutation.SetPublicKey(v)
+	return _u
+}
+
+// SetNillablePublicKey sets the "public_key" field if the given value is not nil.
+func (_u *MerchantUpdateOne) SetNillablePublicKey(v *string) *MerchantUpdateOne {
+	if v != nil {
+		_u.SetPublicKey(*v)
+	}
+	return _u
+}
+
+// ClearPublicKey clears the value of the "public_key" field.
+func (_u *MerchantUpdateOne) ClearPublicKey() *MerchantUpdateOne {
+	_u.mutation.ClearPublicKey()
+	return _u
+}
+
+// SetRefundEnabled sets the "refund_enabled" field.
+func (_u *MerchantUpdateOne) SetRefundEnabled(v bool) *MerchantUpdateOne {
+	_u.mutation.SetRefundEnabled(v)
+	return _u
+}
+
+// SetNillableRefundEnabled sets the "refund_enabled" field if the given value is not nil.
+func (_u *MerchantUpdateOne) SetNillableRefundEnabled(v *bool) *MerchantUpdateOne {
+	if v != nil {
+		_u.SetRefundEnabled(*v)
+	}
+	return _u
+}
+
+// SetTransferEnabled sets the "transfer_enabled" field.
+func (_u *MerchantUpdateOne) SetTransferEnabled(v bool) *MerchantUpdateOne {
+	_u.mutation.SetTransferEnabled(v)
+	return _u
+}
+
+// SetNillableTransferEnabled sets the "transfer_enabled" field if the given value is not nil.
+func (_u *MerchantUpdateOne) SetNillableTransferEnabled(v *bool) *MerchantUpdateOne {
+	if v != nil {
+		_u.SetTransferEnabled(*v)
+	}
+	return _u
+}
+
+// SetMode sets the "mode" field.
+func (_u *MerchantUpdateOne) SetMode(v int) *MerchantUpdateOne {
+	_u.mutation.ResetMode()
+	_u.mutation.SetMode(v)
+	return _u
+}
+
+// SetNillableMode sets the "mode" field if the given value is not nil.
+func (_u *MerchantUpdateOne) SetNillableMode(v *int) *MerchantUpdateOne {
+	if v != nil {
+		_u.SetMode(*v)
+	}
+	return _u
+}
+
+// AddMode adds value to the "mode" field.
+func (_u *MerchantUpdateOne) AddMode(v int) *MerchantUpdateOne {
+	_u.mutation.AddMode(v)
+	return _u
+}
+
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *MerchantUpdateOne) SetUpdatedAt(v time.Time) *MerchantUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -613,6 +899,21 @@ func (_u *MerchantUpdateOne) AddWithdraws(v ...*Withdraw) *MerchantUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddWithdrawIDs(ids...)
+}
+
+// AddRefundIDs adds the "refunds" edge to the Refund entity by IDs.
+func (_u *MerchantUpdateOne) AddRefundIDs(ids ...uuid.UUID) *MerchantUpdateOne {
+	_u.mutation.AddRefundIDs(ids...)
+	return _u
+}
+
+// AddRefunds adds the "refunds" edges to the Refund entity.
+func (_u *MerchantUpdateOne) AddRefunds(v ...*Refund) *MerchantUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRefundIDs(ids...)
 }
 
 // Mutation returns the MerchantMutation object of the builder.
@@ -681,6 +982,27 @@ func (_u *MerchantUpdateOne) RemoveWithdraws(v ...*Withdraw) *MerchantUpdateOne 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveWithdrawIDs(ids...)
+}
+
+// ClearRefunds clears all "refunds" edges to the Refund entity.
+func (_u *MerchantUpdateOne) ClearRefunds() *MerchantUpdateOne {
+	_u.mutation.ClearRefunds()
+	return _u
+}
+
+// RemoveRefundIDs removes the "refunds" edge to Refund entities by IDs.
+func (_u *MerchantUpdateOne) RemoveRefundIDs(ids ...uuid.UUID) *MerchantUpdateOne {
+	_u.mutation.RemoveRefundIDs(ids...)
+	return _u
+}
+
+// RemoveRefunds removes "refunds" edges to Refund entities.
+func (_u *MerchantUpdateOne) RemoveRefunds(v ...*Refund) *MerchantUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveRefundIDs(ids...)
 }
 
 // Where appends a list predicates to the MerchantUpdate builder.
@@ -802,6 +1124,30 @@ func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err 
 	if _u.mutation.NotifyURLCleared() {
 		_spec.ClearField(merchant.FieldNotifyURL, field.TypeString)
 	}
+	if value, ok := _u.mutation.Keytype(); ok {
+		_spec.SetField(merchant.FieldKeytype, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedKeytype(); ok {
+		_spec.AddField(merchant.FieldKeytype, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.PublicKey(); ok {
+		_spec.SetField(merchant.FieldPublicKey, field.TypeString, value)
+	}
+	if _u.mutation.PublicKeyCleared() {
+		_spec.ClearField(merchant.FieldPublicKey, field.TypeString)
+	}
+	if value, ok := _u.mutation.RefundEnabled(); ok {
+		_spec.SetField(merchant.FieldRefundEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.TransferEnabled(); ok {
+		_spec.SetField(merchant.FieldTransferEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Mode(); ok {
+		_spec.SetField(merchant.FieldMode, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMode(); ok {
+		_spec.AddField(merchant.FieldMode, field.TypeInt, value)
+	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(merchant.FieldUpdatedAt, field.TypeTime, value)
 	}
@@ -933,6 +1279,51 @@ func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(withdraw.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.RefundsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchant.RefundsTable,
+			Columns: []string{merchant.RefundsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRefundsIDs(); len(nodes) > 0 && !_u.mutation.RefundsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchant.RefundsTable,
+			Columns: []string{merchant.RefundsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RefundsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchant.RefundsTable,
+			Columns: []string{merchant.RefundsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

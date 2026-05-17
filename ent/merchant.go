@@ -30,6 +30,16 @@ type Merchant struct {
 	Status merchant.Status `json:"status,omitempty"`
 	// NotifyURL holds the value of the "notify_url" field.
 	NotifyURL string `json:"notify_url,omitempty"`
+	// 0 = MD5, 1 = RSA (forces RSA sign_type)
+	Keytype int `json:"keytype,omitempty"`
+	// Merchant RSA public key (PEM or base64)
+	PublicKey string `json:"public_key,omitempty"`
+	// RefundEnabled holds the value of the "refund_enabled" field.
+	RefundEnabled bool `json:"refund_enabled,omitempty"`
+	// TransferEnabled holds the value of the "transfer_enabled" field.
+	TransferEnabled bool `json:"transfer_enabled,omitempty"`
+	// 0 = standard, 1 = surcharge mode (placeholder)
+	Mode int `json:"mode,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -48,9 +58,11 @@ type MerchantEdges struct {
 	Settlements []*Settlement `json:"settlements,omitempty"`
 	// Withdraws holds the value of the withdraws edge.
 	Withdraws []*Withdraw `json:"withdraws,omitempty"`
+	// Refunds holds the value of the refunds edge.
+	Refunds []*Refund `json:"refunds,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // OrdersOrErr returns the Orders value or an error if the edge
@@ -80,16 +92,27 @@ func (e MerchantEdges) WithdrawsOrErr() ([]*Withdraw, error) {
 	return nil, &NotLoadedError{edge: "withdraws"}
 }
 
+// RefundsOrErr returns the Refunds value or an error if the edge
+// was not loaded in eager-loading.
+func (e MerchantEdges) RefundsOrErr() ([]*Refund, error) {
+	if e.loadedTypes[3] {
+		return e.Refunds, nil
+	}
+	return nil, &NotLoadedError{edge: "refunds"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Merchant) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case merchant.FieldRefundEnabled, merchant.FieldTransferEnabled:
+			values[i] = new(sql.NullBool)
 		case merchant.FieldFeeRate:
 			values[i] = new(sql.NullFloat64)
-		case merchant.FieldPid:
+		case merchant.FieldPid, merchant.FieldKeytype, merchant.FieldMode:
 			values[i] = new(sql.NullInt64)
-		case merchant.FieldPkey, merchant.FieldName, merchant.FieldStatus, merchant.FieldNotifyURL:
+		case merchant.FieldPkey, merchant.FieldName, merchant.FieldStatus, merchant.FieldNotifyURL, merchant.FieldPublicKey:
 			values[i] = new(sql.NullString)
 		case merchant.FieldCreatedAt, merchant.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -152,6 +175,36 @@ func (_m *Merchant) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.NotifyURL = value.String
 			}
+		case merchant.FieldKeytype:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field keytype", values[i])
+			} else if value.Valid {
+				_m.Keytype = int(value.Int64)
+			}
+		case merchant.FieldPublicKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field public_key", values[i])
+			} else if value.Valid {
+				_m.PublicKey = value.String
+			}
+		case merchant.FieldRefundEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field refund_enabled", values[i])
+			} else if value.Valid {
+				_m.RefundEnabled = value.Bool
+			}
+		case merchant.FieldTransferEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field transfer_enabled", values[i])
+			} else if value.Valid {
+				_m.TransferEnabled = value.Bool
+			}
+		case merchant.FieldMode:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field mode", values[i])
+			} else if value.Valid {
+				_m.Mode = int(value.Int64)
+			}
 		case merchant.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -190,6 +243,11 @@ func (_m *Merchant) QuerySettlements() *SettlementQuery {
 // QueryWithdraws queries the "withdraws" edge of the Merchant entity.
 func (_m *Merchant) QueryWithdraws() *WithdrawQuery {
 	return NewMerchantClient(_m.config).QueryWithdraws(_m)
+}
+
+// QueryRefunds queries the "refunds" edge of the Merchant entity.
+func (_m *Merchant) QueryRefunds() *RefundQuery {
+	return NewMerchantClient(_m.config).QueryRefunds(_m)
 }
 
 // Update returns a builder for updating this Merchant.
@@ -232,6 +290,21 @@ func (_m *Merchant) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("notify_url=")
 	builder.WriteString(_m.NotifyURL)
+	builder.WriteString(", ")
+	builder.WriteString("keytype=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Keytype))
+	builder.WriteString(", ")
+	builder.WriteString("public_key=")
+	builder.WriteString(_m.PublicKey)
+	builder.WriteString(", ")
+	builder.WriteString("refund_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RefundEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("transfer_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TransferEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("mode=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Mode))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

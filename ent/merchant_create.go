@@ -6,6 +6,7 @@ import (
 	"context"
 	"epay/ent/merchant"
 	"epay/ent/order"
+	"epay/ent/refund"
 	"epay/ent/settlement"
 	"epay/ent/withdraw"
 	"errors"
@@ -80,6 +81,76 @@ func (_c *MerchantCreate) SetNotifyURL(v string) *MerchantCreate {
 func (_c *MerchantCreate) SetNillableNotifyURL(v *string) *MerchantCreate {
 	if v != nil {
 		_c.SetNotifyURL(*v)
+	}
+	return _c
+}
+
+// SetKeytype sets the "keytype" field.
+func (_c *MerchantCreate) SetKeytype(v int) *MerchantCreate {
+	_c.mutation.SetKeytype(v)
+	return _c
+}
+
+// SetNillableKeytype sets the "keytype" field if the given value is not nil.
+func (_c *MerchantCreate) SetNillableKeytype(v *int) *MerchantCreate {
+	if v != nil {
+		_c.SetKeytype(*v)
+	}
+	return _c
+}
+
+// SetPublicKey sets the "public_key" field.
+func (_c *MerchantCreate) SetPublicKey(v string) *MerchantCreate {
+	_c.mutation.SetPublicKey(v)
+	return _c
+}
+
+// SetNillablePublicKey sets the "public_key" field if the given value is not nil.
+func (_c *MerchantCreate) SetNillablePublicKey(v *string) *MerchantCreate {
+	if v != nil {
+		_c.SetPublicKey(*v)
+	}
+	return _c
+}
+
+// SetRefundEnabled sets the "refund_enabled" field.
+func (_c *MerchantCreate) SetRefundEnabled(v bool) *MerchantCreate {
+	_c.mutation.SetRefundEnabled(v)
+	return _c
+}
+
+// SetNillableRefundEnabled sets the "refund_enabled" field if the given value is not nil.
+func (_c *MerchantCreate) SetNillableRefundEnabled(v *bool) *MerchantCreate {
+	if v != nil {
+		_c.SetRefundEnabled(*v)
+	}
+	return _c
+}
+
+// SetTransferEnabled sets the "transfer_enabled" field.
+func (_c *MerchantCreate) SetTransferEnabled(v bool) *MerchantCreate {
+	_c.mutation.SetTransferEnabled(v)
+	return _c
+}
+
+// SetNillableTransferEnabled sets the "transfer_enabled" field if the given value is not nil.
+func (_c *MerchantCreate) SetNillableTransferEnabled(v *bool) *MerchantCreate {
+	if v != nil {
+		_c.SetTransferEnabled(*v)
+	}
+	return _c
+}
+
+// SetMode sets the "mode" field.
+func (_c *MerchantCreate) SetMode(v int) *MerchantCreate {
+	_c.mutation.SetMode(v)
+	return _c
+}
+
+// SetNillableMode sets the "mode" field if the given value is not nil.
+func (_c *MerchantCreate) SetNillableMode(v *int) *MerchantCreate {
+	if v != nil {
+		_c.SetMode(*v)
 	}
 	return _c
 }
@@ -171,6 +242,21 @@ func (_c *MerchantCreate) AddWithdraws(v ...*Withdraw) *MerchantCreate {
 	return _c.AddWithdrawIDs(ids...)
 }
 
+// AddRefundIDs adds the "refunds" edge to the Refund entity by IDs.
+func (_c *MerchantCreate) AddRefundIDs(ids ...uuid.UUID) *MerchantCreate {
+	_c.mutation.AddRefundIDs(ids...)
+	return _c
+}
+
+// AddRefunds adds the "refunds" edges to the Refund entity.
+func (_c *MerchantCreate) AddRefunds(v ...*Refund) *MerchantCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddRefundIDs(ids...)
+}
+
 // Mutation returns the MerchantMutation object of the builder.
 func (_c *MerchantCreate) Mutation() *MerchantMutation {
 	return _c.mutation
@@ -218,6 +304,26 @@ func (_c *MerchantCreate) defaults() {
 		v := merchant.DefaultNotifyURL
 		_c.mutation.SetNotifyURL(v)
 	}
+	if _, ok := _c.mutation.Keytype(); !ok {
+		v := merchant.DefaultKeytype
+		_c.mutation.SetKeytype(v)
+	}
+	if _, ok := _c.mutation.PublicKey(); !ok {
+		v := merchant.DefaultPublicKey
+		_c.mutation.SetPublicKey(v)
+	}
+	if _, ok := _c.mutation.RefundEnabled(); !ok {
+		v := merchant.DefaultRefundEnabled
+		_c.mutation.SetRefundEnabled(v)
+	}
+	if _, ok := _c.mutation.TransferEnabled(); !ok {
+		v := merchant.DefaultTransferEnabled
+		_c.mutation.SetTransferEnabled(v)
+	}
+	if _, ok := _c.mutation.Mode(); !ok {
+		v := merchant.DefaultMode
+		_c.mutation.SetMode(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := merchant.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -263,6 +369,18 @@ func (_c *MerchantCreate) check() error {
 		if err := merchant.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Merchant.status": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.Keytype(); !ok {
+		return &ValidationError{Name: "keytype", err: errors.New(`ent: missing required field "Merchant.keytype"`)}
+	}
+	if _, ok := _c.mutation.RefundEnabled(); !ok {
+		return &ValidationError{Name: "refund_enabled", err: errors.New(`ent: missing required field "Merchant.refund_enabled"`)}
+	}
+	if _, ok := _c.mutation.TransferEnabled(); !ok {
+		return &ValidationError{Name: "transfer_enabled", err: errors.New(`ent: missing required field "Merchant.transfer_enabled"`)}
+	}
+	if _, ok := _c.mutation.Mode(); !ok {
+		return &ValidationError{Name: "mode", err: errors.New(`ent: missing required field "Merchant.mode"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Merchant.created_at"`)}
@@ -329,6 +447,26 @@ func (_c *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 		_spec.SetField(merchant.FieldNotifyURL, field.TypeString, value)
 		_node.NotifyURL = value
 	}
+	if value, ok := _c.mutation.Keytype(); ok {
+		_spec.SetField(merchant.FieldKeytype, field.TypeInt, value)
+		_node.Keytype = value
+	}
+	if value, ok := _c.mutation.PublicKey(); ok {
+		_spec.SetField(merchant.FieldPublicKey, field.TypeString, value)
+		_node.PublicKey = value
+	}
+	if value, ok := _c.mutation.RefundEnabled(); ok {
+		_spec.SetField(merchant.FieldRefundEnabled, field.TypeBool, value)
+		_node.RefundEnabled = value
+	}
+	if value, ok := _c.mutation.TransferEnabled(); ok {
+		_spec.SetField(merchant.FieldTransferEnabled, field.TypeBool, value)
+		_node.TransferEnabled = value
+	}
+	if value, ok := _c.mutation.Mode(); ok {
+		_spec.SetField(merchant.FieldMode, field.TypeInt, value)
+		_node.Mode = value
+	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(merchant.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
@@ -378,6 +516,22 @@ func (_c *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(withdraw.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.RefundsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   merchant.RefundsTable,
+			Columns: []string{merchant.RefundsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

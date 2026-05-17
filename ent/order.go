@@ -43,6 +43,32 @@ type Order struct {
 	ProviderSnapshot string `json:"provider_snapshot,omitempty"`
 	// PaidAt holds the value of the "paid_at" field.
 	PaidAt *time.Time `json:"paid_at,omitempty"`
+	// APITradeNo holds the value of the "api_trade_no" field.
+	APITradeNo string `json:"api_trade_no,omitempty"`
+	// Buyer holds the value of the "buyer" field.
+	Buyer string `json:"buyer,omitempty"`
+	// Param holds the value of the "param" field.
+	Param string `json:"param,omitempty"`
+	// Name holds the value of the "name" field.
+	Name string `json:"name,omitempty"`
+	// Clientip holds the value of the "clientip" field.
+	Clientip string `json:"clientip,omitempty"`
+	// ReturnURL holds the value of the "return_url" field.
+	ReturnURL string `json:"return_url,omitempty"`
+	// Device holds the value of the "device" field.
+	Device string `json:"device,omitempty"`
+	// Method holds the value of the "method" field.
+	Method string `json:"method,omitempty"`
+	// SubOpenid holds the value of the "sub_openid" field.
+	SubOpenid string `json:"sub_openid,omitempty"`
+	// SubAppid holds the value of the "sub_appid" field.
+	SubAppid string `json:"sub_appid,omitempty"`
+	// AuthCode holds the value of the "auth_code" field.
+	AuthCode string `json:"auth_code,omitempty"`
+	// RefundMoney holds the value of the "refund_money" field.
+	RefundMoney float64 `json:"refund_money,omitempty"`
+	// 0 = MD5 standard interface, 1 = RSA s=path API_INIT mode
+	Version int `json:"version,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -78,9 +104,11 @@ func (*Order) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case order.FieldAmount, order.FieldFeeOfficial, order.FieldFeePlatform, order.FieldNetAmount:
+		case order.FieldAmount, order.FieldFeeOfficial, order.FieldFeePlatform, order.FieldNetAmount, order.FieldRefundMoney:
 			values[i] = new(sql.NullFloat64)
-		case order.FieldOrderNo, order.FieldType, order.FieldTradeNo, order.FieldStatus, order.FieldNotifyURL, order.FieldProviderSnapshot:
+		case order.FieldVersion:
+			values[i] = new(sql.NullInt64)
+		case order.FieldOrderNo, order.FieldType, order.FieldTradeNo, order.FieldStatus, order.FieldNotifyURL, order.FieldProviderSnapshot, order.FieldAPITradeNo, order.FieldBuyer, order.FieldParam, order.FieldName, order.FieldClientip, order.FieldReturnURL, order.FieldDevice, order.FieldMethod, order.FieldSubOpenid, order.FieldSubAppid, order.FieldAuthCode:
 			values[i] = new(sql.NullString)
 		case order.FieldPaidAt, order.FieldCreatedAt, order.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -180,6 +208,84 @@ func (_m *Order) assignValues(columns []string, values []any) error {
 				_m.PaidAt = new(time.Time)
 				*_m.PaidAt = value.Time
 			}
+		case order.FieldAPITradeNo:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field api_trade_no", values[i])
+			} else if value.Valid {
+				_m.APITradeNo = value.String
+			}
+		case order.FieldBuyer:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field buyer", values[i])
+			} else if value.Valid {
+				_m.Buyer = value.String
+			}
+		case order.FieldParam:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field param", values[i])
+			} else if value.Valid {
+				_m.Param = value.String
+			}
+		case order.FieldName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field name", values[i])
+			} else if value.Valid {
+				_m.Name = value.String
+			}
+		case order.FieldClientip:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field clientip", values[i])
+			} else if value.Valid {
+				_m.Clientip = value.String
+			}
+		case order.FieldReturnURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field return_url", values[i])
+			} else if value.Valid {
+				_m.ReturnURL = value.String
+			}
+		case order.FieldDevice:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field device", values[i])
+			} else if value.Valid {
+				_m.Device = value.String
+			}
+		case order.FieldMethod:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field method", values[i])
+			} else if value.Valid {
+				_m.Method = value.String
+			}
+		case order.FieldSubOpenid:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field sub_openid", values[i])
+			} else if value.Valid {
+				_m.SubOpenid = value.String
+			}
+		case order.FieldSubAppid:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field sub_appid", values[i])
+			} else if value.Valid {
+				_m.SubAppid = value.String
+			}
+		case order.FieldAuthCode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field auth_code", values[i])
+			} else if value.Valid {
+				_m.AuthCode = value.String
+			}
+		case order.FieldRefundMoney:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field refund_money", values[i])
+			} else if value.Valid {
+				_m.RefundMoney = value.Float64
+			}
+		case order.FieldVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field version", values[i])
+			} else if value.Valid {
+				_m.Version = int(value.Int64)
+			}
 		case order.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -270,6 +376,45 @@ func (_m *Order) String() string {
 		builder.WriteString("paid_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("api_trade_no=")
+	builder.WriteString(_m.APITradeNo)
+	builder.WriteString(", ")
+	builder.WriteString("buyer=")
+	builder.WriteString(_m.Buyer)
+	builder.WriteString(", ")
+	builder.WriteString("param=")
+	builder.WriteString(_m.Param)
+	builder.WriteString(", ")
+	builder.WriteString("name=")
+	builder.WriteString(_m.Name)
+	builder.WriteString(", ")
+	builder.WriteString("clientip=")
+	builder.WriteString(_m.Clientip)
+	builder.WriteString(", ")
+	builder.WriteString("return_url=")
+	builder.WriteString(_m.ReturnURL)
+	builder.WriteString(", ")
+	builder.WriteString("device=")
+	builder.WriteString(_m.Device)
+	builder.WriteString(", ")
+	builder.WriteString("method=")
+	builder.WriteString(_m.Method)
+	builder.WriteString(", ")
+	builder.WriteString("sub_openid=")
+	builder.WriteString(_m.SubOpenid)
+	builder.WriteString(", ")
+	builder.WriteString("sub_appid=")
+	builder.WriteString(_m.SubAppid)
+	builder.WriteString(", ")
+	builder.WriteString("auth_code=")
+	builder.WriteString(_m.AuthCode)
+	builder.WriteString(", ")
+	builder.WriteString("refund_money=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RefundMoney))
+	builder.WriteString(", ")
+	builder.WriteString("version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Version))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

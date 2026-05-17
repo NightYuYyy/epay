@@ -28,6 +28,16 @@ const (
 	FieldStatus = "status"
 	// FieldNotifyURL holds the string denoting the notify_url field in the database.
 	FieldNotifyURL = "notify_url"
+	// FieldKeytype holds the string denoting the keytype field in the database.
+	FieldKeytype = "keytype"
+	// FieldPublicKey holds the string denoting the public_key field in the database.
+	FieldPublicKey = "public_key"
+	// FieldRefundEnabled holds the string denoting the refund_enabled field in the database.
+	FieldRefundEnabled = "refund_enabled"
+	// FieldTransferEnabled holds the string denoting the transfer_enabled field in the database.
+	FieldTransferEnabled = "transfer_enabled"
+	// FieldMode holds the string denoting the mode field in the database.
+	FieldMode = "mode"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -38,6 +48,8 @@ const (
 	EdgeSettlements = "settlements"
 	// EdgeWithdraws holds the string denoting the withdraws edge name in mutations.
 	EdgeWithdraws = "withdraws"
+	// EdgeRefunds holds the string denoting the refunds edge name in mutations.
+	EdgeRefunds = "refunds"
 	// Table holds the table name of the merchant in the database.
 	Table = "merchants"
 	// OrdersTable is the table that holds the orders relation/edge.
@@ -61,6 +73,13 @@ const (
 	WithdrawsInverseTable = "withdraws"
 	// WithdrawsColumn is the table column denoting the withdraws relation/edge.
 	WithdrawsColumn = "merchant_id"
+	// RefundsTable is the table that holds the refunds relation/edge.
+	RefundsTable = "refunds"
+	// RefundsInverseTable is the table name for the Refund entity.
+	// It exists in this package in order to avoid circular dependency with the "refund" package.
+	RefundsInverseTable = "refunds"
+	// RefundsColumn is the table column denoting the refunds relation/edge.
+	RefundsColumn = "merchant_id"
 )
 
 // Columns holds all SQL columns for merchant fields.
@@ -72,6 +91,11 @@ var Columns = []string{
 	FieldFeeRate,
 	FieldStatus,
 	FieldNotifyURL,
+	FieldKeytype,
+	FieldPublicKey,
+	FieldRefundEnabled,
+	FieldTransferEnabled,
+	FieldMode,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -95,6 +119,16 @@ var (
 	DefaultFeeRate float64
 	// DefaultNotifyURL holds the default value on creation for the "notify_url" field.
 	DefaultNotifyURL string
+	// DefaultKeytype holds the default value on creation for the "keytype" field.
+	DefaultKeytype int
+	// DefaultPublicKey holds the default value on creation for the "public_key" field.
+	DefaultPublicKey string
+	// DefaultRefundEnabled holds the default value on creation for the "refund_enabled" field.
+	DefaultRefundEnabled bool
+	// DefaultTransferEnabled holds the default value on creation for the "transfer_enabled" field.
+	DefaultTransferEnabled bool
+	// DefaultMode holds the default value on creation for the "mode" field.
+	DefaultMode int
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -169,6 +203,31 @@ func ByNotifyURL(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldNotifyURL, opts...).ToFunc()
 }
 
+// ByKeytype orders the results by the keytype field.
+func ByKeytype(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldKeytype, opts...).ToFunc()
+}
+
+// ByPublicKey orders the results by the public_key field.
+func ByPublicKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPublicKey, opts...).ToFunc()
+}
+
+// ByRefundEnabled orders the results by the refund_enabled field.
+func ByRefundEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRefundEnabled, opts...).ToFunc()
+}
+
+// ByTransferEnabled orders the results by the transfer_enabled field.
+func ByTransferEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTransferEnabled, opts...).ToFunc()
+}
+
+// ByMode orders the results by the mode field.
+func ByMode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMode, opts...).ToFunc()
+}
+
 // ByCreatedAt orders the results by the created_at field.
 func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
@@ -220,6 +279,20 @@ func ByWithdraws(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newWithdrawsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByRefundsCount orders the results by refunds count.
+func ByRefundsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRefundsStep(), opts...)
+	}
+}
+
+// ByRefunds orders the results by refunds terms.
+func ByRefunds(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRefundsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newOrdersStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -239,5 +312,12 @@ func newWithdrawsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(WithdrawsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, WithdrawsTable, WithdrawsColumn),
+	)
+}
+func newRefundsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RefundsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, RefundsTable, RefundsColumn),
 	)
 }

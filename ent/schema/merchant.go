@@ -39,6 +39,21 @@ func (Merchant) Fields() []ent.Field {
 		field.String("notify_url").
 			Optional().
 			Default(""),
+		// EasyPay extensions
+		field.Int("keytype").
+			Default(0).
+			Comment("0 = MD5, 1 = RSA (forces RSA sign_type)"),
+		field.Text("public_key").
+			Optional().
+			Default("").
+			Comment("Merchant RSA public key (PEM or base64)"),
+		field.Bool("refund_enabled").
+			Default(false),
+		field.Bool("transfer_enabled").
+			Default(false),
+		field.Int("mode").
+			Default(0).
+			Comment("0 = standard, 1 = surcharge mode (placeholder)"),
 		field.Time("created_at").
 			Immutable().
 			Default(time.Now),
@@ -53,6 +68,7 @@ func (Merchant) Edges() []ent.Edge {
 		edge.To("orders", Order.Type),
 		edge.To("settlements", Settlement.Type),
 		edge.To("withdraws", Withdraw.Type),
+		edge.To("refunds", Refund.Type),
 	}
 }
 

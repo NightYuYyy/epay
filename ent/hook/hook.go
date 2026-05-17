@@ -56,6 +56,18 @@ func (f PlatformConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PlatformConfigMutation", m)
 }
 
+// The RefundFunc type is an adapter to allow the use of ordinary
+// function as Refund mutator.
+type RefundFunc func(context.Context, *ent.RefundMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RefundFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RefundMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RefundMutation", m)
+}
+
 // The SettlementFunc type is an adapter to allow the use of ordinary
 // function as Settlement mutator.
 type SettlementFunc func(context.Context, *ent.SettlementMutation) (ent.Value, error)

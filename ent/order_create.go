@@ -150,6 +150,188 @@ func (_c *OrderCreate) SetNillablePaidAt(v *time.Time) *OrderCreate {
 	return _c
 }
 
+// SetAPITradeNo sets the "api_trade_no" field.
+func (_c *OrderCreate) SetAPITradeNo(v string) *OrderCreate {
+	_c.mutation.SetAPITradeNo(v)
+	return _c
+}
+
+// SetNillableAPITradeNo sets the "api_trade_no" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableAPITradeNo(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetAPITradeNo(*v)
+	}
+	return _c
+}
+
+// SetBuyer sets the "buyer" field.
+func (_c *OrderCreate) SetBuyer(v string) *OrderCreate {
+	_c.mutation.SetBuyer(v)
+	return _c
+}
+
+// SetNillableBuyer sets the "buyer" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableBuyer(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetBuyer(*v)
+	}
+	return _c
+}
+
+// SetParam sets the "param" field.
+func (_c *OrderCreate) SetParam(v string) *OrderCreate {
+	_c.mutation.SetParam(v)
+	return _c
+}
+
+// SetNillableParam sets the "param" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableParam(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetParam(*v)
+	}
+	return _c
+}
+
+// SetName sets the "name" field.
+func (_c *OrderCreate) SetName(v string) *OrderCreate {
+	_c.mutation.SetName(v)
+	return _c
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableName(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetName(*v)
+	}
+	return _c
+}
+
+// SetClientip sets the "clientip" field.
+func (_c *OrderCreate) SetClientip(v string) *OrderCreate {
+	_c.mutation.SetClientip(v)
+	return _c
+}
+
+// SetNillableClientip sets the "clientip" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableClientip(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetClientip(*v)
+	}
+	return _c
+}
+
+// SetReturnURL sets the "return_url" field.
+func (_c *OrderCreate) SetReturnURL(v string) *OrderCreate {
+	_c.mutation.SetReturnURL(v)
+	return _c
+}
+
+// SetNillableReturnURL sets the "return_url" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableReturnURL(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetReturnURL(*v)
+	}
+	return _c
+}
+
+// SetDevice sets the "device" field.
+func (_c *OrderCreate) SetDevice(v string) *OrderCreate {
+	_c.mutation.SetDevice(v)
+	return _c
+}
+
+// SetNillableDevice sets the "device" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableDevice(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetDevice(*v)
+	}
+	return _c
+}
+
+// SetMethod sets the "method" field.
+func (_c *OrderCreate) SetMethod(v string) *OrderCreate {
+	_c.mutation.SetMethod(v)
+	return _c
+}
+
+// SetNillableMethod sets the "method" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableMethod(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetMethod(*v)
+	}
+	return _c
+}
+
+// SetSubOpenid sets the "sub_openid" field.
+func (_c *OrderCreate) SetSubOpenid(v string) *OrderCreate {
+	_c.mutation.SetSubOpenid(v)
+	return _c
+}
+
+// SetNillableSubOpenid sets the "sub_openid" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableSubOpenid(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetSubOpenid(*v)
+	}
+	return _c
+}
+
+// SetSubAppid sets the "sub_appid" field.
+func (_c *OrderCreate) SetSubAppid(v string) *OrderCreate {
+	_c.mutation.SetSubAppid(v)
+	return _c
+}
+
+// SetNillableSubAppid sets the "sub_appid" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableSubAppid(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetSubAppid(*v)
+	}
+	return _c
+}
+
+// SetAuthCode sets the "auth_code" field.
+func (_c *OrderCreate) SetAuthCode(v string) *OrderCreate {
+	_c.mutation.SetAuthCode(v)
+	return _c
+}
+
+// SetNillableAuthCode sets the "auth_code" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableAuthCode(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetAuthCode(*v)
+	}
+	return _c
+}
+
+// SetRefundMoney sets the "refund_money" field.
+func (_c *OrderCreate) SetRefundMoney(v float64) *OrderCreate {
+	_c.mutation.SetRefundMoney(v)
+	return _c
+}
+
+// SetNillableRefundMoney sets the "refund_money" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableRefundMoney(v *float64) *OrderCreate {
+	if v != nil {
+		_c.SetRefundMoney(*v)
+	}
+	return _c
+}
+
+// SetVersion sets the "version" field.
+func (_c *OrderCreate) SetVersion(v int) *OrderCreate {
+	_c.mutation.SetVersion(v)
+	return _c
+}
+
+// SetNillableVersion sets the "version" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableVersion(v *int) *OrderCreate {
+	if v != nil {
+		_c.SetVersion(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *OrderCreate) SetCreatedAt(v time.Time) *OrderCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -256,6 +438,58 @@ func (_c *OrderCreate) defaults() {
 		v := order.DefaultProviderSnapshot
 		_c.mutation.SetProviderSnapshot(v)
 	}
+	if _, ok := _c.mutation.APITradeNo(); !ok {
+		v := order.DefaultAPITradeNo
+		_c.mutation.SetAPITradeNo(v)
+	}
+	if _, ok := _c.mutation.Buyer(); !ok {
+		v := order.DefaultBuyer
+		_c.mutation.SetBuyer(v)
+	}
+	if _, ok := _c.mutation.Param(); !ok {
+		v := order.DefaultParam
+		_c.mutation.SetParam(v)
+	}
+	if _, ok := _c.mutation.Name(); !ok {
+		v := order.DefaultName
+		_c.mutation.SetName(v)
+	}
+	if _, ok := _c.mutation.Clientip(); !ok {
+		v := order.DefaultClientip
+		_c.mutation.SetClientip(v)
+	}
+	if _, ok := _c.mutation.ReturnURL(); !ok {
+		v := order.DefaultReturnURL
+		_c.mutation.SetReturnURL(v)
+	}
+	if _, ok := _c.mutation.Device(); !ok {
+		v := order.DefaultDevice
+		_c.mutation.SetDevice(v)
+	}
+	if _, ok := _c.mutation.Method(); !ok {
+		v := order.DefaultMethod
+		_c.mutation.SetMethod(v)
+	}
+	if _, ok := _c.mutation.SubOpenid(); !ok {
+		v := order.DefaultSubOpenid
+		_c.mutation.SetSubOpenid(v)
+	}
+	if _, ok := _c.mutation.SubAppid(); !ok {
+		v := order.DefaultSubAppid
+		_c.mutation.SetSubAppid(v)
+	}
+	if _, ok := _c.mutation.AuthCode(); !ok {
+		v := order.DefaultAuthCode
+		_c.mutation.SetAuthCode(v)
+	}
+	if _, ok := _c.mutation.RefundMoney(); !ok {
+		v := order.DefaultRefundMoney
+		_c.mutation.SetRefundMoney(v)
+	}
+	if _, ok := _c.mutation.Version(); !ok {
+		v := order.DefaultVersion
+		_c.mutation.SetVersion(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := order.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -318,6 +552,12 @@ func (_c *OrderCreate) check() error {
 		if err := order.NotifyURLValidator(v); err != nil {
 			return &ValidationError{Name: "notify_url", err: fmt.Errorf(`ent: validator failed for field "Order.notify_url": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.RefundMoney(); !ok {
+		return &ValidationError{Name: "refund_money", err: errors.New(`ent: missing required field "Order.refund_money"`)}
+	}
+	if _, ok := _c.mutation.Version(); !ok {
+		return &ValidationError{Name: "version", err: errors.New(`ent: missing required field "Order.version"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Order.created_at"`)}
@@ -406,6 +646,58 @@ func (_c *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.PaidAt(); ok {
 		_spec.SetField(order.FieldPaidAt, field.TypeTime, value)
 		_node.PaidAt = &value
+	}
+	if value, ok := _c.mutation.APITradeNo(); ok {
+		_spec.SetField(order.FieldAPITradeNo, field.TypeString, value)
+		_node.APITradeNo = value
+	}
+	if value, ok := _c.mutation.Buyer(); ok {
+		_spec.SetField(order.FieldBuyer, field.TypeString, value)
+		_node.Buyer = value
+	}
+	if value, ok := _c.mutation.Param(); ok {
+		_spec.SetField(order.FieldParam, field.TypeString, value)
+		_node.Param = value
+	}
+	if value, ok := _c.mutation.Name(); ok {
+		_spec.SetField(order.FieldName, field.TypeString, value)
+		_node.Name = value
+	}
+	if value, ok := _c.mutation.Clientip(); ok {
+		_spec.SetField(order.FieldClientip, field.TypeString, value)
+		_node.Clientip = value
+	}
+	if value, ok := _c.mutation.ReturnURL(); ok {
+		_spec.SetField(order.FieldReturnURL, field.TypeString, value)
+		_node.ReturnURL = value
+	}
+	if value, ok := _c.mutation.Device(); ok {
+		_spec.SetField(order.FieldDevice, field.TypeString, value)
+		_node.Device = value
+	}
+	if value, ok := _c.mutation.Method(); ok {
+		_spec.SetField(order.FieldMethod, field.TypeString, value)
+		_node.Method = value
+	}
+	if value, ok := _c.mutation.SubOpenid(); ok {
+		_spec.SetField(order.FieldSubOpenid, field.TypeString, value)
+		_node.SubOpenid = value
+	}
+	if value, ok := _c.mutation.SubAppid(); ok {
+		_spec.SetField(order.FieldSubAppid, field.TypeString, value)
+		_node.SubAppid = value
+	}
+	if value, ok := _c.mutation.AuthCode(); ok {
+		_spec.SetField(order.FieldAuthCode, field.TypeString, value)
+		_node.AuthCode = value
+	}
+	if value, ok := _c.mutation.RefundMoney(); ok {
+		_spec.SetField(order.FieldRefundMoney, field.TypeFloat64, value)
+		_node.RefundMoney = value
+	}
+	if value, ok := _c.mutation.Version(); ok {
+		_spec.SetField(order.FieldVersion, field.TypeInt, value)
+		_node.Version = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(order.FieldCreatedAt, field.TypeTime, value)

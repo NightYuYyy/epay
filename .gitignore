@@ -56,3 +56,18 @@ epay.pid
 # Temp
 /tmp/
 .ace-tool/
+
+# Local configuration & secrets — must NEVER be committed.
+# Use config.example.yaml as the template and keep platform secrets local.
+config.yaml
+platform.key
+platform.pub
+*.pem
+*.key.pem
+
+# Local screenshots / Playwright artifacts
+*.png
+.playwright-mcp/
+
+# OMC / plan artifacts
+.omc/

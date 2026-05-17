@@ -8,6 +8,7 @@ import (
 	"epay/ent/merchant"
 	"epay/ent/order"
 	"epay/ent/platformconfig"
+	"epay/ent/refund"
 	"epay/ent/settlement"
 	"epay/ent/withdraw"
 	"errors"
@@ -82,6 +83,7 @@ func checkColumn(t, c string) error {
 			merchant.Table:       merchant.ValidColumn,
 			order.Table:          order.ValidColumn,
 			platformconfig.Table: platformconfig.ValidColumn,
+			refund.Table:         refund.ValidColumn,
 			settlement.Table:     settlement.ValidColumn,
 			withdraw.Table:       withdraw.ValidColumn,
 		})

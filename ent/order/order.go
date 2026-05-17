@@ -40,6 +40,32 @@ const (
 	FieldProviderSnapshot = "provider_snapshot"
 	// FieldPaidAt holds the string denoting the paid_at field in the database.
 	FieldPaidAt = "paid_at"
+	// FieldAPITradeNo holds the string denoting the api_trade_no field in the database.
+	FieldAPITradeNo = "api_trade_no"
+	// FieldBuyer holds the string denoting the buyer field in the database.
+	FieldBuyer = "buyer"
+	// FieldParam holds the string denoting the param field in the database.
+	FieldParam = "param"
+	// FieldName holds the string denoting the name field in the database.
+	FieldName = "name"
+	// FieldClientip holds the string denoting the clientip field in the database.
+	FieldClientip = "clientip"
+	// FieldReturnURL holds the string denoting the return_url field in the database.
+	FieldReturnURL = "return_url"
+	// FieldDevice holds the string denoting the device field in the database.
+	FieldDevice = "device"
+	// FieldMethod holds the string denoting the method field in the database.
+	FieldMethod = "method"
+	// FieldSubOpenid holds the string denoting the sub_openid field in the database.
+	FieldSubOpenid = "sub_openid"
+	// FieldSubAppid holds the string denoting the sub_appid field in the database.
+	FieldSubAppid = "sub_appid"
+	// FieldAuthCode holds the string denoting the auth_code field in the database.
+	FieldAuthCode = "auth_code"
+	// FieldRefundMoney holds the string denoting the refund_money field in the database.
+	FieldRefundMoney = "refund_money"
+	// FieldVersion holds the string denoting the version field in the database.
+	FieldVersion = "version"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -72,6 +98,19 @@ var Columns = []string{
 	FieldNotifyURL,
 	FieldProviderSnapshot,
 	FieldPaidAt,
+	FieldAPITradeNo,
+	FieldBuyer,
+	FieldParam,
+	FieldName,
+	FieldClientip,
+	FieldReturnURL,
+	FieldDevice,
+	FieldMethod,
+	FieldSubOpenid,
+	FieldSubAppid,
+	FieldAuthCode,
+	FieldRefundMoney,
+	FieldVersion,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -101,6 +140,32 @@ var (
 	NotifyURLValidator func(string) error
 	// DefaultProviderSnapshot holds the default value on creation for the "provider_snapshot" field.
 	DefaultProviderSnapshot string
+	// DefaultAPITradeNo holds the default value on creation for the "api_trade_no" field.
+	DefaultAPITradeNo string
+	// DefaultBuyer holds the default value on creation for the "buyer" field.
+	DefaultBuyer string
+	// DefaultParam holds the default value on creation for the "param" field.
+	DefaultParam string
+	// DefaultName holds the default value on creation for the "name" field.
+	DefaultName string
+	// DefaultClientip holds the default value on creation for the "clientip" field.
+	DefaultClientip string
+	// DefaultReturnURL holds the default value on creation for the "return_url" field.
+	DefaultReturnURL string
+	// DefaultDevice holds the default value on creation for the "device" field.
+	DefaultDevice string
+	// DefaultMethod holds the default value on creation for the "method" field.
+	DefaultMethod string
+	// DefaultSubOpenid holds the default value on creation for the "sub_openid" field.
+	DefaultSubOpenid string
+	// DefaultSubAppid holds the default value on creation for the "sub_appid" field.
+	DefaultSubAppid string
+	// DefaultAuthCode holds the default value on creation for the "auth_code" field.
+	DefaultAuthCode string
+	// DefaultRefundMoney holds the default value on creation for the "refund_money" field.
+	DefaultRefundMoney float64
+	// DefaultVersion holds the default value on creation for the "version" field.
+	DefaultVersion int
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -229,6 +294,71 @@ func ByProviderSnapshot(opts ...sql.OrderTermOption) OrderOption {
 // ByPaidAt orders the results by the paid_at field.
 func ByPaidAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPaidAt, opts...).ToFunc()
+}
+
+// ByAPITradeNo orders the results by the api_trade_no field.
+func ByAPITradeNo(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAPITradeNo, opts...).ToFunc()
+}
+
+// ByBuyer orders the results by the buyer field.
+func ByBuyer(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBuyer, opts...).ToFunc()
+}
+
+// ByParam orders the results by the param field.
+func ByParam(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldParam, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByClientip orders the results by the clientip field.
+func ByClientip(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldClientip, opts...).ToFunc()
+}
+
+// ByReturnURL orders the results by the return_url field.
+func ByReturnURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReturnURL, opts...).ToFunc()
+}
+
+// ByDevice orders the results by the device field.
+func ByDevice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDevice, opts...).ToFunc()
+}
+
+// ByMethod orders the results by the method field.
+func ByMethod(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMethod, opts...).ToFunc()
+}
+
+// BySubOpenid orders the results by the sub_openid field.
+func BySubOpenid(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSubOpenid, opts...).ToFunc()
+}
+
+// BySubAppid orders the results by the sub_appid field.
+func BySubAppid(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSubAppid, opts...).ToFunc()
+}
+
+// ByAuthCode orders the results by the auth_code field.
+func ByAuthCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAuthCode, opts...).ToFunc()
+}
+
+// ByRefundMoney orders the results by the refund_money field.
+func ByRefundMoney(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRefundMoney, opts...).ToFunc()
+}
+
+// ByVersion orders the results by the version field.
+func ByVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVersion, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.
