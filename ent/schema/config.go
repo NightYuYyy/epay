@@ -25,10 +25,12 @@ func (PlatformConfig) Fields() []ent.Field {
 			NotEmpty().
 			Unique(),
 		field.String("value").
-			NotEmpty().
+			Optional().
+			Default("").
 			SchemaType(map[string]string{
 				dialect.Postgres: "text",
-			}),
+			}).
+			Comment("Empty string is allowed — it means the configuration entry is intentionally unset."),
 		field.String("description").
 			Optional().
 			Default(""),

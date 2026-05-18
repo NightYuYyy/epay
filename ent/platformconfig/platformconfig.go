@@ -51,8 +51,8 @@ func ValidColumn(column string) bool {
 var (
 	// KeyValidator is a validator for the "key" field. It is called by the builders before save.
 	KeyValidator func(string) error
-	// ValueValidator is a validator for the "value" field. It is called by the builders before save.
-	ValueValidator func(string) error
+	// DefaultValue holds the default value on creation for the "value" field.
+	DefaultValue string
 	// DefaultDescription holds the default value on creation for the "description" field.
 	DefaultDescription string
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.

@@ -200,8 +200,8 @@ func init() {
 	platformconfig.KeyValidator = platformconfigDescKey.Validators[0].(func(string) error)
 	// platformconfigDescValue is the schema descriptor for value field.
 	platformconfigDescValue := platformconfigFields[2].Descriptor()
-	// platformconfig.ValueValidator is a validator for the "value" field. It is called by the builders before save.
-	platformconfig.ValueValidator = platformconfigDescValue.Validators[0].(func(string) error)
+	// platformconfig.DefaultValue holds the default value on creation for the value field.
+	platformconfig.DefaultValue = platformconfigDescValue.Default.(string)
 	// platformconfigDescDescription is the schema descriptor for description field.
 	platformconfigDescDescription := platformconfigFields[3].Descriptor()
 	// platformconfig.DefaultDescription holds the default value on creation for the description field.

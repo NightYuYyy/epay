@@ -56,6 +56,12 @@ func (_u *PlatformConfigUpdate) SetNillableValue(v *string) *PlatformConfigUpdat
 	return _u
 }
 
+// ClearValue clears the value of the "value" field.
+func (_u *PlatformConfigUpdate) ClearValue() *PlatformConfigUpdate {
+	_u.mutation.ClearValue()
+	return _u
+}
+
 // SetDescription sets the "description" field.
 func (_u *PlatformConfigUpdate) SetDescription(v string) *PlatformConfigUpdate {
 	_u.mutation.SetDescription(v)
@@ -130,11 +136,6 @@ func (_u *PlatformConfigUpdate) check() error {
 			return &ValidationError{Name: "key", err: fmt.Errorf(`ent: validator failed for field "PlatformConfig.key": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.Value(); ok {
-		if err := platformconfig.ValueValidator(v); err != nil {
-			return &ValidationError{Name: "value", err: fmt.Errorf(`ent: validator failed for field "PlatformConfig.value": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -155,6 +156,9 @@ func (_u *PlatformConfigUpdate) sqlSave(ctx context.Context) (_node int, err err
 	}
 	if value, ok := _u.mutation.Value(); ok {
 		_spec.SetField(platformconfig.FieldValue, field.TypeString, value)
+	}
+	if _u.mutation.ValueCleared() {
+		_spec.ClearField(platformconfig.FieldValue, field.TypeString)
 	}
 	if value, ok := _u.mutation.Description(); ok {
 		_spec.SetField(platformconfig.FieldDescription, field.TypeString, value)
@@ -210,6 +214,12 @@ func (_u *PlatformConfigUpdateOne) SetNillableValue(v *string) *PlatformConfigUp
 	if v != nil {
 		_u.SetValue(*v)
 	}
+	return _u
+}
+
+// ClearValue clears the value of the "value" field.
+func (_u *PlatformConfigUpdateOne) ClearValue() *PlatformConfigUpdateOne {
+	_u.mutation.ClearValue()
 	return _u
 }
 
@@ -300,11 +310,6 @@ func (_u *PlatformConfigUpdateOne) check() error {
 			return &ValidationError{Name: "key", err: fmt.Errorf(`ent: validator failed for field "PlatformConfig.key": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.Value(); ok {
-		if err := platformconfig.ValueValidator(v); err != nil {
-			return &ValidationError{Name: "value", err: fmt.Errorf(`ent: validator failed for field "PlatformConfig.value": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -342,6 +347,9 @@ func (_u *PlatformConfigUpdateOne) sqlSave(ctx context.Context) (_node *Platform
 	}
 	if value, ok := _u.mutation.Value(); ok {
 		_spec.SetField(platformconfig.FieldValue, field.TypeString, value)
+	}
+	if _u.mutation.ValueCleared() {
+		_spec.ClearField(platformconfig.FieldValue, field.TypeString)
 	}
 	if value, ok := _u.mutation.Description(); ok {
 		_spec.SetField(platformconfig.FieldDescription, field.TypeString, value)

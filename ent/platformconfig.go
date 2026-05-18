@@ -20,7 +20,7 @@ type PlatformConfig struct {
 	ID uuid.UUID `json:"id,omitempty"`
 	// Key holds the value of the "key" field.
 	Key string `json:"key,omitempty"`
-	// Value holds the value of the "value" field.
+	// Empty string is allowed — it means the configuration entry is intentionally unset.
 	Value string `json:"value,omitempty"`
 	// Description holds the value of the "description" field.
 	Description string `json:"description,omitempty"`

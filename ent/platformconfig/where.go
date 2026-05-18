@@ -200,6 +200,16 @@ func ValueHasSuffix(v string) predicate.PlatformConfig {
 	return predicate.PlatformConfig(sql.FieldHasSuffix(FieldValue, v))
 }
 
+// ValueIsNil applies the IsNil predicate on the "value" field.
+func ValueIsNil() predicate.PlatformConfig {
+	return predicate.PlatformConfig(sql.FieldIsNull(FieldValue))
+}
+
+// ValueNotNil applies the NotNil predicate on the "value" field.
+func ValueNotNil() predicate.PlatformConfig {
+	return predicate.PlatformConfig(sql.FieldNotNull(FieldValue))
+}
+
 // ValueEqualFold applies the EqualFold predicate on the "value" field.
 func ValueEqualFold(v string) predicate.PlatformConfig {
 	return predicate.PlatformConfig(sql.FieldEqualFold(FieldValue, v))

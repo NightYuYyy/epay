@@ -4480,9 +4480,22 @@ func (m *PlatformConfigMutation) OldValue(ctx context.Context) (v string, err er
 	return oldValue.Value, nil
 }
 
+// ClearValue clears the value of the "value" field.
+func (m *PlatformConfigMutation) ClearValue() {
+	m.value = nil
+	m.clearedFields[platformconfig.FieldValue] = struct{}{}
+}
+
+// ValueCleared returns if the "value" field was cleared in this mutation.
+func (m *PlatformConfigMutation) ValueCleared() bool {
+	_, ok := m.clearedFields[platformconfig.FieldValue]
+	return ok
+}
+
 // ResetValue resets all changes to the "value" field.
 func (m *PlatformConfigMutation) ResetValue() {
 	m.value = nil
+	delete(m.clearedFields, platformconfig.FieldValue)
 }
 
 // SetDescription sets the "description" field.
@@ -4767,6 +4780,9 @@ func (m *PlatformConfigMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *PlatformConfigMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(platformconfig.FieldValue) {
+		fields = append(fields, platformconfig.FieldValue)
+	}
 	if m.FieldCleared(platformconfig.FieldDescription) {
 		fields = append(fields, platformconfig.FieldDescription)
 	}
@@ -4784,6 +4800,9 @@ func (m *PlatformConfigMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *PlatformConfigMutation) ClearField(name string) error {
 	switch name {
+	case platformconfig.FieldValue:
+		m.ClearValue()
+		return nil
 	case platformconfig.FieldDescription:
 		m.ClearDescription()
 		return nil

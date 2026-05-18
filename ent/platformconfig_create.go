@@ -33,6 +33,14 @@ func (_c *PlatformConfigCreate) SetValue(v string) *PlatformConfigCreate {
 	return _c
 }
 
+// SetNillableValue sets the "value" field if the given value is not nil.
+func (_c *PlatformConfigCreate) SetNillableValue(v *string) *PlatformConfigCreate {
+	if v != nil {
+		_c.SetValue(*v)
+	}
+	return _c
+}
+
 // SetDescription sets the "description" field.
 func (_c *PlatformConfigCreate) SetDescription(v string) *PlatformConfigCreate {
 	_c.mutation.SetDescription(v)
@@ -124,6 +132,10 @@ func (_c *PlatformConfigCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *PlatformConfigCreate) defaults() {
+	if _, ok := _c.mutation.Value(); !ok {
+		v := platformconfig.DefaultValue
+		_c.mutation.SetValue(v)
+	}
 	if _, ok := _c.mutation.Description(); !ok {
 		v := platformconfig.DefaultDescription
 		_c.mutation.SetDescription(v)
@@ -150,14 +162,6 @@ func (_c *PlatformConfigCreate) check() error {
 	if v, ok := _c.mutation.Key(); ok {
 		if err := platformconfig.KeyValidator(v); err != nil {
 			return &ValidationError{Name: "key", err: fmt.Errorf(`ent: validator failed for field "PlatformConfig.key": %w`, err)}
-		}
-	}
-	if _, ok := _c.mutation.Value(); !ok {
-		return &ValidationError{Name: "value", err: errors.New(`ent: missing required field "PlatformConfig.value"`)}
-	}
-	if v, ok := _c.mutation.Value(); ok {
-		if err := platformconfig.ValueValidator(v); err != nil {
-			return &ValidationError{Name: "value", err: fmt.Errorf(`ent: validator failed for field "PlatformConfig.value": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {

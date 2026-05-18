@@ -95,7 +95,7 @@ var (
 	ConfigsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "key", Type: field.TypeString, Unique: true},
-		{Name: "value", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "value", Type: field.TypeString, Nullable: true, Default: "", SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "description", Type: field.TypeString, Nullable: true, Default: ""},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
