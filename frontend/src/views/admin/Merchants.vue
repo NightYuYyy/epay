@@ -2,7 +2,7 @@
 import { ref, onMounted, h } from 'vue'
 import {
   NDataTable, NButton, NModal, NForm, NFormItem, NInput, NInputNumber,
-  NSpace, NTag, useMessage, NPopconfirm, NSelect,
+  NSpace, NTag, useMessage, useDialog, NSelect,
 } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import api from '@/api/client'
@@ -19,6 +19,7 @@ interface Merchant {
 }
 
 const message = useMessage()
+const dialog = useDialog()
 const loading = ref(false)
 const merchants = ref<Merchant[]>([])
 const total = ref(0)
@@ -90,21 +91,32 @@ const columns: DataTableColumns<Merchant> = [
         default: () => [
           h(NButton, { size: 'small', secondary: true, onClick: () => openEdit(row) }, { default: () => '编辑' }),
           h(NButton, { size: 'small', secondary: true, onClick: () => regenerateKey(row) }, { default: () => '重置密钥' }),
-          h(NPopconfirm, {
-            onPositiveClick: () => toggleStatus(row),
-          }, {
-            trigger: () => h(NButton, {
-              size: 'small',
-              secondary: true,
-              type: row.status === 'active' ? 'warning' : 'success',
-            }, { default: () => row.status === 'active' ? '禁用' : '启用' }),
-            default: () => `确认${row.status === 'active' ? '禁用' : '启用'}该商户？`,
-          }),
+          h(NButton, {
+            size: 'small',
+            secondary: true,
+            type: row.status === 'active' ? 'warning' : 'success',
+            onClick: () => confirmToggleStatus(row),
+          }, { default: () => row.status === 'active' ? '禁用' : '启用' }),
         ],
       })
     },
   },
 ]
+
+// confirmToggleStatus uses the global dialog provider (registered in App.vue).
+// Rendering the dialog at the provider level — instead of a per-row portal —
+// avoids the parentNode/forEach race conditions Naive UI's NPopconfirm hits
+// when the parent table unmounts mid-animation during quick page switches.
+function confirmToggleStatus(row: Merchant) {
+  const isActive = row.status === 'active'
+  dialog.warning({
+    title: isActive ? '禁用商户' : '启用商户',
+    content: `确认${isActive ? '禁用' : '启用'}商户「${row.name}」(PID ${row.pid})？`,
+    positiveText: '确定',
+    negativeText: '取消',
+    onPositiveClick: () => toggleStatus(row),
+  })
+}
 
 async function fetchMerchants() {
   loading.value = true

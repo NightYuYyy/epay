@@ -169,7 +169,11 @@ const sidebarMenuOverrides = {
       </n-layout-header>
 
       <n-layout-content style="padding: 28px 32px; background: var(--color-canvas-soft)">
-        <router-view />
+        <router-view v-slot="{ Component, route }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" :key="route.fullPath" />
+          </transition>
+        </router-view>
       </n-layout-content>
     </n-layout>
   </n-layout>

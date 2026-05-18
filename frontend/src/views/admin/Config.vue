@@ -23,13 +23,35 @@ const form = ref({
   wxpay_api_v3_key: '',
 })
 
+// Backend stores values as strings (rainbow-style key→value text store).
+// Coerce known numeric fields back to numbers so n-input-number can render
+// them — otherwise the inputs show the placeholder and the operator thinks
+// no value is configured.
+const NUMERIC_FIELDS = new Set([
+  'official_alipay_rate',
+  'official_wxpay_rate',
+  'default_platform_rate',
+])
+
+function hydrateForm(remote: Record<string, string> | null | undefined) {
+  if (!remote) return
+  for (const [k, raw] of Object.entries(remote)) {
+    if (!(k in form.value)) continue
+    if (NUMERIC_FIELDS.has(k)) {
+      const n = Number(raw)
+      ;(form.value as any)[k] = Number.isFinite(n) ? n : 0
+    } else {
+      ;(form.value as any)[k] = raw ?? ''
+    }
+  }
+}
+
 onMounted(async () => {
   loading.value = true
   try {
     const { data } = await api.get('/api/admin/configs')
     if (data.code === 0 && data.data) {
-      // Backend returns a flat key→value map; merge over the form defaults.
-      form.value = { ...form.value, ...data.data }
+      hydrateForm(data.data)
     }
   } catch (e: any) {
     message.error(e.response?.data?.msg || '加载失败')
