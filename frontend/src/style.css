@@ -148,11 +148,12 @@ body {
   color: rgba(255, 255, 255, 0.85);
 }
 
-/* Route transition — keeps unmount tidy so Naive UI portals can clean up
- * before the next page mounts. Short fade keeps the chrome stable. */
+/* Route transition — tight 60ms so quick menu switches don't feel sluggish.
+ * `mode="out-in"` still gives Naive UI portals a tick to detach before the
+ * next page mounts. */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 120ms ease;
+  transition: opacity 60ms ease;
 }
 .fade-enter-from,
 .fade-leave-to {

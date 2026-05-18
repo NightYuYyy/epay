@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, shallowRef } from 'vue'
 import {
-  NForm, NFormItem, NInput, NButton, NCard, NInputNumber,
-  NSpace, NMessageProvider, useMessage, NDivider,
+  NForm, NFormItem, NInput, NButton, NInputNumber,
+  useMessage,
 } from 'naive-ui'
 import api from '@/api/client'
 
 const message = useMessage()
-const loading = ref(false)
 const saving = ref(false)
+const loaded = shallowRef(false)
 
 const form = ref({
   official_alipay_rate: 0,
@@ -47,7 +47,6 @@ function hydrateForm(remote: Record<string, string> | null | undefined) {
 }
 
 onMounted(async () => {
-  loading.value = true
   try {
     const { data } = await api.get('/api/admin/configs')
     if (data.code === 0 && data.data) {
@@ -56,7 +55,7 @@ onMounted(async () => {
   } catch (e: any) {
     message.error(e.response?.data?.msg || '加载失败')
   } finally {
-    loading.value = false
+    loaded.value = true
   }
 })
 
@@ -78,63 +77,222 @@ async function handleSave() {
 </script>
 
 <template>
-  <NMessageProvider>
-    <div style="padding:24px;max-width:720px">
-      <h2 style="margin-bottom:24px">系统配置</h2>
-      <NSpin :show="loading">
-        <NCard title="费率配置">
-          <NForm :model="form" label-placement="left" label-width="160">
-            <NFormItem label="支付宝官方费率(%)">
-              <NInputNumber v-model:value="form.official_alipay_rate" :min="0" :max="100" :step="0.01" style="width:200px" />
-            </NFormItem>
-            <NFormItem label="微信官方费率(%)">
-              <NInputNumber v-model:value="form.official_wxpay_rate" :min="0" :max="100" :step="0.01" style="width:200px" />
-            </NFormItem>
-            <NFormItem label="平台默认费率(%)">
-              <NInputNumber v-model:value="form.default_platform_rate" :min="0" :max="100" :step="0.01" style="width:200px" />
-            </NFormItem>
-          </NForm>
-        </NCard>
+  <div class="page">
+    <header class="page-head">
+      <div>
+        <h1 class="page-title">系统配置</h1>
+        <p class="page-sub">维护平台费率与支付通道密钥。变更立即生效。</p>
+      </div>
+      <n-button type="primary" :loading="saving" :disabled="!loaded" @click="handleSave">
+        保存配置
+      </n-button>
+    </header>
 
-        <NDivider />
+    <!-- v-if 替代 NSpin：避免 leave 动画在路由切换时阻塞 -->
+    <template v-if="loaded">
+      <!-- 费率 -->
+      <section class="card-section">
+        <header class="section-head">
+          <h3>费率配置</h3>
+          <p>百分比单位为小数（0.006 = 0.6%）</p>
+        </header>
+        <n-form :model="form" label-placement="top" :show-feedback="false">
+          <div class="grid-3">
+            <n-form-item label="支付宝官方费率">
+              <n-input-number
+                v-model:value="form.official_alipay_rate"
+                :min="0"
+                :max="1"
+                :step="0.001"
+                :precision="4"
+                style="width: 100%"
+              />
+            </n-form-item>
+            <n-form-item label="微信官方费率">
+              <n-input-number
+                v-model:value="form.official_wxpay_rate"
+                :min="0"
+                :max="1"
+                :step="0.001"
+                :precision="4"
+                style="width: 100%"
+              />
+            </n-form-item>
+            <n-form-item label="平台默认费率">
+              <n-input-number
+                v-model:value="form.default_platform_rate"
+                :min="0"
+                :max="1"
+                :step="0.001"
+                :precision="4"
+                style="width: 100%"
+              />
+            </n-form-item>
+          </div>
+        </n-form>
+      </section>
 
-        <NCard title="支付宝配置">
-          <NForm :model="form" label-placement="left" label-width="160">
-            <NFormItem label="App ID">
-              <NInput v-model:value="form.alipay_app_id" />
-            </NFormItem>
-            <NFormItem label="应用私钥">
-              <NInput v-model:value="form.alipay_private_key" type="textarea" :autosize="{ minRows: 3, maxRows: 6 }" />
-            </NFormItem>
-            <NFormItem label="支付宝公钥">
-              <NInput v-model:value="form.alipay_public_key" type="textarea" :autosize="{ minRows: 3, maxRows: 6 }" />
-            </NFormItem>
-          </NForm>
-        </NCard>
+      <!-- 支付宝 -->
+      <section class="card-section">
+        <header class="section-head">
+          <h3>支付宝配置</h3>
+          <p>商户应用的密钥用于签名支付宝官方接口请求。</p>
+        </header>
+        <n-form :model="form" label-placement="top" :show-feedback="false">
+          <n-form-item label="App ID">
+            <n-input v-model:value="form.alipay_app_id" placeholder="2021000xxxxxxxxx" />
+          </n-form-item>
+          <n-form-item label="应用私钥 (PKCS#1/PKCS#8 PEM 或纯 base64)">
+            <n-input
+              v-model:value="form.alipay_private_key"
+              type="textarea"
+              :rows="4"
+              placeholder="MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQ..."
+            />
+          </n-form-item>
+          <n-form-item label="支付宝公钥">
+            <n-input
+              v-model:value="form.alipay_public_key"
+              type="textarea"
+              :rows="4"
+              placeholder="MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."
+            />
+          </n-form-item>
+        </n-form>
+      </section>
 
-        <NDivider />
+      <!-- 微信 -->
+      <section class="card-section">
+        <header class="section-head">
+          <h3>微信支付配置</h3>
+          <p>所有字段都是可选的，留空表示未启用微信通道。</p>
+        </header>
+        <n-form :model="form" label-placement="top" :show-feedback="false">
+          <div class="grid-2">
+            <n-form-item label="App ID">
+              <n-input v-model:value="form.wxpay_app_id" placeholder="wxabcdef0123456789" />
+            </n-form-item>
+            <n-form-item label="商户号">
+              <n-input v-model:value="form.wxpay_mch_id" placeholder="1234567890" />
+            </n-form-item>
+          </div>
+          <div class="grid-2">
+            <n-form-item label="API Key">
+              <n-input
+                v-model:value="form.wxpay_api_key"
+                type="password"
+                show-password-on="click"
+              />
+            </n-form-item>
+            <n-form-item label="API V3 Key">
+              <n-input
+                v-model:value="form.wxpay_api_v3_key"
+                type="password"
+                show-password-on="click"
+              />
+            </n-form-item>
+          </div>
+        </n-form>
+      </section>
+    </template>
 
-        <NCard title="微信支付配置">
-          <NForm :model="form" label-placement="left" label-width="160">
-            <NFormItem label="App ID">
-              <NInput v-model:value="form.wxpay_app_id" />
-            </NFormItem>
-            <NFormItem label="商户号">
-              <NInput v-model:value="form.wxpay_mch_id" />
-            </NFormItem>
-            <NFormItem label="API Key">
-              <NInput v-model:value="form.wxpay_api_key" type="password" show-password-on="click" />
-            </NFormItem>
-            <NFormItem label="API V3 Key">
-              <NInput v-model:value="form.wxpay_api_v3_key" type="password" show-password-on="click" />
-            </NFormItem>
-          </NForm>
-        </NCard>
-
-        <NSpace justify="end" style="margin-top:24px">
-          <NButton type="primary" :loading="saving" @click="handleSave">保存配置</NButton>
-        </NSpace>
-      </NSpin>
+    <!-- 加载占位：轻量骨架避免大块 NSpin -->
+    <div v-else class="skeleton">
+      <div class="skeleton-bar" />
+      <div class="skeleton-bar w-2/3" />
+      <div class="skeleton-bar w-1/3" />
     </div>
-  </NMessageProvider>
+  </div>
 </template>
+
+<style scoped>
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: 880px;
+}
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.page-title {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  margin: 0 0 6px;
+}
+.page-sub {
+  color: var(--color-ink-mute);
+  font-size: 13.5px;
+  margin: 0;
+}
+
+.card-section {
+  background: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  border-radius: 14px;
+  padding: 20px 24px 8px;
+}
+.section-head {
+  margin-bottom: 14px;
+}
+.section-head h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+  margin: 0 0 4px;
+}
+.section-head p {
+  color: var(--color-ink-mute);
+  font-size: 12.5px;
+  margin: 0;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0 16px;
+}
+@media (max-width: 720px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+
+.skeleton {
+  background: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.skeleton-bar {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--color-canvas-soft) 0%,
+    var(--color-hairline) 50%,
+    var(--color-canvas-soft) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+.skeleton-bar.w-2\/3 { width: 66%; }
+.skeleton-bar.w-1\/3 { width: 33%; }
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+</style>
