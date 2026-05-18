@@ -27,11 +27,12 @@ onMounted(async () => {
   loading.value = true
   try {
     const { data } = await api.get('/api/admin/configs')
-    if (data.code === 0) {
+    if (data.code === 0 && data.data) {
+      // Backend returns a flat key→value map; merge over the form defaults.
       form.value = { ...form.value, ...data.data }
     }
   } catch (e: any) {
-    message.error(e.response?.data?.message || '加载失败')
+    message.error(e.response?.data?.msg || '加载失败')
   } finally {
     loading.value = false
   }
@@ -44,10 +45,10 @@ async function handleSave() {
     if (data.code === 0) {
       message.success('保存成功')
     } else {
-      message.error(data.message || '保存失败')
+      message.error(data.msg || '保存失败')
     }
   } catch (e: any) {
-    message.error(e.response?.data?.message || '保存失败')
+    message.error(e.response?.data?.msg || '保存失败')
   } finally {
     saving.value = false
   }

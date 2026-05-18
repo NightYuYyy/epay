@@ -4,6 +4,7 @@ package admin
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -533,13 +534,9 @@ func (h *AdminHandler) ConfirmWithdraw(c *gin.Context) {
 
 // ---- Configs ----
 
-type configItem struct {
-	Key         string `json:"key"`
-	Value       string `json:"value"`
-	Description string `json:"description"`
-}
-
-// GetConfigs returns all platform configuration entries.
+// GetConfigs returns all platform configuration entries as a flat
+// key→value map. Frontend forms can spread the result directly into their
+// reactive form object without iterating an items array.
 func (h *AdminHandler) GetConfigs(c *gin.Context) {
 	ctx, cancel := timeoutCtx(c)
 	defer cancel()
@@ -550,37 +547,38 @@ func (h *AdminHandler) GetConfigs(c *gin.Context) {
 		return
 	}
 
-	items := make([]configItem, 0, len(configs))
+	result := make(map[string]string, len(configs))
 	for _, cfg := range configs {
-		items = append(items, configItem{
-			Key:         cfg.Key,
-			Value:       cfg.Value,
-			Description: cfg.Description,
-		})
+		result[cfg.Key] = cfg.Value
 	}
 
-	respOK(c, items)
+	respOK(c, result)
 }
 
-// UpdateConfigs upserts platform configuration entries from a map of key-value pairs.
+// UpdateConfigs upserts platform configuration entries.
+//
+// Accepts a heterogeneous JSON object — values may be strings, numbers, or
+// booleans — and stringifies each one before persisting. This lets clients
+// post forms with mixed types (e.g. a fee_rate as a number alongside an
+// app_id as a string) without an awkward client-side coercion step.
 func (h *AdminHandler) UpdateConfigs(c *gin.Context) {
-	var req map[string]string
+	var req map[string]any
 	if err := c.ShouldBindJSON(&req); err != nil {
-		respErr(c, "invalid request")
+		respErr(c, "invalid request: "+err.Error())
 		return
 	}
 
 	ctx, cancel := timeoutCtx(c)
 	defer cancel()
 
-	for key, value := range req {
+	for key, raw := range req {
+		value := stringifyConfigValue(raw)
 		// Check if config already exists
 		existing, err := h.ent.PlatformConfig.Query().
 			Where(entcfg.KeyEQ(key)).
 			First(ctx)
 		if err != nil {
 			if ent.IsNotFound(err) {
-				// Create new config entry
 				_, err := h.ent.PlatformConfig.Create().
 					SetKey(key).
 					SetValue(value).
@@ -595,7 +593,6 @@ func (h *AdminHandler) UpdateConfigs(c *gin.Context) {
 			return
 		}
 
-		// Update existing config
 		_, err = h.ent.PlatformConfig.UpdateOneID(existing.ID).
 			SetValue(value).
 			Save(ctx)
@@ -606,4 +603,28 @@ func (h *AdminHandler) UpdateConfigs(c *gin.Context) {
 	}
 
 	respOK(c, nil)
+}
+
+// stringifyConfigValue converts a JSON-decoded value to its canonical string
+// representation for persistence in pre_config. Numbers drop trailing zeros
+// where possible; booleans use "true"/"false"; nulls become empty strings.
+func stringifyConfigValue(v any) string {
+	switch x := v.(type) {
+	case nil:
+		return ""
+	case string:
+		return x
+	case bool:
+		if x {
+			return "true"
+		}
+		return "false"
+	case float64:
+		// JSON numbers decode to float64. Use the shortest round-trippable
+		// form so 0.006 stays "0.006" not "0.006000000...".
+		return strconv.FormatFloat(x, 'f', -1, 64)
+	default:
+		// Fallback: rely on the standard formatter.
+		return fmt.Sprintf("%v", x)
+	}
 }
