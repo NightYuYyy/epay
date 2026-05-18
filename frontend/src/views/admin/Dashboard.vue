@@ -5,26 +5,26 @@ import api from '@/api/client'
 
 const message = useMessage()
 const loading = ref(true)
-const stats = ref<{ today_orders?: number; today_income?: number; pending_withdraws?: number; total_orders?: number }>({})
+const stats = ref<{ today_order_count?: number; today_revenue?: number; pending_withdraw_count?: number }>({})
 
 const cards = computed(() => [
   {
     label: '今日订单',
-    value: stats.value.today_orders ?? 0,
+    value: stats.value.today_order_count ?? 0,
     prefix: '',
     accent: 'linear-gradient(135deg, #665efd 0%, #533afd 100%)',
     delta: '实时',
   },
   {
     label: '今日收入',
-    value: Number(stats.value.today_income ?? 0).toFixed(2),
+    value: Number(stats.value.today_revenue ?? 0).toFixed(2),
     prefix: '¥ ',
     accent: 'linear-gradient(135deg, #f96bee 0%, #ea2261 100%)',
-    delta: '已结算金额',
+    delta: '今日订单累计金额',
   },
   {
     label: '待审核提现',
-    value: stats.value.pending_withdraws ?? 0,
+    value: stats.value.pending_withdraw_count ?? 0,
     prefix: '',
     accent: 'linear-gradient(135deg, #1ab87a 0%, #0a194d 100%)',
     delta: '待处理',
