@@ -32,10 +32,49 @@ type Handler struct {
 	platformPubKey  string
 	sysKey          string
 	userRefundOn    bool
+	paymentCreator  PaymentCreator
 }
 
 // HandlerOption applies optional configuration to a Handler.
 type HandlerOption func(*Handler)
+
+// PaymentCreateRequest is the minimal provider-backed payment request that the
+// EasyPay protocol layer can delegate to the real payment service.
+type PaymentCreateRequest struct {
+	PID       int
+	OrderNo   string
+	Type      string
+	Amount    float64
+	Subject   string
+	NotifyURL string
+	ReturnURL string
+	ClientIP  string
+	IsMobile  bool
+	Param     string
+	Device    string
+	Method    string
+	SubOpenID string
+	SubAppID  string
+	AuthCode  string
+	Version   int
+}
+
+// PaymentCreateResponse is the provider output returned to EasyPay clients.
+type PaymentCreateResponse struct {
+	TradeNo string
+	PayURL  string
+	QRCode  string
+}
+
+// PaymentCreator lets cmd/server wire the protocol layer to the real payment
+// service without making this package depend on service/payment.
+type PaymentCreator func(context.Context, PaymentCreateRequest) (*PaymentCreateResponse, error)
+
+// WithPaymentCreator switches mapi.php / submit.php / api.php?s=pay/create
+// from mock pay URLs to real upstream provider creation.
+func WithPaymentCreator(creator PaymentCreator) HandlerOption {
+	return func(h *Handler) { h.paymentCreator = creator }
+}
 
 // WithPlatformKeys configures platform RSA keypair + system key.
 func WithPlatformKeys(privKey, pubKey, sysKey string) HandlerOption {
@@ -63,12 +102,12 @@ func NewHandler(client *ent.Client, opts ...HandlerOption) *Handler {
 // easyPayResponse is the standard JSON envelope returned by mapi/api endpoints.
 // Optional fields are omitted via `omitempty`.
 type easyPayResponse struct {
-	Code    int    `json:"code"`
-	Msg     string `json:"msg,omitempty"`
-	TradeNo string `json:"trade_no,omitempty"`
-	PayURL  string `json:"payurl,omitempty"`
-	QRCode  string `json:"qrcode,omitempty"`
-	HTML    string `json:"html,omitempty"`
+	Code      int    `json:"code"`
+	Msg       string `json:"msg,omitempty"`
+	TradeNo   string `json:"trade_no,omitempty"`
+	PayURL    string `json:"payurl,omitempty"`
+	QRCode    string `json:"qrcode,omitempty"`
+	HTML      string `json:"html,omitempty"`
 	URLScheme string `json:"urlscheme,omitempty"`
 }
 
@@ -77,24 +116,24 @@ type easyPayResponse struct {
 // merchantRequest captures the full set of EasyPay create-order parameters,
 // aligned with rainbow-epay's mapi.php / submit.php inputs.
 type merchantRequest struct {
-	Pid         string
-	Type        string
-	OutTradeNo  string
-	NotifyURL   string
-	ReturnURL   string
-	Name        string
-	Money       string
-	ClientIP    string
-	Device      string
-	Method      string
-	Param       string
-	Sitename    string
-	SubOpenID   string
-	SubAppID    string
-	AuthCode    string
-	Timestamp   string
-	Sign        string
-	SignType    string
+	Pid        string
+	Type       string
+	OutTradeNo string
+	NotifyURL  string
+	ReturnURL  string
+	Name       string
+	Money      string
+	ClientIP   string
+	Device     string
+	Method     string
+	Param      string
+	Sitename   string
+	SubOpenID  string
+	SubAppID   string
+	AuthCode   string
+	Timestamp  string
+	Sign       string
+	SignType   string
 
 	// Raw map used for signature verification (drops empty values per protocol).
 	Raw map[string]string
@@ -378,6 +417,20 @@ func (h *Handler) HandleMapi(c *gin.Context) {
 		c.JSON(http.StatusOK, easyPayResponse{Code: code, Msg: msg})
 		return
 	}
+	if h.paymentCreator != nil {
+		resp, code, msg := h.createRealPayment(ctx, m, r, 0)
+		if code != 0 {
+			c.JSON(http.StatusOK, easyPayResponse{Code: code, Msg: msg})
+			return
+		}
+		c.JSON(http.StatusOK, easyPayResponse{
+			Code:    1,
+			TradeNo: resp.TradeNo,
+			PayURL:  firstNonEmptyString(resp.PayURL, resp.QRCode),
+			QRCode:  firstNonEmptyString(resp.QRCode, resp.PayURL),
+		})
+		return
+	}
 	ord, code, msg := h.findOrCreateOrder(ctx, m, r, 0)
 	if code != 0 {
 		c.JSON(http.StatusOK, easyPayResponse{Code: code, Msg: msg})
@@ -407,6 +460,29 @@ func (h *Handler) HandleSubmit(c *gin.Context) {
 		c.JSON(http.StatusOK, easyPayResponse{Code: code, Msg: msg})
 		return
 	}
+	if h.paymentCreator != nil {
+		resp, code, msg := h.createRealPayment(ctx, m, r, 0)
+		if code != 0 {
+			c.JSON(http.StatusOK, easyPayResponse{Code: code, Msg: msg})
+			return
+		}
+		if strings.TrimSpace(resp.QRCode) != "" && strings.TrimSpace(resp.PayURL) == "" {
+			page, err := paymentQRCodeHTML(resp.QRCode, r.Type, r.OutTradeNo, r.Name)
+			if err != nil {
+				c.JSON(http.StatusOK, easyPayResponse{Code: -1, Msg: "生成支付二维码失败：" + err.Error()})
+				return
+			}
+			c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(page))
+			return
+		}
+		target := firstNonEmptyString(resp.PayURL, resp.QRCode)
+		if target == "" {
+			c.JSON(http.StatusOK, easyPayResponse{Code: -1, Msg: "支付链接为空"})
+			return
+		}
+		c.Redirect(http.StatusFound, target)
+		return
+	}
 	ord, code, msg := h.findOrCreateOrder(ctx, m, r, 0)
 	if code != 0 {
 		c.JSON(http.StatusOK, easyPayResponse{Code: code, Msg: msg})
@@ -420,4 +496,47 @@ func (h *Handler) HandleSubmit(c *gin.Context) {
 // is wired up. Real implementations return alipay/wxpay redirect URLs.
 func buildMockPayURL(outTradeNo, payType string) string {
 	return "https://pay.example.com/" + payType + "?order=" + outTradeNo
+}
+
+func (h *Handler) createRealPayment(ctx context.Context, m *ent.Merchant, r *merchantRequest, version int) (*PaymentCreateResponse, int, string) {
+	if h.paymentCreator == nil {
+		return nil, -1, "payment creator is not configured"
+	}
+	pid, _ := strconv.Atoi(r.Pid)
+	amount, _ := strconv.ParseFloat(r.Money, 64)
+	resp, err := h.paymentCreator(ctx, PaymentCreateRequest{
+		PID:       pid,
+		OrderNo:   r.OutTradeNo,
+		Type:      r.Type,
+		Amount:    amount,
+		Subject:   r.Name,
+		NotifyURL: r.NotifyURL,
+		ReturnURL: r.ReturnURL,
+		ClientIP:  r.ClientIP,
+		IsMobile:  strings.EqualFold(r.Device, "mobile") || strings.EqualFold(r.Method, "wap"),
+		Param:     r.Param,
+		Device:    r.Device,
+		Method:    r.Method,
+		SubOpenID: r.SubOpenID,
+		SubAppID:  r.SubAppID,
+		AuthCode:  r.AuthCode,
+		Version:   version,
+	})
+	if err != nil {
+		log.Printf("[easypay] real payment create pid=%d out_trade_no=%s: %v", m.Pid, r.OutTradeNo, err)
+		return nil, -1, "创建支付订单失败：" + err.Error()
+	}
+	if resp == nil {
+		return nil, -1, "创建支付订单失败：empty provider response"
+	}
+	return resp, 0, ""
+}
+
+func firstNonEmptyString(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return strings.TrimSpace(v)
+		}
+	}
+	return ""
 }

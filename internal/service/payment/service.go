@@ -47,6 +47,12 @@ type CreateOrderRequest struct {
 	ReturnURL   string
 	ClientIP    string
 	IsMobile    bool
+	Param       string
+	Device      string
+	Method      string
+	SubOpenID   string
+	SubAppID    string
+	AuthCode    string
 	ExpireAfter time.Duration
 }
 
@@ -135,6 +141,15 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		SetAmount(req.Amount).
 		SetStatus(order.StatusPENDING).
 		SetNotifyURL(req.NotifyURL).
+		SetReturnURL(req.ReturnURL).
+		SetName(req.Subject).
+		SetParam(req.Param).
+		SetClientip(req.ClientIP).
+		SetDevice(firstNonEmpty(req.Device, "pc")).
+		SetMethod(req.Method).
+		SetSubOpenid(req.SubOpenID).
+		SetSubAppid(req.SubAppID).
+		SetAuthCode(req.AuthCode).
 		SetProviderSnapshot(string(snapshotJSON)).
 		SetTradeNo(tradeNo).
 		Save(ctx)
@@ -367,26 +382,36 @@ func (s *PaymentService) providerConfig(providerKey string) (map[string]string, 
 	if s == nil || s.cfg == nil {
 		return nil, fmt.Errorf("payment service config is nil")
 	}
+	entries := map[string]string{}
+	if s.ent != nil {
+		rows, err := s.ent.PlatformConfig.Query().All(context.Background())
+		if err == nil {
+			for _, row := range rows {
+				entries[row.Key] = row.Value
+			}
+		}
+	}
 	switch providerKey {
 	case "alipay":
 		return map[string]string{
-			"appId":           s.cfg.Alipay.AppID,
-			"privateKey":      s.cfg.Alipay.PrivateKey,
-			"publicKey":       s.cfg.Alipay.PublicKey,
-			"alipayPublicKey": s.cfg.Alipay.PublicKey,
-			"notifyUrl":       s.cfg.Alipay.NotifyURL,
-			"returnUrl":       s.cfg.Alipay.ReturnURL,
+			"appId":           firstNonEmpty(entries["alipay_app_id"], s.cfg.Alipay.AppID),
+			"privateKey":      firstNonEmpty(entries["alipay_private_key"], s.cfg.Alipay.PrivateKey),
+			"publicKey":       firstNonEmpty(entries["alipay_public_key"], s.cfg.Alipay.PublicKey),
+			"alipayPublicKey": firstNonEmpty(entries["alipay_public_key"], s.cfg.Alipay.PublicKey),
+			"notifyUrl":       firstNonEmpty(entries["alipay_notify_url"], s.cfg.Alipay.NotifyURL),
+			"returnUrl":       firstNonEmpty(entries["alipay_return_url"], s.cfg.Alipay.ReturnURL),
+			"production":      firstNonEmpty(entries["alipay_production"], "false"),
 		}, nil
 	case "wxpay":
 		return map[string]string{
-			"appId":       s.cfg.Wxpay.AppID,
-			"mchId":       s.cfg.Wxpay.MchID,
-			"privateKey":  s.cfg.Wxpay.PrivateKey,
-			"apiV3Key":    s.cfg.Wxpay.APIv3Key,
-			"publicKey":   s.cfg.Wxpay.PublicKey,
-			"publicKeyId": s.cfg.Wxpay.PublicKeyID,
-			"serialNo":    s.cfg.Wxpay.SerialNo,
-			"notifyUrl":   s.cfg.Wxpay.NotifyURL,
+			"appId":       firstNonEmpty(entries["wxpay_app_id"], s.cfg.Wxpay.AppID),
+			"mchId":       firstNonEmpty(entries["wxpay_mch_id"], s.cfg.Wxpay.MchID),
+			"privateKey":  firstNonEmpty(entries["wxpay_private_key"], s.cfg.Wxpay.PrivateKey),
+			"apiV3Key":    firstNonEmpty(entries["wxpay_api_v3_key"], s.cfg.Wxpay.APIv3Key),
+			"publicKey":   firstNonEmpty(entries["wxpay_public_key"], s.cfg.Wxpay.PublicKey),
+			"publicKeyId": firstNonEmpty(entries["wxpay_public_key_id"], s.cfg.Wxpay.PublicKeyID),
+			"serialNo":    firstNonEmpty(entries["wxpay_serial_no"], s.cfg.Wxpay.SerialNo),
+			"notifyUrl":   firstNonEmpty(entries["wxpay_notify_url"], s.cfg.Wxpay.NotifyURL),
 		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported provider key: %s", providerKey)

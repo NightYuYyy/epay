@@ -1,23 +1,25 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
 import {
-  NDataTable, NCard, NButton, NSpace, NTag, NPopconfirm,
-  NMessageProvider, useMessage,
+  NDataTable, NCard, NButton, NSpace, NTag,
+  useMessage, useDialog,
 } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import api from '@/api/client'
 
 const message = useMessage()
+const dialog = useDialog()
 const loading = ref(false)
 const withdraws = ref<any[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
 
-const statusMap: Record<number, { type: string; label: string }> = {
-  0: { type: 'warning', label: '待审核' },
-  1: { type: 'success', label: '已通过' },
-  2: { type: 'error', label: '已拒绝' },
+const statusMap: Record<string, { type: 'success' | 'warning' | 'error' | 'default' | 'info'; label: string }> = {
+  PENDING: { type: 'warning', label: '待审核' },
+  APPROVED: { type: 'info', label: '已通过' },
+  PAID: { type: 'success', label: '已打款' },
+  REJECTED: { type: 'error', label: '已拒绝' },
 }
 
 const columns: DataTableColumns<any> = [
@@ -27,10 +29,9 @@ const columns: DataTableColumns<any> = [
     title: '金额',
     key: 'amount',
     width: 100,
-    render(row) { return `¥${(row.amount / 100).toFixed(2)}` },
+    render(row) { return `¥${Number(row.amount || 0).toFixed(2)}` },
   },
-  { title: '提现方式', key: 'type', width: 80 },
-  { title: '账号', key: 'account', width: 180 },
+  { title: '收款信息', key: 'account_info', width: 180, ellipsis: { tooltip: true } },
   {
     title: '状态',
     key: 'status',
@@ -47,38 +48,49 @@ const columns: DataTableColumns<any> = [
     key: 'actions',
     width: 200,
     render(row) {
-      if (row.status !== 0) return h('span', null, '-')
+      if (row.status !== 'PENDING') return h('span', null, '-')
       return h(NSpace, null, () => [
-        h(NPopconfirm, {
-          onPositiveClick: () => handleApprove(row),
-        }, {
-          trigger: () => h(NButton, { size: 'small', type: 'success' }, '通过'),
-          default: () => '确认通过该提现申请？',
-        }),
-        h(NPopconfirm, {
-          onPositiveClick: () => handleReject(row),
-          showIcon: false,
-        }, {
-          trigger: () => h(NButton, { size: 'small', type: 'error' }, '拒绝'),
-          default: () => '确认拒绝该提现申请？',
-        }),
+        h(NButton, { size: 'small', type: 'success', onClick: () => confirmApprove(row) }, { default: () => '通过' }),
+        h(NButton, { size: 'small', type: 'error', onClick: () => confirmReject(row) }, { default: () => '拒绝' }),
       ])
     },
   },
 ]
 
+function confirmApprove(row: any) {
+  dialog.warning({
+    title: '通过提现申请',
+    content: `确认通过商户「${row.merchant_name || '-'}」的 ¥${Number(row.amount || 0).toFixed(2)} 提现申请？`,
+    positiveText: '通过',
+    negativeText: '取消',
+    onPositiveClick: () => handleApprove(row),
+  })
+}
+
+function confirmReject(row: any) {
+  dialog.warning({
+    title: '拒绝提现申请',
+    content: `确认拒绝商户「${row.merchant_name || '-'}」的 ¥${Number(row.amount || 0).toFixed(2)} 提现申请？`,
+    positiveText: '拒绝',
+    negativeText: '取消',
+    onPositiveClick: () => handleReject(row),
+  })
+}
+
 async function fetchWithdraws() {
   loading.value = true
   try {
     const { data } = await api.get('/api/admin/withdraws', {
-      params: { page: page.value, page_size: pageSize.value },
+      params: { page: page.value, limit: pageSize.value },
     })
     if (data.code === 0) {
-      withdraws.value = data.data.list || data.data
+      withdraws.value = data.data.items || []
       total.value = data.data.total || 0
+    } else {
+      message.error(data.msg || '加载失败')
     }
   } catch (e: any) {
-    message.error(e.response?.data?.message || '加载失败')
+    message.error(e.response?.data?.msg || '加载失败')
   } finally {
     loading.value = false
   }
@@ -89,26 +101,26 @@ async function handleApprove(row: any) {
     const { data } = await api.post(`/api/admin/withdraws/${row.id}/approve`)
     if (data.code === 0) {
       message.success('已通过')
-      row.status = 1
+      row.status = 'APPROVED'
     } else {
-      message.error(data.message || '操作失败')
+      message.error(data.msg || '操作失败')
     }
   } catch (e: any) {
-    message.error(e.response?.data?.message || '操作失败')
+    message.error(e.response?.data?.msg || '操作失败')
   }
 }
 
 async function handleReject(row: any) {
   try {
-    const { data } = await api.post(`/api/admin/withdraws/${row.id}/reject`)
+    const { data } = await api.post(`/api/admin/withdraws/${row.id}/reject`, { remark: '管理员拒绝' })
     if (data.code === 0) {
       message.success('已拒绝')
-      row.status = 2
+      row.status = 'REJECTED'
     } else {
-      message.error(data.message || '操作失败')
+      message.error(data.msg || '操作失败')
     }
   } catch (e: any) {
-    message.error(e.response?.data?.message || '操作失败')
+    message.error(e.response?.data?.msg || '操作失败')
   }
 }
 
@@ -121,22 +133,20 @@ onMounted(() => {
 </script>
 
 <template>
-  <NMessageProvider>
-    <div style="padding:24px">
-      <NCard title="提现管理">
-        <NDataTable
-          :columns="columns"
-          :data="withdraws"
-          :loading="loading"
-          :pagination="{
-            page, pageSize, itemCount: total,
-            onChange: handlePageChange,
-            onUpdatePageSize: handlePageSizeChange,
-            showSizePicker: true,
-            pageSizes: [10, 20, 50],
-          }"
-        />
-      </NCard>
-    </div>
-  </NMessageProvider>
+  <div style="padding:24px">
+    <NCard title="提现管理">
+      <NDataTable
+        :columns="columns"
+        :data="withdraws"
+        :loading="loading"
+        :pagination="{
+          page, pageSize, itemCount: total,
+          onChange: handlePageChange,
+          onUpdatePageSize: handlePageSizeChange,
+          showSizePicker: true,
+          pageSizes: [10, 20, 50],
+        }"
+      />
+    </NCard>
+  </div>
 </template>

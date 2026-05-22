@@ -102,6 +102,21 @@ func (h *Handler) sPayCreate(c *gin.Context) {
 		h.sError(c, code, msg)
 		return
 	}
+	if h.paymentCreator != nil {
+		resp, code, msg := h.createRealPayment(ctx, m, r, 1)
+		if code != 0 {
+			h.sError(c, code, msg)
+			return
+		}
+		h.sSuccess(c, gin.H{
+			"code":     0,
+			"trade_no": resp.TradeNo,
+			"pay_type": "jump",
+			"pay_info": firstNonEmptyString(resp.PayURL, resp.QRCode),
+			"qrcode":   firstNonEmptyString(resp.QRCode, resp.PayURL),
+		})
+		return
+	}
 	ord, code, msg := h.findOrCreateOrder(ctx, m, r, 1)
 	if code != 0 {
 		h.sError(c, code, msg)

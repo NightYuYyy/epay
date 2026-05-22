@@ -76,7 +76,13 @@ func (a *AlipayProvider) getClient() (*alipay.Client, error) {
 		return a.client, nil
 	}
 
-	client, err := alipay.New(a.config["appId"], a.config["privateKey"], true)
+	production := false
+	if raw := strings.TrimSpace(a.config["production"]); raw != "" {
+		if parsed, perr := strconv.ParseBool(raw); perr == nil {
+			production = parsed
+		}
+	}
+	client, err := alipay.New(a.config["appId"], a.config["privateKey"], production)
 	if err != nil {
 		return nil, fmt.Errorf("alipay init client: %w", err)
 	}

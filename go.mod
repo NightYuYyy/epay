@@ -9,6 +9,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/lib/pq v1.12.3
 	github.com/redis/go-redis/v9 v9.19.0
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/smartwalle/alipay/v3 v3.2.29
 	github.com/spf13/viper v1.21.0
 	golang.org/x/crypto v0.51.0

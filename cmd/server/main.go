@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -16,9 +18,13 @@ import (
 	"epay/internal/handler/easypay"
 	merchant "epay/internal/handler/merchant"
 	"epay/internal/handler/middleware"
+	"epay/internal/provider"
+	_ "epay/internal/provider/alipay"
+	_ "epay/internal/provider/wxpay"
 	redisutil "epay/internal/redis"
 	adminSvc "epay/internal/service/admin"
 	merchantSvc "epay/internal/service/merchant"
+	paymentSvc "epay/internal/service/payment"
 	settlementSvc "epay/internal/service/settlement"
 
 	"github.com/gin-gonic/gin"
@@ -66,6 +72,7 @@ func main() {
 
 	// Initialize settlement service
 	settlementService := settlementSvc.New(dbClient, rdb)
+	paymentService := paymentSvc.NewPaymentService(dbClient, rdb, cfg)
 
 	// Initialize admin handler
 	adminHandler := admin.NewHandler(dbClient, adminService, merchantService, settlementService)
@@ -96,12 +103,71 @@ func main() {
 			cfg.Platform.SysKey,
 		),
 		easypay.WithUserRefund(cfg.Platform.UserRefundEnabled),
+		easypay.WithPaymentCreator(func(ctx context.Context, req easypay.PaymentCreateRequest) (*easypay.PaymentCreateResponse, error) {
+			createResp, err := paymentService.CreateOrder(ctx, paymentSvc.CreateOrderRequest{
+				PID:         req.PID,
+				OrderNo:     req.OrderNo,
+				Type:        provider.PaymentType(req.Type),
+				Amount:      req.Amount,
+				Subject:     req.Subject,
+				NotifyURL:   req.NotifyURL,
+				ReturnURL:   req.ReturnURL,
+				ClientIP:    req.ClientIP,
+				IsMobile:    req.IsMobile,
+				Param:       req.Param,
+				Device:      req.Device,
+				Method:      req.Method,
+				SubOpenID:   req.SubOpenID,
+				SubAppID:    req.SubAppID,
+				AuthCode:    req.AuthCode,
+				ExpireAfter: 30 * time.Minute,
+			})
+			if err != nil {
+				return nil, err
+			}
+			if createResp == nil || createResp.Provider == nil {
+				return nil, fmt.Errorf("empty payment response")
+			}
+			return &easypay.PaymentCreateResponse{
+				TradeNo: createResp.Provider.TradeNo,
+				PayURL:  createResp.Provider.PayURL,
+				QRCode:  createResp.Provider.QRCode,
+			}, nil
+		}),
 	)
 	r.POST("/mapi.php", easypayHandler.HandleMapi)
 	r.GET("/submit.php", easypayHandler.HandleSubmit)
 	r.POST("/submit.php", easypayHandler.HandleSubmit)
 	r.GET("/api.php", easypayHandler.HandleAPI)
 	r.POST("/api.php", easypayHandler.HandleAPI)
+	r.POST("/api/alipay/notify", func(c *gin.Context) {
+		rawBody, _ := io.ReadAll(c.Request.Body)
+		headers := make(map[string]string, len(c.Request.Header))
+		for k, values := range c.Request.Header {
+			headers[k] = strings.Join(values, ",")
+		}
+		resp, err := paymentService.HandleCallback(c.Request.Context(), provider.TypeAlipay, string(rawBody), headers)
+		if err != nil {
+			log.Printf("[main] alipay notify error: %v", err)
+			c.String(http.StatusOK, "failure")
+			return
+		}
+		c.String(http.StatusOK, resp)
+	})
+	r.POST("/api/wxpay/notify", func(c *gin.Context) {
+		rawBody, _ := io.ReadAll(c.Request.Body)
+		headers := make(map[string]string, len(c.Request.Header))
+		for k, values := range c.Request.Header {
+			headers[k] = strings.Join(values, ",")
+		}
+		resp, err := paymentService.HandleCallback(c.Request.Context(), provider.TypeWxpay, string(rawBody), headers)
+		if err != nil {
+			log.Printf("[main] wxpay notify error: %v", err)
+			c.String(http.StatusOK, "failure")
+			return
+		}
+		c.String(http.StatusOK, resp)
+	})
 
 	// Admin login (no auth)
 	r.POST("/api/admin/login", adminHandler.Login)
