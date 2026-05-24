@@ -1,16 +1,19 @@
+// Package fee computes per-order fees and applies settlements to user balances.
 package fee
 
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
 	"epay/ent"
-	"epay/ent/merchant"
 	"epay/ent/order"
 	"epay/ent/platformconfig"
+	"epay/ent/product"
 	"epay/ent/settlement"
+	"epay/ent/user"
 	"epay/internal/redis"
 
 	"github.com/google/uuid"
@@ -26,7 +29,7 @@ type FeeResult struct {
 	PlatformRate float64
 }
 
-// FeeService calculates fees and applies settlements to merchant balances.
+// FeeService calculates fees and applies settlements to user balances.
 type FeeService struct {
 	ent *ent.Client
 	rdb *goredis.Client
@@ -39,46 +42,52 @@ func New(client *ent.Client, rdb *goredis.Client) *FeeService {
 
 // CalculateFee computes the official fee, platform fee, and net amount for a payment.
 //
-//   - officialRate is loaded from PlatformConfig with key "official_{paymentType}_rate"
-//     (stored as a decimal string, e.g. "0.006" for 0.6%)
-//   - platformRate falls back to config key "default_platform_rate" if the merchant
-//     has no fee_rate set (default 1.0 means 1%, applied as rate/100)
-func (s *FeeService) CalculateFee(ctx context.Context, paymentType string, amount float64, merchantID uuid.UUID) (*FeeResult, error) {
-	// Load merchant for platform fee_rate
-	m, err := s.ent.Merchant.Query().
-		Where(merchant.IDEQ(merchantID)).
-		Only(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("calculate fee: query merchant %s: %w", merchantID, err)
-	}
+//   - platformRate is product.fee_rate when set; otherwise user.fee_rate.
+//   - Rate values are decimal fractions (0.006 = 0.6%). Legacy percent-style
+//     config values >= 1 are normalized to fractions to avoid 100x fees.
+func (s *FeeService) CalculateFee(ctx context.Context, paymentType string, amount float64, userID, productID uuid.UUID) (*FeeResult, error) {
+	platformRate := 0.0
+	platformRateSet := false
 
-	platformRate := m.FeeRate
-	if platformRate == 0 {
-		// Fallback to global default platform rate
-		cfg, err := s.ent.PlatformConfig.Query().
-			Where(platformconfig.KeyEQ("default_platform_rate")).
-			Only(ctx)
-		if err == nil {
-			if v, parseErr := strconv.ParseFloat(cfg.Value, 64); parseErr == nil {
-				platformRate = v
-			}
+	if productID != uuid.Nil {
+		p, err := s.ent.Product.Query().Where(product.IDEQ(productID)).Only(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("calculate fee: query product %s: %w", productID, err)
+		}
+		if p.FeeRate != nil {
+			platformRate = normalizeRate(*p.FeeRate)
+			platformRateSet = true
 		}
 	}
 
-	// Load official rate from global config
+	if !platformRateSet && userID != uuid.Nil {
+		u, err := s.ent.User.Query().Where(user.IDEQ(userID)).Only(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("calculate fee: query user %s: %w", userID, err)
+		}
+		platformRate = normalizeRate(u.FeeRate)
+		platformRateSet = true
+	}
+
+	if !platformRateSet {
+		v, ok, err := s.loadRateConfig(ctx, "default_platform_rate")
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			platformRate = v
+		}
+	}
+
+	// Load official rate from global config.
 	configKey := fmt.Sprintf("official_%s_rate", paymentType)
-	var officialRate float64
-	cfg, err := s.ent.PlatformConfig.Query().
-		Where(platformconfig.KeyEQ(configKey)).
-		Only(ctx)
-	if err == nil {
-		if v, parseErr := strconv.ParseFloat(cfg.Value, 64); parseErr == nil {
-			officialRate = v
-		}
+	officialRate, _, err := s.loadRateConfig(ctx, configKey)
+	if err != nil {
+		return nil, err
 	}
 
 	feeOfficial := amount * officialRate
-	feePlatform := amount * platformRate / 100
+	feePlatform := amount * platformRate
 	netAmount := amount - feePlatform
 
 	return &FeeResult{
@@ -90,8 +99,33 @@ func (s *FeeService) CalculateFee(ctx context.Context, paymentType string, amoun
 	}, nil
 }
 
+func normalizeRate(rate float64) float64 {
+	if rate >= 1 {
+		return rate / 100
+	}
+	return rate
+}
+
+func (s *FeeService) loadRateConfig(ctx context.Context, key string) (float64, bool, error) {
+	cfg, err := s.ent.PlatformConfig.Query().
+		Where(platformconfig.KeyEQ(key)).
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, fmt.Errorf("calculate fee: query config %s: %w", key, err)
+	}
+	v, err := strconv.ParseFloat(cfg.Value, 64)
+	if err != nil {
+		log.Printf("[fee] invalid rate config %s=%q: %v", key, cfg.Value, err)
+		return 0, false, fmt.Errorf("calculate fee: invalid rate config %s", key)
+	}
+	return normalizeRate(v), true, nil
+}
+
 // ApplySettlement finalizes a PAID order by computing fees and crediting the
-// merchant's settlement balance. Uses a distributed Redis lock to prevent
+// user's settlement balance. Uses a distributed Redis lock to prevent
 // concurrent settlement on the same order.
 func (s *FeeService) ApplySettlement(ctx context.Context, orderID uuid.UUID) error {
 	lockKey := fmt.Sprintf("settle:%s", orderID)
@@ -105,7 +139,6 @@ func (s *FeeService) ApplySettlement(ctx context.Context, orderID uuid.UUID) err
 	}
 	defer redis.ReleaseLock(ctx, s.rdb, lockKey)
 
-	// Load order — must be PAID
 	o, err := s.ent.Order.Query().
 		Where(order.IDEQ(orderID)).
 		Only(ctx)
@@ -116,20 +149,17 @@ func (s *FeeService) ApplySettlement(ctx context.Context, orderID uuid.UUID) err
 		return fmt.Errorf("apply settlement: order %s has status %s, expected PAID", orderID, o.Status)
 	}
 
-	// Calculate fees
-	result, err := s.CalculateFee(ctx, string(o.Type), o.Amount, o.MerchantID)
+	result, err := s.CalculateFee(ctx, string(o.Type), o.Amount, o.UserID, o.ProductID)
 	if err != nil {
 		return fmt.Errorf("apply settlement: %w", err)
 	}
 
-	// Run order update and settlement upsert in a transaction
 	tx, err := s.ent.Tx(ctx)
 	if err != nil {
 		return fmt.Errorf("apply settlement: begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	// Update order with settlement data
 	err = tx.Order.UpdateOneID(o.ID).
 		SetFeeOfficial(result.FeeOfficial).
 		SetFeePlatform(result.FeePlatform).
@@ -140,8 +170,7 @@ func (s *FeeService) ApplySettlement(ctx context.Context, orderID uuid.UUID) err
 		return fmt.Errorf("apply settlement: update order: %w", err)
 	}
 
-	// Upsert merchant settlement record
-	err = s.upsertSettlement(ctx, tx, o.MerchantID, result.NetAmount, o.Amount)
+	err = s.upsertSettlement(ctx, tx, o.UserID, result.NetAmount, o.Amount)
 	if err != nil {
 		return fmt.Errorf("apply settlement: upsert settlement: %w", err)
 	}
@@ -153,21 +182,23 @@ func (s *FeeService) ApplySettlement(ctx context.Context, orderID uuid.UUID) err
 	return nil
 }
 
-// upsertSettlement adds net_amount to the merchant's balance and total income.
+// upsertSettlement adds net_amount to the user's balance and total income.
 // Creates a new settlement record if one does not exist.
-func (s *FeeService) upsertSettlement(ctx context.Context, tx *ent.Tx, merchantID uuid.UUID, netAmount, amount float64) error {
-	existing, err := tx.Settlement.Query().
-		Where(settlement.MerchantIDEQ(merchantID)).
+func (s *FeeService) upsertSettlement(ctx context.Context, tx *ent.Tx, userID uuid.UUID, netAmount, amount float64) error {
+	_, err := tx.Settlement.Query().
+		Where(settlement.UserIDEQ(userID)).
 		Only(ctx)
 
 	if ent.IsNotFound(err) {
-		// Create new settlement record
 		_, err := tx.Settlement.Create().
-			SetMerchantID(merchantID).
+			SetUserID(userID).
 			SetBalance(netAmount).
 			SetTotalIncome(amount).
 			Save(ctx)
 		if err != nil {
+			if ent.IsConstraintError(err) {
+				return s.addSettlementAmounts(ctx, tx, userID, netAmount, amount)
+			}
 			return fmt.Errorf("create settlement: %w", err)
 		}
 		return nil
@@ -176,8 +207,15 @@ func (s *FeeService) upsertSettlement(ctx context.Context, tx *ent.Tx, merchantI
 		return fmt.Errorf("query settlement: %w", err)
 	}
 
-	// Update existing settlement with atomic increment
-	_, err = tx.Settlement.UpdateOneID(existing.ID).
+	if err := s.addSettlementAmounts(ctx, tx, userID, netAmount, amount); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *FeeService) addSettlementAmounts(ctx context.Context, tx *ent.Tx, userID uuid.UUID, netAmount, amount float64) error {
+	_, err := tx.Settlement.Update().
+		Where(settlement.UserIDEQ(userID)).
 		AddBalance(netAmount).
 		AddTotalIncome(amount).
 		Save(ctx)
@@ -187,17 +225,17 @@ func (s *FeeService) upsertSettlement(ctx context.Context, tx *ent.Tx, merchantI
 	return nil
 }
 
-// GetMerchantBalance returns the merchant's current settlement balance.
-// Returns 0 if no settlement record exists.
-func (s *FeeService) GetMerchantBalance(ctx context.Context, merchantID uuid.UUID) (float64, error) {
+// GetUserBalance returns the user's current settlement balance. Returns 0
+// when no settlement record exists.
+func (s *FeeService) GetUserBalance(ctx context.Context, userID uuid.UUID) (float64, error) {
 	stl, err := s.ent.Settlement.Query().
-		Where(settlement.MerchantIDEQ(merchantID)).
+		Where(settlement.UserIDEQ(userID)).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return 0, nil
 	}
 	if err != nil {
-		return 0, fmt.Errorf("get merchant balance: query settlement: %w", err)
+		return 0, fmt.Errorf("get user balance: query settlement: %w", err)
 	}
 	return stl.Balance, nil
 }

@@ -16,16 +16,18 @@ type Tx struct {
 	config
 	// Admin is the client for interacting with the Admin builders.
 	Admin *AdminClient
-	// Merchant is the client for interacting with the Merchant builders.
-	Merchant *MerchantClient
 	// Order is the client for interacting with the Order builders.
 	Order *OrderClient
 	// PlatformConfig is the client for interacting with the PlatformConfig builders.
 	PlatformConfig *PlatformConfigClient
+	// Product is the client for interacting with the Product builders.
+	Product *ProductClient
 	// Refund is the client for interacting with the Refund builders.
 	Refund *RefundClient
 	// Settlement is the client for interacting with the Settlement builders.
 	Settlement *SettlementClient
+	// User is the client for interacting with the User builders.
+	User *UserClient
 	// Withdraw is the client for interacting with the Withdraw builders.
 	Withdraw *WithdrawClient
 
@@ -160,11 +162,12 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Admin = NewAdminClient(tx.config)
-	tx.Merchant = NewMerchantClient(tx.config)
 	tx.Order = NewOrderClient(tx.config)
 	tx.PlatformConfig = NewPlatformConfigClient(tx.config)
+	tx.Product = NewProductClient(tx.config)
 	tx.Refund = NewRefundClient(tx.config)
 	tx.Settlement = NewSettlementClient(tx.config)
+	tx.User = NewUserClient(tx.config)
 	tx.Withdraw = NewWithdrawClient(tx.config)
 }
 

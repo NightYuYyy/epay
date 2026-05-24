@@ -14,7 +14,7 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:8080',
       '/mapi.php': { target: 'http://localhost:8080', changeOrigin: true },
-      '/demo': { target: 'http://localhost:8080', changeOrigin: true },
+      '/demo/': { target: 'http://localhost:8080', changeOrigin: true },
     },
   },
   build: {

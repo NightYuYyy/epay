@@ -15,22 +15,22 @@ import (
 	"epay/internal/config"
 	"epay/internal/database"
 	admin "epay/internal/handler/admin"
-	"epay/internal/handler/easypay"
 	demo "epay/internal/handler/demo"
-	merchant "epay/internal/handler/merchant"
+	"epay/internal/handler/easypay"
 	"epay/internal/handler/middleware"
+	userHandler "epay/internal/handler/user"
 	"epay/internal/provider"
 	_ "epay/internal/provider/alipay"
 	_ "epay/internal/provider/wxpay"
 	redisutil "epay/internal/redis"
 	adminSvc "epay/internal/service/admin"
 	feeSvc "epay/internal/service/fee"
-	merchantSvc "epay/internal/service/merchant"
 	paymentSvc "epay/internal/service/payment"
+	productSvc "epay/internal/service/product"
 	settlementSvc "epay/internal/service/settlement"
+	userSvc "epay/internal/service/user"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func main() {
@@ -60,7 +60,8 @@ func main() {
 	}
 
 	// Initialize services
-	merchantService := merchantSvc.NewService(dbClient)
+	userService := userSvc.NewService(dbClient)
+	productService := productSvc.NewService(dbClient)
 
 	// Initialize Redis
 	rdb, err := redisutil.NewClient(cfg.Redis.Addr, cfg.Redis.Password, cfg.Redis.DB)
@@ -81,10 +82,10 @@ func main() {
 	paymentService.StartExpiryScanner(paymentCtx)
 
 	// Initialize admin handler
-	adminHandler := admin.NewHandler(dbClient, adminService, merchantService, settlementService)
+	adminHandler := admin.NewHandler(dbClient, adminService, userService, productService, settlementService)
 
-	// Initialize merchant handler
-	merchantHandler := merchant.NewHandler(dbClient, merchantService, settlementService, cfg)
+	// Initialize user handler (self-service portal)
+	usrHandler := userHandler.NewHandler(dbClient, userService, productService, settlementService, cfg)
 
 	// Initialize Gin
 	r := gin.Default()
@@ -209,10 +210,13 @@ func main() {
 	{
 		adminGroup.POST("/change-password", adminHandler.ChangePassword)
 		adminGroup.GET("/dashboard", adminHandler.Dashboard)
-		adminGroup.GET("/merchants", adminHandler.ListMerchants)
-		adminGroup.POST("/merchants", adminHandler.CreateMerchant)
-		adminGroup.PUT("/merchants/:id", adminHandler.UpdateMerchant)
-		adminGroup.POST("/merchants/:id/regenerate-key", adminHandler.RegeneratePkey)
+		adminGroup.GET("/users", adminHandler.ListUsers)
+		adminGroup.POST("/users", adminHandler.CreateUser)
+		adminGroup.PUT("/users/:id", adminHandler.UpdateUser)
+		adminGroup.GET("/products", adminHandler.ListProducts)
+		adminGroup.POST("/products", adminHandler.CreateProduct)
+		adminGroup.PUT("/products/:id", adminHandler.UpdateProduct)
+		adminGroup.POST("/products/:id/regenerate-pkey", adminHandler.RegenerateProductPkey)
 		adminGroup.GET("/orders", adminHandler.ListOrders)
 		adminGroup.GET("/withdraws", adminHandler.ListWithdraws)
 		adminGroup.POST("/withdraws/:id/approve", adminHandler.ApproveWithdraw)
@@ -222,149 +226,27 @@ func main() {
 		adminGroup.PUT("/configs", adminHandler.UpdateConfigs)
 	}
 
-	// Merchant management (admin only)
-	merchantGroup := r.Group("/api/merchants")
-	merchantGroup.Use(adminAuth)
-
-	// Create merchant
-	merchantGroup.POST("", func(c *gin.Context) {
-		var req struct {
-			Name      string  `json:"name"`
-			FeeRate   float64 `json:"fee_rate"`
-			NotifyURL string  `json:"notify_url"`
-		}
-		if err := c.ShouldBindJSON(&req); err != nil || req.Name == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "msg": "name is required"})
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-		defer cancel()
-
-		m, err := merchantService.CreateMerchant(ctx, req.Name, req.FeeRate, req.NotifyURL)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusCreated, gin.H{"code": 0, "msg": "ok", "data": m})
-	})
-
-	// Get merchant by ID
-	merchantGroup.GET("/:id", func(c *gin.Context) {
-		id, err := uuid.Parse(c.Param("id"))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "msg": "invalid id"})
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-		defer cancel()
-
-		m, err := merchantService.GetMerchant(ctx, id, false)
-		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"code": 404, "msg": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"code": 0, "msg": "ok", "data": m})
-	})
-
-	// Update merchant
-	merchantGroup.PUT("/:id", func(c *gin.Context) {
-		id, err := uuid.Parse(c.Param("id"))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "msg": "invalid id"})
-			return
-		}
-
-		var req struct {
-			Name      *string  `json:"name"`
-			FeeRate   *float64 `json:"fee_rate"`
-			Status    *string  `json:"status"`
-			NotifyURL *string  `json:"notify_url"`
-		}
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "msg": "invalid request"})
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-		defer cancel()
-
-		m, err := merchantService.UpdateMerchant(ctx, id, req.Name, req.FeeRate, req.Status, req.NotifyURL)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "msg": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"code": 0, "msg": "ok", "data": m})
-	})
-
-	// List merchants
-	merchantGroup.GET("", func(c *gin.Context) {
-		page := 1
-		if p, err := strconv.Atoi(c.DefaultQuery("page", "1")); err == nil && p > 0 {
-			page = p
-		}
-		limit := 20
-		if l, err := strconv.Atoi(c.DefaultQuery("limit", "20")); err == nil && l > 0 && l <= 100 {
-			limit = l
-		}
-		status := c.Query("status")
-
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-		defer cancel()
-
-		result, err := merchantService.ListMerchants(ctx, page, limit, status)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"code": 0, "msg": "ok", "data": result})
-	})
-
-	// Regenerate pkey
-	merchantGroup.POST("/:id/regenerate-pkey", func(c *gin.Context) {
-		id, err := uuid.Parse(c.Param("id"))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "msg": "invalid id"})
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-		defer cancel()
-
-		newPkey, err := merchantService.RegeneratePkey(ctx, id)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "msg": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"code": 0, "msg": "ok", "pkey": newPkey})
-	})
-
 	// ========================
-	// Merchant API (self-service)
+	// User self-service portal
 	// ========================
-
-	merchantSelfGroup := r.Group("/api/merchant")
+	userSelfGroup := r.Group("/api/user")
 	{
-		merchantSelfGroup.POST("/login", merchantHandler.Login)
-		merchantSelfGroup.POST("/register", merchantHandler.Register)
+		userSelfGroup.POST("/login", usrHandler.Login)
+		userSelfGroup.POST("/register", usrHandler.Register)
 	}
-
-	merchantAuthGroup := merchantSelfGroup.Group("")
-	merchantAuthGroup.Use(middleware.MerchantAuth(cfg))
+	userAuthGroup := userSelfGroup.Group("")
+	userAuthGroup.Use(middleware.UserAuth(cfg))
 	{
-		merchantAuthGroup.GET("/profile", merchantHandler.Profile)
-		merchantAuthGroup.GET("/balance", merchantHandler.Balance)
-		merchantAuthGroup.GET("/orders", merchantHandler.ListOrders)
-		merchantAuthGroup.GET("/withdraws", merchantHandler.ListWithdraws)
-		merchantAuthGroup.POST("/withdraws", merchantHandler.RequestWithdraw)
-		merchantAuthGroup.GET("/api-key", merchantHandler.GetAPIKey)
-		merchantAuthGroup.PUT("/notify-url", merchantHandler.UpdateNotifyURL)
+		userAuthGroup.GET("/profile", usrHandler.Profile)
+		userAuthGroup.GET("/balance", usrHandler.Balance)
+		userAuthGroup.GET("/orders", usrHandler.ListOrders)
+		userAuthGroup.GET("/withdraws", usrHandler.ListWithdraws)
+		userAuthGroup.POST("/withdraws", usrHandler.RequestWithdraw)
+		userAuthGroup.GET("/products", usrHandler.ListProducts)
+		userAuthGroup.POST("/products", usrHandler.CreateProduct)
+		userAuthGroup.GET("/products/:id/secret", usrHandler.GetProductSecret)
+		userAuthGroup.PUT("/products/:id", usrHandler.UpdateProduct)
+		userAuthGroup.POST("/products/:id/regenerate-pkey", usrHandler.RegenerateProductPkey)
 	}
 
 	// ========================
@@ -391,12 +273,12 @@ func main() {
 				r.StaticFile("/"+fav, path)
 			}
 		}
-		// Root → admin login (matches existing Vue router default).
+		// Root serves the public SPA landing page with user registration/login entry points.
 		r.GET("/", func(c *gin.Context) {
-			c.Redirect(http.StatusFound, "/admin/login")
+			c.File(indexHTML)
 		})
 		// Catch-all: serve index.html for unmatched browser routes (deep links
-		// like /admin/dashboard, /merchant/login). API 404s stay JSON; asset
+		// like /admin/dashboard, /user/login). API 404s stay JSON; asset
 		// 404s (paths with file extensions) return JSON 404 too so the browser
 		// doesn't get HTML for a missing image / script.
 		r.NoRoute(func(c *gin.Context) {
@@ -407,7 +289,7 @@ func main() {
 				return
 			}
 			fp := filepath.Join(spaDir, filepath.Clean(p))
-			if strings.HasPrefix(fp, spaDir) {
+			if fp == spaDir || strings.HasPrefix(fp, spaDir+string(filepath.Separator)) {
 				if info, err := os.Stat(fp); err == nil && !info.IsDir() {
 					c.File(fp)
 					return

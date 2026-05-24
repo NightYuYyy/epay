@@ -3,7 +3,7 @@
 package ent
 
 import (
-	"epay/ent/merchant"
+	"epay/ent/user"
 	"epay/ent/withdraw"
 	"fmt"
 	"strings"
@@ -19,8 +19,8 @@ type Withdraw struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
-	// MerchantID holds the value of the "merchant_id" field.
-	MerchantID uuid.UUID `json:"merchant_id,omitempty"`
+	// UserID holds the value of the "user_id" field.
+	UserID uuid.UUID `json:"user_id,omitempty"`
 	// Amount holds the value of the "amount" field.
 	Amount float64 `json:"amount,omitempty"`
 	// AccountInfo holds the value of the "account_info" field.
@@ -41,22 +41,22 @@ type Withdraw struct {
 
 // WithdrawEdges holds the relations/edges for other nodes in the graph.
 type WithdrawEdges struct {
-	// Merchant holds the value of the merchant edge.
-	Merchant *Merchant `json:"merchant,omitempty"`
+	// User holds the value of the user edge.
+	User *User `json:"user,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// MerchantOrErr returns the Merchant value or an error if the edge
+// UserOrErr returns the User value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e WithdrawEdges) MerchantOrErr() (*Merchant, error) {
-	if e.Merchant != nil {
-		return e.Merchant, nil
+func (e WithdrawEdges) UserOrErr() (*User, error) {
+	if e.User != nil {
+		return e.User, nil
 	} else if e.loadedTypes[0] {
-		return nil, &NotFoundError{label: merchant.Label}
+		return nil, &NotFoundError{label: user.Label}
 	}
-	return nil, &NotLoadedError{edge: "merchant"}
+	return nil, &NotLoadedError{edge: "user"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -70,7 +70,7 @@ func (*Withdraw) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case withdraw.FieldCreatedAt, withdraw.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case withdraw.FieldID, withdraw.FieldMerchantID:
+		case withdraw.FieldID, withdraw.FieldUserID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -93,11 +93,11 @@ func (_m *Withdraw) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				_m.ID = *value
 			}
-		case withdraw.FieldMerchantID:
+		case withdraw.FieldUserID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
-				return fmt.Errorf("unexpected type %T for field merchant_id", values[i])
+				return fmt.Errorf("unexpected type %T for field user_id", values[i])
 			} else if value != nil {
-				_m.MerchantID = *value
+				_m.UserID = *value
 			}
 		case withdraw.FieldAmount:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -148,9 +148,9 @@ func (_m *Withdraw) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
-// QueryMerchant queries the "merchant" edge of the Withdraw entity.
-func (_m *Withdraw) QueryMerchant() *MerchantQuery {
-	return NewWithdrawClient(_m.config).QueryMerchant(_m)
+// QueryUser queries the "user" edge of the Withdraw entity.
+func (_m *Withdraw) QueryUser() *UserQuery {
+	return NewWithdrawClient(_m.config).QueryUser(_m)
 }
 
 // Update returns a builder for updating this Withdraw.
@@ -176,8 +176,8 @@ func (_m *Withdraw) String() string {
 	var builder strings.Builder
 	builder.WriteString("Withdraw(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
-	builder.WriteString("merchant_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.MerchantID))
+	builder.WriteString("user_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
 	builder.WriteString(", ")
 	builder.WriteString("amount=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Amount))

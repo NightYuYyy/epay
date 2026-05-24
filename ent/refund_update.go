@@ -4,9 +4,9 @@ package ent
 
 import (
 	"context"
-	"epay/ent/merchant"
 	"epay/ent/predicate"
 	"epay/ent/refund"
+	"epay/ent/user"
 	"errors"
 	"fmt"
 	"time"
@@ -78,16 +78,16 @@ func (_u *RefundUpdate) SetNillableTradeNo(v *string) *RefundUpdate {
 	return _u
 }
 
-// SetMerchantID sets the "merchant_id" field.
-func (_u *RefundUpdate) SetMerchantID(v uuid.UUID) *RefundUpdate {
-	_u.mutation.SetMerchantID(v)
+// SetUserID sets the "user_id" field.
+func (_u *RefundUpdate) SetUserID(v uuid.UUID) *RefundUpdate {
+	_u.mutation.SetUserID(v)
 	return _u
 }
 
-// SetNillableMerchantID sets the "merchant_id" field if the given value is not nil.
-func (_u *RefundUpdate) SetNillableMerchantID(v *uuid.UUID) *RefundUpdate {
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *RefundUpdate) SetNillableUserID(v *uuid.UUID) *RefundUpdate {
 	if v != nil {
-		_u.SetMerchantID(*v)
+		_u.SetUserID(*v)
 	}
 	return _u
 }
@@ -194,9 +194,9 @@ func (_u *RefundUpdate) ClearFinishedAt() *RefundUpdate {
 	return _u
 }
 
-// SetMerchant sets the "merchant" edge to the Merchant entity.
-func (_u *RefundUpdate) SetMerchant(v *Merchant) *RefundUpdate {
-	return _u.SetMerchantID(v.ID)
+// SetUser sets the "user" edge to the User entity.
+func (_u *RefundUpdate) SetUser(v *User) *RefundUpdate {
+	return _u.SetUserID(v.ID)
 }
 
 // Mutation returns the RefundMutation object of the builder.
@@ -204,9 +204,9 @@ func (_u *RefundUpdate) Mutation() *RefundMutation {
 	return _u.mutation
 }
 
-// ClearMerchant clears the "merchant" edge to the Merchant entity.
-func (_u *RefundUpdate) ClearMerchant() *RefundUpdate {
-	_u.mutation.ClearMerchant()
+// ClearUser clears the "user" edge to the User entity.
+func (_u *RefundUpdate) ClearUser() *RefundUpdate {
+	_u.mutation.ClearUser()
 	return _u
 }
 
@@ -263,8 +263,8 @@ func (_u *RefundUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Refund.status": %w`, err)}
 		}
 	}
-	if _u.mutation.MerchantCleared() && len(_u.mutation.MerchantIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Refund.merchant"`)
+	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Refund.user"`)
 	}
 	return nil
 }
@@ -323,28 +323,28 @@ func (_u *RefundUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.FinishedAtCleared() {
 		_spec.ClearField(refund.FieldFinishedAt, field.TypeTime)
 	}
-	if _u.mutation.MerchantCleared() {
+	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   refund.MerchantTable,
-			Columns: []string{refund.MerchantColumn},
+			Table:   refund.UserTable,
+			Columns: []string{refund.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.MerchantIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   refund.MerchantTable,
-			Columns: []string{refund.MerchantColumn},
+			Table:   refund.UserTable,
+			Columns: []string{refund.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -420,16 +420,16 @@ func (_u *RefundUpdateOne) SetNillableTradeNo(v *string) *RefundUpdateOne {
 	return _u
 }
 
-// SetMerchantID sets the "merchant_id" field.
-func (_u *RefundUpdateOne) SetMerchantID(v uuid.UUID) *RefundUpdateOne {
-	_u.mutation.SetMerchantID(v)
+// SetUserID sets the "user_id" field.
+func (_u *RefundUpdateOne) SetUserID(v uuid.UUID) *RefundUpdateOne {
+	_u.mutation.SetUserID(v)
 	return _u
 }
 
-// SetNillableMerchantID sets the "merchant_id" field if the given value is not nil.
-func (_u *RefundUpdateOne) SetNillableMerchantID(v *uuid.UUID) *RefundUpdateOne {
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *RefundUpdateOne) SetNillableUserID(v *uuid.UUID) *RefundUpdateOne {
 	if v != nil {
-		_u.SetMerchantID(*v)
+		_u.SetUserID(*v)
 	}
 	return _u
 }
@@ -536,9 +536,9 @@ func (_u *RefundUpdateOne) ClearFinishedAt() *RefundUpdateOne {
 	return _u
 }
 
-// SetMerchant sets the "merchant" edge to the Merchant entity.
-func (_u *RefundUpdateOne) SetMerchant(v *Merchant) *RefundUpdateOne {
-	return _u.SetMerchantID(v.ID)
+// SetUser sets the "user" edge to the User entity.
+func (_u *RefundUpdateOne) SetUser(v *User) *RefundUpdateOne {
+	return _u.SetUserID(v.ID)
 }
 
 // Mutation returns the RefundMutation object of the builder.
@@ -546,9 +546,9 @@ func (_u *RefundUpdateOne) Mutation() *RefundMutation {
 	return _u.mutation
 }
 
-// ClearMerchant clears the "merchant" edge to the Merchant entity.
-func (_u *RefundUpdateOne) ClearMerchant() *RefundUpdateOne {
-	_u.mutation.ClearMerchant()
+// ClearUser clears the "user" edge to the User entity.
+func (_u *RefundUpdateOne) ClearUser() *RefundUpdateOne {
+	_u.mutation.ClearUser()
 	return _u
 }
 
@@ -618,8 +618,8 @@ func (_u *RefundUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Refund.status": %w`, err)}
 		}
 	}
-	if _u.mutation.MerchantCleared() && len(_u.mutation.MerchantIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Refund.merchant"`)
+	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Refund.user"`)
 	}
 	return nil
 }
@@ -695,28 +695,28 @@ func (_u *RefundUpdateOne) sqlSave(ctx context.Context) (_node *Refund, err erro
 	if _u.mutation.FinishedAtCleared() {
 		_spec.ClearField(refund.FieldFinishedAt, field.TypeTime)
 	}
-	if _u.mutation.MerchantCleared() {
+	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   refund.MerchantTable,
-			Columns: []string{refund.MerchantColumn},
+			Table:   refund.UserTable,
+			Columns: []string{refund.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.MerchantIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   refund.MerchantTable,
-			Columns: []string{refund.MerchantColumn},
+			Table:   refund.UserTable,
+			Columns: []string{refund.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

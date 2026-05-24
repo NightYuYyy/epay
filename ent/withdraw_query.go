@@ -4,8 +4,8 @@ package ent
 
 import (
 	"context"
-	"epay/ent/merchant"
 	"epay/ent/predicate"
+	"epay/ent/user"
 	"epay/ent/withdraw"
 	"fmt"
 	"math"
@@ -21,12 +21,12 @@ import (
 // WithdrawQuery is the builder for querying Withdraw entities.
 type WithdrawQuery struct {
 	config
-	ctx          *QueryContext
-	order        []withdraw.OrderOption
-	inters       []Interceptor
-	predicates   []predicate.Withdraw
-	withMerchant *MerchantQuery
-	modifiers    []func(*sql.Selector)
+	ctx        *QueryContext
+	order      []withdraw.OrderOption
+	inters     []Interceptor
+	predicates []predicate.Withdraw
+	withUser   *UserQuery
+	modifiers  []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -63,9 +63,9 @@ func (_q *WithdrawQuery) Order(o ...withdraw.OrderOption) *WithdrawQuery {
 	return _q
 }
 
-// QueryMerchant chains the current query on the "merchant" edge.
-func (_q *WithdrawQuery) QueryMerchant() *MerchantQuery {
-	query := (&MerchantClient{config: _q.config}).Query()
+// QueryUser chains the current query on the "user" edge.
+func (_q *WithdrawQuery) QueryUser() *UserQuery {
+	query := (&UserClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -76,8 +76,8 @@ func (_q *WithdrawQuery) QueryMerchant() *MerchantQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(withdraw.Table, withdraw.FieldID, selector),
-			sqlgraph.To(merchant.Table, merchant.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, withdraw.MerchantTable, withdraw.MerchantColumn),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, withdraw.UserTable, withdraw.UserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -272,26 +272,26 @@ func (_q *WithdrawQuery) Clone() *WithdrawQuery {
 		return nil
 	}
 	return &WithdrawQuery{
-		config:       _q.config,
-		ctx:          _q.ctx.Clone(),
-		order:        append([]withdraw.OrderOption{}, _q.order...),
-		inters:       append([]Interceptor{}, _q.inters...),
-		predicates:   append([]predicate.Withdraw{}, _q.predicates...),
-		withMerchant: _q.withMerchant.Clone(),
+		config:     _q.config,
+		ctx:        _q.ctx.Clone(),
+		order:      append([]withdraw.OrderOption{}, _q.order...),
+		inters:     append([]Interceptor{}, _q.inters...),
+		predicates: append([]predicate.Withdraw{}, _q.predicates...),
+		withUser:   _q.withUser.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
 }
 
-// WithMerchant tells the query-builder to eager-load the nodes that are connected to
-// the "merchant" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *WithdrawQuery) WithMerchant(opts ...func(*MerchantQuery)) *WithdrawQuery {
-	query := (&MerchantClient{config: _q.config}).Query()
+// WithUser tells the query-builder to eager-load the nodes that are connected to
+// the "user" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WithdrawQuery) WithUser(opts ...func(*UserQuery)) *WithdrawQuery {
+	query := (&UserClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withMerchant = query
+	_q.withUser = query
 	return _q
 }
 
@@ -301,12 +301,12 @@ func (_q *WithdrawQuery) WithMerchant(opts ...func(*MerchantQuery)) *WithdrawQue
 // Example:
 //
 //	var v []struct {
-//		MerchantID uuid.UUID `json:"merchant_id,omitempty"`
+//		UserID uuid.UUID `json:"user_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Withdraw.Query().
-//		GroupBy(withdraw.FieldMerchantID).
+//		GroupBy(withdraw.FieldUserID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *WithdrawQuery) GroupBy(field string, fields ...string) *WithdrawGroupBy {
@@ -324,11 +324,11 @@ func (_q *WithdrawQuery) GroupBy(field string, fields ...string) *WithdrawGroupB
 // Example:
 //
 //	var v []struct {
-//		MerchantID uuid.UUID `json:"merchant_id,omitempty"`
+//		UserID uuid.UUID `json:"user_id,omitempty"`
 //	}
 //
 //	client.Withdraw.Query().
-//		Select(withdraw.FieldMerchantID).
+//		Select(withdraw.FieldUserID).
 //		Scan(ctx, &v)
 func (_q *WithdrawQuery) Select(fields ...string) *WithdrawSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
@@ -374,7 +374,7 @@ func (_q *WithdrawQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wit
 		nodes       = []*Withdraw{}
 		_spec       = _q.querySpec()
 		loadedTypes = [1]bool{
-			_q.withMerchant != nil,
+			_q.withUser != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -398,20 +398,20 @@ func (_q *WithdrawQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wit
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withMerchant; query != nil {
-		if err := _q.loadMerchant(ctx, query, nodes, nil,
-			func(n *Withdraw, e *Merchant) { n.Edges.Merchant = e }); err != nil {
+	if query := _q.withUser; query != nil {
+		if err := _q.loadUser(ctx, query, nodes, nil,
+			func(n *Withdraw, e *User) { n.Edges.User = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (_q *WithdrawQuery) loadMerchant(ctx context.Context, query *MerchantQuery, nodes []*Withdraw, init func(*Withdraw), assign func(*Withdraw, *Merchant)) error {
+func (_q *WithdrawQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*Withdraw, init func(*Withdraw), assign func(*Withdraw, *User)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Withdraw)
 	for i := range nodes {
-		fk := nodes[i].MerchantID
+		fk := nodes[i].UserID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -420,7 +420,7 @@ func (_q *WithdrawQuery) loadMerchant(ctx context.Context, query *MerchantQuery,
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(merchant.IDIn(ids...))
+	query.Where(user.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -428,7 +428,7 @@ func (_q *WithdrawQuery) loadMerchant(ctx context.Context, query *MerchantQuery,
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "merchant_id" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -465,8 +465,8 @@ func (_q *WithdrawQuery) querySpec() *sqlgraph.QuerySpec {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
-		if _q.withMerchant != nil {
-			_spec.Node.AddColumnOnce(withdraw.FieldMerchantID)
+		if _q.withUser != nil {
+			_spec.Node.AddColumnOnce(withdraw.FieldUserID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

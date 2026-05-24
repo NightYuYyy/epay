@@ -61,9 +61,14 @@ func OrderNo(v string) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldOrderNo, v))
 }
 
-// MerchantID applies equality check predicate on the "merchant_id" field. It's identical to MerchantIDEQ.
-func MerchantID(v uuid.UUID) predicate.Order {
-	return predicate.Order(sql.FieldEQ(FieldMerchantID, v))
+// ProductID applies equality check predicate on the "product_id" field. It's identical to ProductIDEQ.
+func ProductID(v uuid.UUID) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldProductID, v))
+}
+
+// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
+func UserID(v uuid.UUID) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldUserID, v))
 }
 
 // Amount applies equality check predicate on the "amount" field. It's identical to AmountEQ.
@@ -246,24 +251,44 @@ func OrderNoContainsFold(v string) predicate.Order {
 	return predicate.Order(sql.FieldContainsFold(FieldOrderNo, v))
 }
 
-// MerchantIDEQ applies the EQ predicate on the "merchant_id" field.
-func MerchantIDEQ(v uuid.UUID) predicate.Order {
-	return predicate.Order(sql.FieldEQ(FieldMerchantID, v))
+// ProductIDEQ applies the EQ predicate on the "product_id" field.
+func ProductIDEQ(v uuid.UUID) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldProductID, v))
 }
 
-// MerchantIDNEQ applies the NEQ predicate on the "merchant_id" field.
-func MerchantIDNEQ(v uuid.UUID) predicate.Order {
-	return predicate.Order(sql.FieldNEQ(FieldMerchantID, v))
+// ProductIDNEQ applies the NEQ predicate on the "product_id" field.
+func ProductIDNEQ(v uuid.UUID) predicate.Order {
+	return predicate.Order(sql.FieldNEQ(FieldProductID, v))
 }
 
-// MerchantIDIn applies the In predicate on the "merchant_id" field.
-func MerchantIDIn(vs ...uuid.UUID) predicate.Order {
-	return predicate.Order(sql.FieldIn(FieldMerchantID, vs...))
+// ProductIDIn applies the In predicate on the "product_id" field.
+func ProductIDIn(vs ...uuid.UUID) predicate.Order {
+	return predicate.Order(sql.FieldIn(FieldProductID, vs...))
 }
 
-// MerchantIDNotIn applies the NotIn predicate on the "merchant_id" field.
-func MerchantIDNotIn(vs ...uuid.UUID) predicate.Order {
-	return predicate.Order(sql.FieldNotIn(FieldMerchantID, vs...))
+// ProductIDNotIn applies the NotIn predicate on the "product_id" field.
+func ProductIDNotIn(vs ...uuid.UUID) predicate.Order {
+	return predicate.Order(sql.FieldNotIn(FieldProductID, vs...))
+}
+
+// UserIDEQ applies the EQ predicate on the "user_id" field.
+func UserIDEQ(v uuid.UUID) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldUserID, v))
+}
+
+// UserIDNEQ applies the NEQ predicate on the "user_id" field.
+func UserIDNEQ(v uuid.UUID) predicate.Order {
+	return predicate.Order(sql.FieldNEQ(FieldUserID, v))
+}
+
+// UserIDIn applies the In predicate on the "user_id" field.
+func UserIDIn(vs ...uuid.UUID) predicate.Order {
+	return predicate.Order(sql.FieldIn(FieldUserID, vs...))
+}
+
+// UserIDNotIn applies the NotIn predicate on the "user_id" field.
+func UserIDNotIn(vs ...uuid.UUID) predicate.Order {
+	return predicate.Order(sql.FieldNotIn(FieldUserID, vs...))
 }
 
 // TypeEQ applies the EQ predicate on the "type" field.
@@ -1716,21 +1741,44 @@ func UpdatedAtLTE(v time.Time) predicate.Order {
 	return predicate.Order(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
-// HasMerchant applies the HasEdge predicate on the "merchant" edge.
-func HasMerchant() predicate.Order {
+// HasProduct applies the HasEdge predicate on the "product" edge.
+func HasProduct() predicate.Order {
 	return predicate.Order(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, MerchantTable, MerchantColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, ProductTable, ProductColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasMerchantWith applies the HasEdge predicate on the "merchant" edge with a given conditions (other predicates).
-func HasMerchantWith(preds ...predicate.Merchant) predicate.Order {
+// HasProductWith applies the HasEdge predicate on the "product" edge with a given conditions (other predicates).
+func HasProductWith(preds ...predicate.Product) predicate.Order {
 	return predicate.Order(func(s *sql.Selector) {
-		step := newMerchantStep()
+		step := newProductStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasUser applies the HasEdge predicate on the "user" edge.
+func HasUser() predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUserWith applies the HasEdge predicate on the "user" edge with a given conditions (other predicates).
+func HasUserWith(preds ...predicate.User) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		step := newUserStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

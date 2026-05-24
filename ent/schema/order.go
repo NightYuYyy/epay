@@ -5,16 +5,19 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
 // Order holds the schema definition for the Order entity.
 //
-// The `order_no` field is the merchant's out_trade_no in EasyPay terminology;
-// the column name is kept as `order_no` for backward compatibility.
+// `order_no` is the merchant-supplied out_trade_no in EasyPay terminology.
+// Every order belongs to one Product, and (denormalized) to that product's
+// User so user-scope queries don't need a join.
 type Order struct {
 	ent.Schema
 }
@@ -27,7 +30,9 @@ func (Order) Fields() []ent.Field {
 		field.String("order_no").
 			NotEmpty().
 			Unique(),
-		field.UUID("merchant_id", uuid.UUID{}),
+		field.UUID("product_id", uuid.UUID{}),
+		field.UUID("user_id", uuid.UUID{}).
+			Comment("Denormalized from product.user_id for fast user-scope queries"),
 		field.Enum("type").
 			Values("alipay", "wxpay"),
 		field.Float("amount").
@@ -116,11 +121,24 @@ func (Order) Fields() []ent.Field {
 
 func (Order) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("merchant", Merchant.Type).
+		edge.From("product", Product.Type).
 			Ref("orders").
-			Field("merchant_id").
+			Field("product_id").
 			Unique().
 			Required(),
+		edge.From("user", User.Type).
+			Ref("orders").
+			Field("user_id").
+			Unique().
+			Required(),
+	}
+}
+
+func (Order) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("trade_no").
+			Unique().
+			Annotations(entsql.IndexWhere("trade_no <> ''")),
 	}
 }
 

@@ -1,28 +1,28 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { NForm, NFormItem, NInput, NInputNumber, NButton, useMessage } from 'naive-ui'
+import { NForm, NFormItem, NInput, NButton, useMessage } from 'naive-ui'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const message = useMessage()
 
-const pid = ref<number | null>(null)
+const email = ref('')
 const password = ref('')
 const loading = ref(false)
 
 async function handleLogin() {
-  if (!pid.value || !password.value) {
-    message.warning('请输入商户PID和密码')
+  if (!email.value || !password.value) {
+    message.warning('请输入邮箱和密码')
     return
   }
   loading.value = true
   try {
-    const res = await authStore.login(String(pid.value), password.value, false)
+    const res = await authStore.login(email.value, password.value, false)
     if (res.code === 0) {
       message.success('登录成功')
-      router.push('/merchant/dashboard')
+      router.push('/user/dashboard')
     } else {
       message.error(res.msg || '登录失败')
     }
@@ -42,8 +42,8 @@ async function handleLogin() {
         <div class="brand-mark">
           <div class="brand-glyph">ε</div>
           <div>
-            <div class="brand-name">Epay 商户中心</div>
-            <div class="brand-tag">For merchants</div>
+            <div class="brand-name">Epay 用户中心</div>
+            <div class="brand-tag">For users</div>
           </div>
         </div>
 
@@ -52,7 +52,7 @@ async function handleLogin() {
           清算、订单、提现全打通
         </h1>
         <p class="hero-sub">
-          使用商户 PID 与密码登录后即可管理订单、查询交易、申请提现。
+          使用邮箱与密码登录后即可管理产品、查询订单、申请提现。
         </p>
 
         <ul class="hero-points">
@@ -65,16 +65,14 @@ async function handleLogin() {
 
     <div class="form-panel">
       <div class="form-wrap">
-        <h2 class="form-title">商户登录</h2>
-        <p class="form-sub">使用平台分配的 PID 与密码访问</p>
+        <h2 class="form-title">用户登录</h2>
+        <p class="form-sub">使用注册邮箱与密码访问</p>
 
         <n-form label-placement="top" :show-feedback="false" style="margin-top: 28px">
-          <n-form-item label="商户 PID" style="margin-bottom: 16px">
-            <n-input-number
-              v-model:value="pid"
-              :min="1"
-              :show-button="false"
-              placeholder="例如 5481"
+          <n-form-item label="邮箱" style="margin-bottom: 16px">
+            <n-input
+              v-model:value="email"
+              placeholder="例如 user@example.com"
               size="large"
               style="width: 100%"
             />
@@ -94,7 +92,7 @@ async function handleLogin() {
 
         <div class="form-hint">
           还没有账号？
-          <router-link to="/merchant/register">立即注册</router-link>
+          <router-link to="/user/register">立即注册</router-link>
         </div>
       </div>
     </div>

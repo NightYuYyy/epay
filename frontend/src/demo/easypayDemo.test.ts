@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
+import viteConfig from '../../vite.config'
 import { describe, expect, it } from 'vitest'
 import {
   buildEasyPayDemoPayload,
@@ -13,7 +14,8 @@ describe('standalone EasyPay demo page', () => {
   it('is a standalone HTML entry instead of a merchant portal route', () => {
     const html = readFileSync(new URL('../../demo.html', import.meta.url), 'utf8')
     const router = readFileSync(new URL('../router/index.ts', import.meta.url), 'utf8')
-    const merchantLayout = readFileSync(new URL('../layouts/MerchantLayout.vue', import.meta.url), 'utf8')
+    const userLayout = readFileSync(new URL('../layouts/UserLayout.vue', import.meta.url), 'utf8')
+    const demoMain = readFileSync(new URL('./main.ts', import.meta.url), 'utf8')
 
     expect(html).toContain('<form id="payment-form"')
     expect(html).toContain('id="qr-code"')
@@ -25,8 +27,16 @@ describe('standalone EasyPay demo page', () => {
     expect(html).not.toContain('id="app"')
     expect(router).not.toContain('MerchantPaymentDemo')
     expect(router).not.toContain('/views/merchant/PaymentDemo.vue')
-    expect(merchantLayout).not.toContain('/merchant/demo')
-    expect(merchantLayout).not.toContain('支付 Demo')
+    expect(userLayout).not.toContain('/user/demo')
+    expect(userLayout).not.toContain('支付 Demo')
+    const proxy = (viteConfig as any).server?.proxy
+    expect(proxy && typeof proxy).toBe('object')
+    const proxyKeys = Object.keys(proxy)
+    expect(proxyKeys).not.toContain('/demo')
+    expect(proxyKeys).toContain('/demo/')
+    expect(demoMain).not.toContain("params.get('pkey')")
+    expect(demoMain).toContain("params.delete('pkey')")
+    expect(demoMain).toContain('window.history.replaceState')
   })
 })
 

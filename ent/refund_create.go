@@ -4,8 +4,8 @@ package ent
 
 import (
 	"context"
-	"epay/ent/merchant"
 	"epay/ent/refund"
+	"epay/ent/user"
 	"errors"
 	"fmt"
 	"time"
@@ -48,9 +48,9 @@ func (_c *RefundCreate) SetTradeNo(v string) *RefundCreate {
 	return _c
 }
 
-// SetMerchantID sets the "merchant_id" field.
-func (_c *RefundCreate) SetMerchantID(v uuid.UUID) *RefundCreate {
-	_c.mutation.SetMerchantID(v)
+// SetUserID sets the "user_id" field.
+func (_c *RefundCreate) SetUserID(v uuid.UUID) *RefundCreate {
+	_c.mutation.SetUserID(v)
 	return _c
 }
 
@@ -158,9 +158,9 @@ func (_c *RefundCreate) SetNillableID(v *uuid.UUID) *RefundCreate {
 	return _c
 }
 
-// SetMerchant sets the "merchant" edge to the Merchant entity.
-func (_c *RefundCreate) SetMerchant(v *Merchant) *RefundCreate {
-	return _c.SetMerchantID(v.ID)
+// SetUser sets the "user" edge to the User entity.
+func (_c *RefundCreate) SetUser(v *User) *RefundCreate {
+	return _c.SetUserID(v.ID)
 }
 
 // Mutation returns the RefundMutation object of the builder.
@@ -246,8 +246,8 @@ func (_c *RefundCreate) check() error {
 			return &ValidationError{Name: "trade_no", err: fmt.Errorf(`ent: validator failed for field "Refund.trade_no": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.MerchantID(); !ok {
-		return &ValidationError{Name: "merchant_id", err: errors.New(`ent: missing required field "Refund.merchant_id"`)}
+	if _, ok := _c.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "Refund.user_id"`)}
 	}
 	if _, ok := _c.mutation.Money(); !ok {
 		return &ValidationError{Name: "money", err: errors.New(`ent: missing required field "Refund.money"`)}
@@ -269,8 +269,8 @@ func (_c *RefundCreate) check() error {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Refund.updated_at"`)}
 	}
-	if len(_c.mutation.MerchantIDs()) == 0 {
-		return &ValidationError{Name: "merchant", err: errors.New(`ent: missing required edge "Refund.merchant"`)}
+	if len(_c.mutation.UserIDs()) == 0 {
+		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "Refund.user"`)}
 	}
 	return nil
 }
@@ -347,21 +347,21 @@ func (_c *RefundCreate) createSpec() (*Refund, *sqlgraph.CreateSpec) {
 		_spec.SetField(refund.FieldFinishedAt, field.TypeTime, value)
 		_node.FinishedAt = &value
 	}
-	if nodes := _c.mutation.MerchantIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   refund.MerchantTable,
-			Columns: []string{refund.MerchantColumn},
+			Table:   refund.UserTable,
+			Columns: []string{refund.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.MerchantID = nodes[0]
+		_node.UserID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

@@ -22,8 +22,8 @@ const (
 	FieldOutRefundNo = "out_refund_no"
 	// FieldTradeNo holds the string denoting the trade_no field in the database.
 	FieldTradeNo = "trade_no"
-	// FieldMerchantID holds the string denoting the merchant_id field in the database.
-	FieldMerchantID = "merchant_id"
+	// FieldUserID holds the string denoting the user_id field in the database.
+	FieldUserID = "user_id"
 	// FieldMoney holds the string denoting the money field in the database.
 	FieldMoney = "money"
 	// FieldReduceMoney holds the string denoting the reduce_money field in the database.
@@ -38,17 +38,17 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldFinishedAt holds the string denoting the finished_at field in the database.
 	FieldFinishedAt = "finished_at"
-	// EdgeMerchant holds the string denoting the merchant edge name in mutations.
-	EdgeMerchant = "merchant"
+	// EdgeUser holds the string denoting the user edge name in mutations.
+	EdgeUser = "user"
 	// Table holds the table name of the refund in the database.
 	Table = "refunds"
-	// MerchantTable is the table that holds the merchant relation/edge.
-	MerchantTable = "refunds"
-	// MerchantInverseTable is the table name for the Merchant entity.
-	// It exists in this package in order to avoid circular dependency with the "merchant" package.
-	MerchantInverseTable = "merchants"
-	// MerchantColumn is the table column denoting the merchant relation/edge.
-	MerchantColumn = "merchant_id"
+	// UserTable is the table that holds the user relation/edge.
+	UserTable = "refunds"
+	// UserInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	UserInverseTable = "users"
+	// UserColumn is the table column denoting the user relation/edge.
+	UserColumn = "user_id"
 )
 
 // Columns holds all SQL columns for refund fields.
@@ -57,7 +57,7 @@ var Columns = []string{
 	FieldRefundNo,
 	FieldOutRefundNo,
 	FieldTradeNo,
-	FieldMerchantID,
+	FieldUserID,
 	FieldMoney,
 	FieldReduceMoney,
 	FieldStatus,
@@ -148,9 +148,9 @@ func ByTradeNo(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTradeNo, opts...).ToFunc()
 }
 
-// ByMerchantID orders the results by the merchant_id field.
-func ByMerchantID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldMerchantID, opts...).ToFunc()
+// ByUserID orders the results by the user_id field.
+func ByUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUserID, opts...).ToFunc()
 }
 
 // ByMoney orders the results by the money field.
@@ -188,16 +188,16 @@ func ByFinishedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFinishedAt, opts...).ToFunc()
 }
 
-// ByMerchantField orders the results by merchant field.
-func ByMerchantField(field string, opts ...sql.OrderTermOption) OrderOption {
+// ByUserField orders the results by user field.
+func ByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newMerchantStep(), sql.OrderByField(field, opts...))
+		sqlgraph.OrderByNeighborTerms(s, newUserStep(), sql.OrderByField(field, opts...))
 	}
 }
-func newMerchantStep() *sqlgraph.Step {
+func newUserStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(MerchantInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, MerchantTable, MerchantColumn),
+		sqlgraph.To(UserInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 	)
 }

@@ -56,9 +56,9 @@ func IDLTE(id uuid.UUID) predicate.Settlement {
 	return predicate.Settlement(sql.FieldLTE(FieldID, id))
 }
 
-// MerchantID applies equality check predicate on the "merchant_id" field. It's identical to MerchantIDEQ.
-func MerchantID(v uuid.UUID) predicate.Settlement {
-	return predicate.Settlement(sql.FieldEQ(FieldMerchantID, v))
+// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
+func UserID(v uuid.UUID) predicate.Settlement {
+	return predicate.Settlement(sql.FieldEQ(FieldUserID, v))
 }
 
 // Balance applies equality check predicate on the "balance" field. It's identical to BalanceEQ.
@@ -91,24 +91,24 @@ func UpdatedAt(v time.Time) predicate.Settlement {
 	return predicate.Settlement(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
-// MerchantIDEQ applies the EQ predicate on the "merchant_id" field.
-func MerchantIDEQ(v uuid.UUID) predicate.Settlement {
-	return predicate.Settlement(sql.FieldEQ(FieldMerchantID, v))
+// UserIDEQ applies the EQ predicate on the "user_id" field.
+func UserIDEQ(v uuid.UUID) predicate.Settlement {
+	return predicate.Settlement(sql.FieldEQ(FieldUserID, v))
 }
 
-// MerchantIDNEQ applies the NEQ predicate on the "merchant_id" field.
-func MerchantIDNEQ(v uuid.UUID) predicate.Settlement {
-	return predicate.Settlement(sql.FieldNEQ(FieldMerchantID, v))
+// UserIDNEQ applies the NEQ predicate on the "user_id" field.
+func UserIDNEQ(v uuid.UUID) predicate.Settlement {
+	return predicate.Settlement(sql.FieldNEQ(FieldUserID, v))
 }
 
-// MerchantIDIn applies the In predicate on the "merchant_id" field.
-func MerchantIDIn(vs ...uuid.UUID) predicate.Settlement {
-	return predicate.Settlement(sql.FieldIn(FieldMerchantID, vs...))
+// UserIDIn applies the In predicate on the "user_id" field.
+func UserIDIn(vs ...uuid.UUID) predicate.Settlement {
+	return predicate.Settlement(sql.FieldIn(FieldUserID, vs...))
 }
 
-// MerchantIDNotIn applies the NotIn predicate on the "merchant_id" field.
-func MerchantIDNotIn(vs ...uuid.UUID) predicate.Settlement {
-	return predicate.Settlement(sql.FieldNotIn(FieldMerchantID, vs...))
+// UserIDNotIn applies the NotIn predicate on the "user_id" field.
+func UserIDNotIn(vs ...uuid.UUID) predicate.Settlement {
+	return predicate.Settlement(sql.FieldNotIn(FieldUserID, vs...))
 }
 
 // BalanceEQ applies the EQ predicate on the "balance" field.
@@ -351,21 +351,21 @@ func UpdatedAtLTE(v time.Time) predicate.Settlement {
 	return predicate.Settlement(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
-// HasMerchant applies the HasEdge predicate on the "merchant" edge.
-func HasMerchant() predicate.Settlement {
+// HasUser applies the HasEdge predicate on the "user" edge.
+func HasUser() predicate.Settlement {
 	return predicate.Settlement(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, MerchantTable, MerchantColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasMerchantWith applies the HasEdge predicate on the "merchant" edge with a given conditions (other predicates).
-func HasMerchantWith(preds ...predicate.Merchant) predicate.Settlement {
+// HasUserWith applies the HasEdge predicate on the "user" edge with a given conditions (other predicates).
+func HasUserWith(preds ...predicate.User) predicate.Settlement {
 	return predicate.Settlement(func(s *sql.Selector) {
-		step := newMerchantStep()
+		step := newUserStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

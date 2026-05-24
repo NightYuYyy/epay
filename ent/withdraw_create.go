@@ -4,7 +4,7 @@ package ent
 
 import (
 	"context"
-	"epay/ent/merchant"
+	"epay/ent/user"
 	"epay/ent/withdraw"
 	"errors"
 	"fmt"
@@ -22,9 +22,9 @@ type WithdrawCreate struct {
 	hooks    []Hook
 }
 
-// SetMerchantID sets the "merchant_id" field.
-func (_c *WithdrawCreate) SetMerchantID(v uuid.UUID) *WithdrawCreate {
-	_c.mutation.SetMerchantID(v)
+// SetUserID sets the "user_id" field.
+func (_c *WithdrawCreate) SetUserID(v uuid.UUID) *WithdrawCreate {
+	_c.mutation.SetUserID(v)
 	return _c
 }
 
@@ -110,9 +110,9 @@ func (_c *WithdrawCreate) SetNillableID(v *uuid.UUID) *WithdrawCreate {
 	return _c
 }
 
-// SetMerchant sets the "merchant" edge to the Merchant entity.
-func (_c *WithdrawCreate) SetMerchant(v *Merchant) *WithdrawCreate {
-	return _c.SetMerchantID(v.ID)
+// SetUser sets the "user" edge to the User entity.
+func (_c *WithdrawCreate) SetUser(v *User) *WithdrawCreate {
+	return _c.SetUserID(v.ID)
 }
 
 // Mutation returns the WithdrawMutation object of the builder.
@@ -174,8 +174,8 @@ func (_c *WithdrawCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *WithdrawCreate) check() error {
-	if _, ok := _c.mutation.MerchantID(); !ok {
-		return &ValidationError{Name: "merchant_id", err: errors.New(`ent: missing required field "Withdraw.merchant_id"`)}
+	if _, ok := _c.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "Withdraw.user_id"`)}
 	}
 	if _, ok := _c.mutation.Amount(); !ok {
 		return &ValidationError{Name: "amount", err: errors.New(`ent: missing required field "Withdraw.amount"`)}
@@ -202,8 +202,8 @@ func (_c *WithdrawCreate) check() error {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Withdraw.updated_at"`)}
 	}
-	if len(_c.mutation.MerchantIDs()) == 0 {
-		return &ValidationError{Name: "merchant", err: errors.New(`ent: missing required edge "Withdraw.merchant"`)}
+	if len(_c.mutation.UserIDs()) == 0 {
+		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "Withdraw.user"`)}
 	}
 	return nil
 }
@@ -264,21 +264,21 @@ func (_c *WithdrawCreate) createSpec() (*Withdraw, *sqlgraph.CreateSpec) {
 		_spec.SetField(withdraw.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if nodes := _c.mutation.MerchantIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   withdraw.MerchantTable,
-			Columns: []string{withdraw.MerchantColumn},
+			Table:   withdraw.UserTable,
+			Columns: []string{withdraw.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.MerchantID = nodes[0]
+		_node.UserID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

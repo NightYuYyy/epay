@@ -82,18 +82,14 @@ func (a *AlipayProvider) getClient() (*alipay.Client, error) {
 			production = parsed
 		}
 	}
+	// SDK default in sandbox = new gateway (openapi-sandbox.dl.alipaydev.com).
+	// The legacy sandbox gateway (openapi.alipaydev.com) is mostly deprecated
+	// and returns 502 for unauthenticated probes, so we keep the SDK default.
+	// Operators can opt in to the legacy gateway by setting
+	// alipay_sandbox_legacy_gateway=true.
 	var opts []alipay.OptionFunc
-	if !production {
-		// Default SDK behavior connects to the new sandbox gateway
-		// (openapi-sandbox.dl.alipaydev.com), which has unreliable async
-		// notification delivery. Switch to the legacy sandbox gateway
-		// (openapi.alipaydev.com) which reliably sends notify_url callbacks.
-		// Operators can opt out by setting alipay_sandbox_new_gateway=true.
-		if strings.EqualFold(strings.TrimSpace(a.config["sandboxNewGateway"]), "true") {
-			opts = append(opts, alipay.WithNewSandboxGateway())
-		} else {
-			opts = append(opts, alipay.WithPastSandboxGateway())
-		}
+	if !production && strings.EqualFold(strings.TrimSpace(a.config["sandboxLegacyGateway"]), "true") {
+		opts = append(opts, alipay.WithPastSandboxGateway())
 	}
 	client, err := alipay.New(a.config["appId"], a.config["privateKey"], production, opts...)
 	if err != nil {

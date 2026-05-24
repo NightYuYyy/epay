@@ -71,9 +71,9 @@ func TradeNo(v string) predicate.Refund {
 	return predicate.Refund(sql.FieldEQ(FieldTradeNo, v))
 }
 
-// MerchantID applies equality check predicate on the "merchant_id" field. It's identical to MerchantIDEQ.
-func MerchantID(v uuid.UUID) predicate.Refund {
-	return predicate.Refund(sql.FieldEQ(FieldMerchantID, v))
+// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
+func UserID(v uuid.UUID) predicate.Refund {
+	return predicate.Refund(sql.FieldEQ(FieldUserID, v))
 }
 
 // Money applies equality check predicate on the "money" field. It's identical to MoneyEQ.
@@ -311,24 +311,24 @@ func TradeNoContainsFold(v string) predicate.Refund {
 	return predicate.Refund(sql.FieldContainsFold(FieldTradeNo, v))
 }
 
-// MerchantIDEQ applies the EQ predicate on the "merchant_id" field.
-func MerchantIDEQ(v uuid.UUID) predicate.Refund {
-	return predicate.Refund(sql.FieldEQ(FieldMerchantID, v))
+// UserIDEQ applies the EQ predicate on the "user_id" field.
+func UserIDEQ(v uuid.UUID) predicate.Refund {
+	return predicate.Refund(sql.FieldEQ(FieldUserID, v))
 }
 
-// MerchantIDNEQ applies the NEQ predicate on the "merchant_id" field.
-func MerchantIDNEQ(v uuid.UUID) predicate.Refund {
-	return predicate.Refund(sql.FieldNEQ(FieldMerchantID, v))
+// UserIDNEQ applies the NEQ predicate on the "user_id" field.
+func UserIDNEQ(v uuid.UUID) predicate.Refund {
+	return predicate.Refund(sql.FieldNEQ(FieldUserID, v))
 }
 
-// MerchantIDIn applies the In predicate on the "merchant_id" field.
-func MerchantIDIn(vs ...uuid.UUID) predicate.Refund {
-	return predicate.Refund(sql.FieldIn(FieldMerchantID, vs...))
+// UserIDIn applies the In predicate on the "user_id" field.
+func UserIDIn(vs ...uuid.UUID) predicate.Refund {
+	return predicate.Refund(sql.FieldIn(FieldUserID, vs...))
 }
 
-// MerchantIDNotIn applies the NotIn predicate on the "merchant_id" field.
-func MerchantIDNotIn(vs ...uuid.UUID) predicate.Refund {
-	return predicate.Refund(sql.FieldNotIn(FieldMerchantID, vs...))
+// UserIDNotIn applies the NotIn predicate on the "user_id" field.
+func UserIDNotIn(vs ...uuid.UUID) predicate.Refund {
+	return predicate.Refund(sql.FieldNotIn(FieldUserID, vs...))
 }
 
 // MoneyEQ applies the EQ predicate on the "money" field.
@@ -636,21 +636,21 @@ func FinishedAtNotNil() predicate.Refund {
 	return predicate.Refund(sql.FieldNotNull(FieldFinishedAt))
 }
 
-// HasMerchant applies the HasEdge predicate on the "merchant" edge.
-func HasMerchant() predicate.Refund {
+// HasUser applies the HasEdge predicate on the "user" edge.
+func HasUser() predicate.Refund {
 	return predicate.Refund(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, MerchantTable, MerchantColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasMerchantWith applies the HasEdge predicate on the "merchant" edge with a given conditions (other predicates).
-func HasMerchantWith(preds ...predicate.Merchant) predicate.Refund {
+// HasUserWith applies the HasEdge predicate on the "user" edge with a given conditions (other predicates).
+func HasUserWith(preds ...predicate.User) predicate.Refund {
 	return predicate.Refund(func(s *sql.Selector) {
-		step := newMerchantStep()
+		step := newUserStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

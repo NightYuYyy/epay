@@ -14,11 +14,18 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function login(username: string, password: string, isAdmin = true) {
-    const url = isAdmin ? '/api/admin/login' : '/api/merchant/login'
-	const payload = isAdmin ? { username, password } : { pid: username, password }
-	const { data } = await api.post(url, payload)
+    const url = isAdmin ? '/api/admin/login' : '/api/user/login'
+    const payload = isAdmin ? { username, password } : { email: username, password }
+    const { data } = await api.post(url, payload)
     if (data.code === 0) {
-      setAuth(data.data.token, data.data)
+      const responseData = data.data ?? {}
+      if (!responseData.token) {
+        return { ...data, code: -1, msg: data.msg || '登录响应缺少 token' }
+      }
+      const adminUser = { ...responseData }
+      delete adminUser.token
+      delete adminUser.expire_at
+      setAuth(responseData.token, responseData.user ?? adminUser)
     }
     return data
   }

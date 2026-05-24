@@ -34,17 +34,17 @@ function svgIcon(d: string) {
 
 const ICONS = {
   dashboard: svgIcon('M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z'),
+  products: svgIcon('M21 7 12 2 3 7v10l9 5 9-5V7zM3 7l9 5 9-5M12 12v10'),
   orders: svgIcon('M3 6h18M3 12h18M3 18h18'),
   withdraw: svgIcon('M12 2v20m6-12-6 6-6-6'),
-  keys: svgIcon('M21 2l-9.6 9.6m0 0a4 4 0 1 1-5.66 5.66 4 4 0 0 1 5.66-5.66zM17 5l3 3M14 8l3 3'),
   logout: svgIcon('M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9'),
 }
 
 const menuOptions: MenuOption[] = [
-  { label: '仪表盘', key: '/merchant/dashboard', icon: ICONS.dashboard },
-  { label: '订单管理', key: '/merchant/orders', icon: ICONS.orders },
-  { label: '提现', key: '/merchant/withdraw', icon: ICONS.withdraw },
-  { label: 'API 密钥', key: '/merchant/keys', icon: ICONS.keys },
+  { label: '仪表盘', key: '/user/dashboard', icon: ICONS.dashboard },
+  { label: '产品管理', key: '/user/products', icon: ICONS.products },
+  { label: '订单', key: '/user/orders', icon: ICONS.orders },
+  { label: '提现', key: '/user/withdraw', icon: ICONS.withdraw },
 ]
 
 const activeKey = computed(() => route.path)
@@ -59,17 +59,17 @@ const userDropdownOptions = [
 function handleUserAction(key: string) {
   if (key === 'logout') {
     auth.logout()
-    router.replace('/merchant/login')
+    router.replace('/user/login')
   }
 }
 
-const username = computed(() => auth.user?.username || 'merchant')
+const username = computed(() => auth.user?.name || auth.user?.email || 'user')
 const breadcrumb = computed(() => {
   const map: Record<string, string> = {
-    '/merchant/dashboard': '仪表盘',
-    '/merchant/orders': '订单管理',
-    '/merchant/withdraw': '提现',
-    '/merchant/keys': 'API 密钥',
+    '/user/dashboard': '仪表盘',
+    '/user/products': '产品管理',
+    '/user/orders': '订单',
+    '/user/withdraw': '提现',
   }
   return map[route.path] || ''
 })
@@ -117,7 +117,7 @@ const sidebarMenuOverrides = {
         >ε</div>
         <div style="display: flex; flex-direction: column; line-height: 1.1">
           <span style="font-family: var(--font-display); font-weight: 500; font-size: 16px; color: #fff; letter-spacing: -0.01em">Epay</span>
-          <span style="color: rgba(255, 255, 255, 0.55); font-size: 11px">Merchant portal</span>
+          <span style="color: rgba(255, 255, 255, 0.55); font-size: 11px">User portal</span>
         </div>
       </div>
 
@@ -145,7 +145,7 @@ const sidebarMenuOverrides = {
         "
       >
         <div style="display: flex; align-items: center; gap: 10px">
-          <span style="color: var(--color-ink-mute); font-size: 13px">商户中心</span>
+          <span style="color: var(--color-ink-mute); font-size: 13px">用户中心</span>
           <span style="color: var(--color-hairline-strong); font-size: 12px">/</span>
           <span style="color: var(--color-ink); font-weight: 500">{{ breadcrumb }}</span>
         </div>
@@ -159,10 +159,10 @@ const sidebarMenuOverrides = {
               round
               :size="32"
               :style="{ background: 'var(--color-primary)', color: '#fff', fontSize: '12px', fontWeight: 600 }"
-            >M</n-avatar>
+            >U</n-avatar>
             <div style="display: flex; flex-direction: column; line-height: 1.1">
               <span style="font-size: 13px; color: var(--color-ink); font-weight: 500">{{ username }}</span>
-              <span style="font-size: 11px; color: var(--color-ink-mute)">商户</span>
+              <span style="font-size: 11px; color: var(--color-ink-mute)">用户</span>
             </div>
           </div>
         </n-dropdown>

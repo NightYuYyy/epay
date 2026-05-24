@@ -21,7 +21,7 @@ func (Withdraw) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New).
 			Immutable(),
-		field.UUID("merchant_id", uuid.UUID{}),
+		field.UUID("user_id", uuid.UUID{}),
 		field.Float("amount").
 			SchemaType(map[string]string{
 				dialect.Postgres: "decimal(20,2)",
@@ -48,9 +48,9 @@ func (Withdraw) Fields() []ent.Field {
 
 func (Withdraw) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("merchant", Merchant.Type).
+		edge.From("user", User.Type).
 			Ref("withdraws").
-			Field("merchant_id").
+			Field("user_id").
 			Unique().
 			Required(),
 	}

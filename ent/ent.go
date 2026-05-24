@@ -5,11 +5,12 @@ package ent
 import (
 	"context"
 	"epay/ent/admin"
-	"epay/ent/merchant"
 	"epay/ent/order"
 	"epay/ent/platformconfig"
+	"epay/ent/product"
 	"epay/ent/refund"
 	"epay/ent/settlement"
+	"epay/ent/user"
 	"epay/ent/withdraw"
 	"errors"
 	"fmt"
@@ -80,11 +81,12 @@ func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			admin.Table:          admin.ValidColumn,
-			merchant.Table:       merchant.ValidColumn,
 			order.Table:          order.ValidColumn,
 			platformconfig.Table: platformconfig.ValidColumn,
+			product.Table:        product.ValidColumn,
 			refund.Table:         refund.ValidColumn,
 			settlement.Table:     settlement.ValidColumn,
+			user.Table:           user.ValidColumn,
 			withdraw.Table:       withdraw.ValidColumn,
 		})
 	})

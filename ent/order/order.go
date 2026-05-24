@@ -18,8 +18,10 @@ const (
 	FieldID = "id"
 	// FieldOrderNo holds the string denoting the order_no field in the database.
 	FieldOrderNo = "order_no"
-	// FieldMerchantID holds the string denoting the merchant_id field in the database.
-	FieldMerchantID = "merchant_id"
+	// FieldProductID holds the string denoting the product_id field in the database.
+	FieldProductID = "product_id"
+	// FieldUserID holds the string denoting the user_id field in the database.
+	FieldUserID = "user_id"
 	// FieldType holds the string denoting the type field in the database.
 	FieldType = "type"
 	// FieldAmount holds the string denoting the amount field in the database.
@@ -70,24 +72,34 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// EdgeMerchant holds the string denoting the merchant edge name in mutations.
-	EdgeMerchant = "merchant"
+	// EdgeProduct holds the string denoting the product edge name in mutations.
+	EdgeProduct = "product"
+	// EdgeUser holds the string denoting the user edge name in mutations.
+	EdgeUser = "user"
 	// Table holds the table name of the order in the database.
 	Table = "orders"
-	// MerchantTable is the table that holds the merchant relation/edge.
-	MerchantTable = "orders"
-	// MerchantInverseTable is the table name for the Merchant entity.
-	// It exists in this package in order to avoid circular dependency with the "merchant" package.
-	MerchantInverseTable = "merchants"
-	// MerchantColumn is the table column denoting the merchant relation/edge.
-	MerchantColumn = "merchant_id"
+	// ProductTable is the table that holds the product relation/edge.
+	ProductTable = "orders"
+	// ProductInverseTable is the table name for the Product entity.
+	// It exists in this package in order to avoid circular dependency with the "product" package.
+	ProductInverseTable = "products"
+	// ProductColumn is the table column denoting the product relation/edge.
+	ProductColumn = "product_id"
+	// UserTable is the table that holds the user relation/edge.
+	UserTable = "orders"
+	// UserInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	UserInverseTable = "users"
+	// UserColumn is the table column denoting the user relation/edge.
+	UserColumn = "user_id"
 )
 
 // Columns holds all SQL columns for order fields.
 var Columns = []string{
 	FieldID,
 	FieldOrderNo,
-	FieldMerchantID,
+	FieldProductID,
+	FieldUserID,
 	FieldType,
 	FieldAmount,
 	FieldFeeOfficial,
@@ -241,9 +253,14 @@ func ByOrderNo(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOrderNo, opts...).ToFunc()
 }
 
-// ByMerchantID orders the results by the merchant_id field.
-func ByMerchantID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldMerchantID, opts...).ToFunc()
+// ByProductID orders the results by the product_id field.
+func ByProductID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProductID, opts...).ToFunc()
+}
+
+// ByUserID orders the results by the user_id field.
+func ByUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUserID, opts...).ToFunc()
 }
 
 // ByType orders the results by the type field.
@@ -371,16 +388,30 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
-// ByMerchantField orders the results by merchant field.
-func ByMerchantField(field string, opts ...sql.OrderTermOption) OrderOption {
+// ByProductField orders the results by product field.
+func ByProductField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newMerchantStep(), sql.OrderByField(field, opts...))
+		sqlgraph.OrderByNeighborTerms(s, newProductStep(), sql.OrderByField(field, opts...))
 	}
 }
-func newMerchantStep() *sqlgraph.Step {
+
+// ByUserField orders the results by user field.
+func ByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newUserStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newProductStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(MerchantInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, MerchantTable, MerchantColumn),
+		sqlgraph.To(ProductInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ProductTable, ProductColumn),
+	)
+}
+func newUserStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(UserInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 	)
 }

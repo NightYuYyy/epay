@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"epay/ent"
-	"epay/ent/merchant"
 	"epay/ent/order"
+	"epay/ent/product"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -143,7 +143,7 @@ type merchantRequest struct {
 // They are also the keys included in the signature canonicalization (after
 // removing sign / sign_type / empty values).
 var merchantParamKeys = []string{
-	"pid", "type", "out_trade_no", "notify_url", "return_url",
+	"pid", "type", "out_trade_no", "trade_no", "notify_url", "return_url",
 	"name", "money", "clientip", "device", "method",
 	"param", "sitename", "sub_openid", "sub_appid", "auth_code",
 	"timestamp", "sign", "sign_type",
@@ -207,10 +207,11 @@ var outTradeNoPattern = regexp.MustCompile(`^[a-zA-Z0-9._\-|]+$`)
 // moneyPattern matches positive decimal numbers `/^[0-9.]+$/`.
 var moneyPattern = regexp.MustCompile(`^[0-9.]+$`)
 
-// resolveAndAuthMerchant looks up the merchant by pid and verifies the
-// signature. Returns the merchant on success, or a (code, msg) error suitable
-// for direct response.
-func (h *Handler) resolveAndAuthMerchant(ctx context.Context, r *merchantRequest, apiInit bool) (*ent.Merchant, int, string) {
+// resolveAndAuthMerchant looks up the EasyPay product by pid and verifies the
+// signature. Returns the product on success, or a (code, msg) error suitable
+// for direct response. In EasyPay protocol terminology a "merchant" is the
+// integrating endpoint, which in our model is a Product owned by a User.
+func (h *Handler) resolveAndAuthMerchant(ctx context.Context, r *merchantRequest, apiInit bool) (*ent.Product, int, string) {
 	if r.Pid == "" {
 		return nil, -1, "商户ID不能为空"
 	}
@@ -218,9 +219,9 @@ func (h *Handler) resolveAndAuthMerchant(ctx context.Context, r *merchantRequest
 	if err != nil || pid <= 0 {
 		return nil, -1, "商户ID不能为空"
 	}
-	m, err := h.client.Merchant.Query().Where(merchant.Pid(pid)).First(ctx)
+	m, err := h.client.Product.Query().Where(product.Pid(pid)).First(ctx)
 	if err != nil {
-		log.Printf("[easypay] merchant pid=%d lookup: %v", pid, err)
+		log.Printf("[easypay] product pid=%d lookup: %v", pid, err)
 		return nil, -1, "商户不存在！"
 	}
 	if m.Status != "active" {
@@ -228,7 +229,7 @@ func (h *Handler) resolveAndAuthMerchant(ctx context.Context, r *merchantRequest
 	}
 
 	// RSA / MD5 sign-type policy alignment with rainbow:
-	//   keytype=1 → merchant must use RSA
+	//   keytype=1 → caller must use RSA
 	//   API_INIT mode (s=path) → always force RSA + require timestamp
 	if m.Keytype == 1 && !strings.EqualFold(r.SignType, SignTypeRSA) {
 		return nil, -3, "该商户只能使用RSA签名类型"
@@ -308,12 +309,12 @@ func validateCreateRequest(r *merchantRequest, requireClientIP bool) (int, strin
 //   - If exists & params drift → reject
 //   - Otherwise reuse existing PENDING order
 //   - Else insert new order with full field set
-func (h *Handler) findOrCreateOrder(ctx context.Context, m *ent.Merchant, r *merchantRequest, version int) (*ent.Order, int, string) {
+func (h *Handler) findOrCreateOrder(ctx context.Context, m *ent.Product, r *merchantRequest, version int) (*ent.Order, int, string) {
 	moneyF, _ := strconv.ParseFloat(r.Money, 64)
 	existing, err := h.client.Order.Query().Where(order.OrderNo(r.OutTradeNo)).First(ctx)
 	if err == nil {
 		// Order with the same out_trade_no exists.
-		if existing.MerchantID != m.ID {
+		if existing.ProductID != m.ID {
 			return nil, -1, "该订单号已被其他商户使用"
 		}
 		if time.Since(existing.CreatedAt) < 10*24*time.Hour {
@@ -329,9 +330,6 @@ func (h *Handler) findOrCreateOrder(ctx context.Context, m *ent.Merchant, r *mer
 			}
 			return existing, 0, ""
 		}
-		// Old order: fall through to create a fresh trade_no with the same
-		// out_trade_no will violate the unique constraint; we treat as
-		// already-settled stale state.
 		return nil, -1, fmt.Sprintf("该订单(%s)已过期，请更换订单号重新发起", r.OutTradeNo)
 	}
 
@@ -341,7 +339,8 @@ func (h *Handler) findOrCreateOrder(ctx context.Context, m *ent.Merchant, r *mer
 		return nil, -1, terr.Error()
 	}
 	created, cerr := h.client.Order.Create().
-		SetMerchantID(m.ID).
+		SetProductID(m.ID).
+		SetUserID(m.UserID).
 		SetOrderNo(r.OutTradeNo).
 		SetTradeNo(tradeNo).
 		SetType(ordType).
@@ -404,7 +403,7 @@ func absInt64(v int64) int64 {
 
 // HandleMapi processes POST /mapi.php. Returns JSON payment info.
 func (h *Handler) HandleMapi(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 	defer cancel()
 
 	r := extractMerchantRequest(c)
@@ -447,7 +446,7 @@ func (h *Handler) HandleMapi(c *gin.Context) {
 
 // HandleSubmit processes GET|POST /submit.php. Returns 302 redirect on success.
 func (h *Handler) HandleSubmit(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 	defer cancel()
 
 	r := extractMerchantRequest(c)
@@ -498,7 +497,7 @@ func buildMockPayURL(outTradeNo, payType string) string {
 	return "https://pay.example.com/" + payType + "?order=" + outTradeNo
 }
 
-func (h *Handler) createRealPayment(ctx context.Context, m *ent.Merchant, r *merchantRequest, version int) (*PaymentCreateResponse, int, string) {
+func (h *Handler) createRealPayment(ctx context.Context, m *ent.Product, r *merchantRequest, version int) (*PaymentCreateResponse, int, string) {
 	if h.paymentCreator == nil {
 		return nil, -1, "payment creator is not configured"
 	}

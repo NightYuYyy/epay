@@ -35,16 +35,18 @@ function svgIcon(d: string) {
 
 const ICONS = {
   dashboard: svgIcon('M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z'),
-  merchants: svgIcon('M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM3 21v-2a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v2'),
+  users: svgIcon('M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM3 21v-2a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v2'),
   orders: svgIcon('M3 6h18M3 12h18M3 18h18'),
   withdraws: svgIcon('M12 2v20m6-12-6 6-6-6'),
+  products: svgIcon('M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'),
   config: svgIcon('M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm7-3a7 7 0 0 0-.18-1.55l2.06-1.6-2-3.46-2.42.96a7 7 0 0 0-2.69-1.56L13.5 2h-3l-.27 2.79a7 7 0 0 0-2.69 1.56l-2.42-.96-2 3.46 2.06 1.6A7 7 0 0 0 5 12c0 .53.07 1.05.18 1.55l-2.06 1.6 2 3.46 2.42-.96a7 7 0 0 0 2.69 1.56L10.5 22h3l.27-2.79a7 7 0 0 0 2.69-1.56l2.42.96 2-3.46-2.06-1.6c.11-.5.18-1.02.18-1.55z'),
   logout: svgIcon('M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9'),
 }
 
 const menuOptions: MenuOption[] = [
   { label: '仪表盘', key: '/admin/dashboard', icon: ICONS.dashboard },
-  { label: '商户管理', key: '/admin/merchants', icon: ICONS.merchants },
+  { label: '用户管理', key: '/admin/users', icon: ICONS.users },
+  { label: '产品管理', key: '/admin/products', icon: ICONS.products },
   { label: '订单管理', key: '/admin/orders', icon: ICONS.orders },
   { label: '提现管理', key: '/admin/withdraws', icon: ICONS.withdraws },
   { label: '系统配置', key: '/admin/config', icon: ICONS.config },
@@ -70,7 +72,8 @@ const username = computed(() => auth.user?.username || 'admin')
 const breadcrumb = computed(() => {
   const map: Record<string, string> = {
     '/admin/dashboard': '仪表盘',
-    '/admin/merchants': '商户管理',
+    '/admin/users': '用户管理',
+    '/admin/products': '产品管理',
     '/admin/orders': '订单管理',
     '/admin/withdraws': '提现管理',
     '/admin/config': '系统配置',

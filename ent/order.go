@@ -3,8 +3,9 @@
 package ent
 
 import (
-	"epay/ent/merchant"
 	"epay/ent/order"
+	"epay/ent/product"
+	"epay/ent/user"
 	"fmt"
 	"strings"
 	"time"
@@ -21,8 +22,10 @@ type Order struct {
 	ID uuid.UUID `json:"id,omitempty"`
 	// OrderNo holds the value of the "order_no" field.
 	OrderNo string `json:"order_no,omitempty"`
-	// MerchantID holds the value of the "merchant_id" field.
-	MerchantID uuid.UUID `json:"merchant_id,omitempty"`
+	// ProductID holds the value of the "product_id" field.
+	ProductID uuid.UUID `json:"product_id,omitempty"`
+	// Denormalized from product.user_id for fast user-scope queries
+	UserID uuid.UUID `json:"user_id,omitempty"`
 	// Type holds the value of the "type" field.
 	Type order.Type `json:"type,omitempty"`
 	// Amount holds the value of the "amount" field.
@@ -81,22 +84,35 @@ type Order struct {
 
 // OrderEdges holds the relations/edges for other nodes in the graph.
 type OrderEdges struct {
-	// Merchant holds the value of the merchant edge.
-	Merchant *Merchant `json:"merchant,omitempty"`
+	// Product holds the value of the product edge.
+	Product *Product `json:"product,omitempty"`
+	// User holds the value of the user edge.
+	User *User `json:"user,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
-// MerchantOrErr returns the Merchant value or an error if the edge
+// ProductOrErr returns the Product value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e OrderEdges) MerchantOrErr() (*Merchant, error) {
-	if e.Merchant != nil {
-		return e.Merchant, nil
+func (e OrderEdges) ProductOrErr() (*Product, error) {
+	if e.Product != nil {
+		return e.Product, nil
 	} else if e.loadedTypes[0] {
-		return nil, &NotFoundError{label: merchant.Label}
+		return nil, &NotFoundError{label: product.Label}
 	}
-	return nil, &NotLoadedError{edge: "merchant"}
+	return nil, &NotLoadedError{edge: "product"}
+}
+
+// UserOrErr returns the User value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OrderEdges) UserOrErr() (*User, error) {
+	if e.User != nil {
+		return e.User, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: user.Label}
+	}
+	return nil, &NotLoadedError{edge: "user"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -112,7 +128,7 @@ func (*Order) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case order.FieldPaidAt, order.FieldCreatedAt, order.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case order.FieldID, order.FieldMerchantID:
+		case order.FieldID, order.FieldProductID, order.FieldUserID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -141,11 +157,17 @@ func (_m *Order) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.OrderNo = value.String
 			}
-		case order.FieldMerchantID:
+		case order.FieldProductID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
-				return fmt.Errorf("unexpected type %T for field merchant_id", values[i])
+				return fmt.Errorf("unexpected type %T for field product_id", values[i])
 			} else if value != nil {
-				_m.MerchantID = *value
+				_m.ProductID = *value
+			}
+		case order.FieldUserID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+			} else if value != nil {
+				_m.UserID = *value
 			}
 		case order.FieldType:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -311,9 +333,14 @@ func (_m *Order) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
-// QueryMerchant queries the "merchant" edge of the Order entity.
-func (_m *Order) QueryMerchant() *MerchantQuery {
-	return NewOrderClient(_m.config).QueryMerchant(_m)
+// QueryProduct queries the "product" edge of the Order entity.
+func (_m *Order) QueryProduct() *ProductQuery {
+	return NewOrderClient(_m.config).QueryProduct(_m)
+}
+
+// QueryUser queries the "user" edge of the Order entity.
+func (_m *Order) QueryUser() *UserQuery {
+	return NewOrderClient(_m.config).QueryUser(_m)
 }
 
 // Update returns a builder for updating this Order.
@@ -342,8 +369,11 @@ func (_m *Order) String() string {
 	builder.WriteString("order_no=")
 	builder.WriteString(_m.OrderNo)
 	builder.WriteString(", ")
-	builder.WriteString("merchant_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.MerchantID))
+	builder.WriteString("product_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ProductID))
+	builder.WriteString(", ")
+	builder.WriteString("user_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
 	builder.WriteString(", ")
 	builder.WriteString("type=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Type))

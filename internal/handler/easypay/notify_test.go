@@ -11,9 +11,9 @@ import (
 	"epay/ent/order"
 )
 
-// fakeOrderAndMerchant builds a minimal Order + Merchant for notify tests.
+// fakeOrderAndProduct builds a minimal Order + Product for notify tests.
 // Bypasses the database so the test stays a pure unit test.
-func fakeOrderAndMerchant() (*ent.Order, *ent.Merchant) {
+func fakeOrderAndProduct() (*ent.Order, *ent.Product) {
 	ord := &ent.Order{
 		OrderNo:   "20250101001",
 		TradeNo:   "TR000001",
@@ -24,16 +24,16 @@ func fakeOrderAndMerchant() (*ent.Order, *ent.Merchant) {
 		NotifyURL: "https://shop.example.com/notify",
 		Version:   0,
 	}
-	merch := &ent.Merchant{
+	prod := &ent.Product{
 		Pid:  1001,
 		Pkey: "secret-key",
 	}
-	return ord, merch
+	return ord, prod
 }
 
 func TestBuildNotifyURL_MD5(t *testing.T) {
-	ord, merch := fakeOrderAndMerchant()
-	raw, err := BuildNotifyURL(ord, merch, "")
+	ord, prod := fakeOrderAndProduct()
+	raw, err := BuildNotifyURL(ord, prod, "")
 	if err != nil {
 		t.Fatalf("BuildNotifyURL: %v", err)
 	}
@@ -45,7 +45,6 @@ func TestBuildNotifyURL_MD5(t *testing.T) {
 		t.Fatalf("parse url: %v", err)
 	}
 	params := q.Query()
-	// Required field set
 	for _, k := range []string{"pid", "trade_no", "out_trade_no", "type",
 		"name", "money", "trade_status", "sign", "sign_type"} {
 		if params.Get(k) == "" {
@@ -61,9 +60,6 @@ func TestBuildNotifyURL_MD5(t *testing.T) {
 	if params.Get("param") != "biz=xyz" {
 		t.Errorf("expected param=biz=xyz, got %s", params.Get("param"))
 	}
-	// Recompute the signature without using the helper to ensure the algorithm
-	// path is invariant to URL encoding (rainbow's verifier uses the decoded
-	// values from $_GET).
 	sigParams := map[string]string{}
 	for k := range params {
 		if k == "sign" || k == "sign_type" {
@@ -71,16 +67,16 @@ func TestBuildNotifyURL_MD5(t *testing.T) {
 		}
 		sigParams[k] = params.Get(k)
 	}
-	if !VerifyMD5(sigParams, merch.Pkey, params.Get("sign")) {
-		t.Errorf("notify signature does not verify with merchant pkey")
+	if !VerifyMD5(sigParams, prod.Pkey, params.Get("sign")) {
+		t.Errorf("notify signature does not verify with product pkey")
 	}
 }
 
 func TestBuildNotifyURL_RSA(t *testing.T) {
 	priv, pub := mustGenerateRSAKeyPair(t)
-	ord, merch := fakeOrderAndMerchant()
+	ord, prod := fakeOrderAndProduct()
 	ord.Version = 1
-	raw, err := BuildNotifyURL(ord, merch, priv)
+	raw, err := BuildNotifyURL(ord, prod, priv)
 	if err != nil {
 		t.Fatalf("BuildNotifyURL: %v", err)
 	}
@@ -92,7 +88,6 @@ func TestBuildNotifyURL_RSA(t *testing.T) {
 	if params.Get("timestamp") == "" {
 		t.Fatal("RSA notify must include timestamp")
 	}
-	// Verify with the published platform public key
 	sigParams := map[string]string{}
 	for k := range params {
 		if k == "sign" || k == "sign_type" {
@@ -103,7 +98,6 @@ func TestBuildNotifyURL_RSA(t *testing.T) {
 	if err := VerifyRSA(sigParams, pub, params.Get("sign")); err != nil {
 		t.Errorf("RSA notify signature did not verify: %v", err)
 	}
-	// Timestamp must be within 5 seconds of "now"
 	ts, _ := strconv.ParseInt(params.Get("timestamp"), 10, 64)
 	if drift := time.Now().Unix() - ts; drift < -2 || drift > 2 {
 		t.Errorf("timestamp drift too large: %ds", drift)
@@ -111,11 +105,11 @@ func TestBuildNotifyURL_RSA(t *testing.T) {
 }
 
 func TestBuildNotifyURL_OptionalFieldsOmittedWhenEmpty(t *testing.T) {
-	ord, merch := fakeOrderAndMerchant()
+	ord, prod := fakeOrderAndProduct()
 	ord.Param = ""
 	ord.APITradeNo = ""
 	ord.Buyer = ""
-	raw, err := BuildNotifyURL(ord, merch, "")
+	raw, err := BuildNotifyURL(ord, prod, "")
 	if err != nil {
 		t.Fatalf("BuildNotifyURL: %v", err)
 	}
@@ -129,9 +123,9 @@ func TestBuildNotifyURL_OptionalFieldsOmittedWhenEmpty(t *testing.T) {
 }
 
 func TestBuildNotifyURL_AppendsToExistingQueryString(t *testing.T) {
-	ord, merch := fakeOrderAndMerchant()
+	ord, prod := fakeOrderAndProduct()
 	ord.NotifyURL = "https://shop.example.com/notify?fixed=1"
-	raw, err := BuildNotifyURL(ord, merch, "")
+	raw, err := BuildNotifyURL(ord, prod, "")
 	if err != nil {
 		t.Fatalf("BuildNotifyURL: %v", err)
 	}

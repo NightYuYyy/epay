@@ -3,7 +3,8 @@
 package ent
 
 import (
-	"epay/ent/merchant"
+	"epay/ent/product"
+	"epay/ent/user"
 	"fmt"
 	"strings"
 	"time"
@@ -13,28 +14,32 @@ import (
 	"github.com/google/uuid"
 )
 
-// Merchant is the model entity for the Merchant schema.
-type Merchant struct {
+// Product is the model entity for the Product schema.
+type Product struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
-	// Pid holds the value of the "pid" field.
+	// UserID holds the value of the "user_id" field.
+	UserID uuid.UUID `json:"user_id,omitempty"`
+	// Public merchant id used in EasyPay protocol
 	Pid int `json:"pid,omitempty"`
-	// Pkey holds the value of the "pkey" field.
-	Pkey string `json:"pkey,omitempty"`
-	// PasswordHash holds the value of the "password_hash" field.
-	PasswordHash string `json:"password_hash,omitempty"`
-	// Name holds the value of the "name" field.
+	// API signing key — MD5 secret for the EasyPay protocol
+	Pkey string `json:"-"`
+	// Product/project display name
 	Name string `json:"name,omitempty"`
-	// FeeRate holds the value of the "fee_rate" field.
-	FeeRate float64 `json:"fee_rate,omitempty"`
-	// Status holds the value of the "status" field.
-	Status merchant.Status `json:"status,omitempty"`
-	// NotifyURL holds the value of the "notify_url" field.
+	// Description holds the value of the "description" field.
+	Description string `json:"description,omitempty"`
+	// Default merchant async-notify URL for this product
 	NotifyURL string `json:"notify_url,omitempty"`
+	// Default merchant sync return URL for this product
+	ReturnURL string `json:"return_url,omitempty"`
+	// Optional override of user.fee_rate
+	FeeRate *float64 `json:"fee_rate,omitempty"`
+	// Status holds the value of the "status" field.
+	Status product.Status `json:"status,omitempty"`
 	// 0 = MD5, 1 = RSA (forces RSA sign_type)
 	Keytype int `json:"keytype,omitempty"`
-	// Merchant RSA public key (PEM or base64)
+	// Product RSA public key (PEM or base64) when keytype=1
 	PublicKey string `json:"public_key,omitempty"`
 	// RefundEnabled holds the value of the "refund_enabled" field.
 	RefundEnabled bool `json:"refund_enabled,omitempty"`
@@ -47,78 +52,58 @@ type Merchant struct {
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the MerchantQuery when eager-loading is set.
-	Edges        MerchantEdges `json:"edges"`
+	// The values are being populated by the ProductQuery when eager-loading is set.
+	Edges        ProductEdges `json:"edges"`
 	selectValues sql.SelectValues
 }
 
-// MerchantEdges holds the relations/edges for other nodes in the graph.
-type MerchantEdges struct {
+// ProductEdges holds the relations/edges for other nodes in the graph.
+type ProductEdges struct {
+	// User holds the value of the user edge.
+	User *User `json:"user,omitempty"`
 	// Orders holds the value of the orders edge.
 	Orders []*Order `json:"orders,omitempty"`
-	// Settlements holds the value of the settlements edge.
-	Settlements []*Settlement `json:"settlements,omitempty"`
-	// Withdraws holds the value of the withdraws edge.
-	Withdraws []*Withdraw `json:"withdraws,omitempty"`
-	// Refunds holds the value of the refunds edge.
-	Refunds []*Refund `json:"refunds,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [2]bool
+}
+
+// UserOrErr returns the User value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ProductEdges) UserOrErr() (*User, error) {
+	if e.User != nil {
+		return e.User, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: user.Label}
+	}
+	return nil, &NotLoadedError{edge: "user"}
 }
 
 // OrdersOrErr returns the Orders value or an error if the edge
 // was not loaded in eager-loading.
-func (e MerchantEdges) OrdersOrErr() ([]*Order, error) {
-	if e.loadedTypes[0] {
+func (e ProductEdges) OrdersOrErr() ([]*Order, error) {
+	if e.loadedTypes[1] {
 		return e.Orders, nil
 	}
 	return nil, &NotLoadedError{edge: "orders"}
 }
 
-// SettlementsOrErr returns the Settlements value or an error if the edge
-// was not loaded in eager-loading.
-func (e MerchantEdges) SettlementsOrErr() ([]*Settlement, error) {
-	if e.loadedTypes[1] {
-		return e.Settlements, nil
-	}
-	return nil, &NotLoadedError{edge: "settlements"}
-}
-
-// WithdrawsOrErr returns the Withdraws value or an error if the edge
-// was not loaded in eager-loading.
-func (e MerchantEdges) WithdrawsOrErr() ([]*Withdraw, error) {
-	if e.loadedTypes[2] {
-		return e.Withdraws, nil
-	}
-	return nil, &NotLoadedError{edge: "withdraws"}
-}
-
-// RefundsOrErr returns the Refunds value or an error if the edge
-// was not loaded in eager-loading.
-func (e MerchantEdges) RefundsOrErr() ([]*Refund, error) {
-	if e.loadedTypes[3] {
-		return e.Refunds, nil
-	}
-	return nil, &NotLoadedError{edge: "refunds"}
-}
-
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Merchant) scanValues(columns []string) ([]any, error) {
+func (*Product) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case merchant.FieldRefundEnabled, merchant.FieldTransferEnabled:
+		case product.FieldRefundEnabled, product.FieldTransferEnabled:
 			values[i] = new(sql.NullBool)
-		case merchant.FieldFeeRate:
+		case product.FieldFeeRate:
 			values[i] = new(sql.NullFloat64)
-		case merchant.FieldPid, merchant.FieldKeytype, merchant.FieldMode:
+		case product.FieldPid, product.FieldKeytype, product.FieldMode:
 			values[i] = new(sql.NullInt64)
-		case merchant.FieldPkey, merchant.FieldPasswordHash, merchant.FieldName, merchant.FieldStatus, merchant.FieldNotifyURL, merchant.FieldPublicKey:
+		case product.FieldPkey, product.FieldName, product.FieldDescription, product.FieldNotifyURL, product.FieldReturnURL, product.FieldStatus, product.FieldPublicKey:
 			values[i] = new(sql.NullString)
-		case merchant.FieldCreatedAt, merchant.FieldUpdatedAt:
+		case product.FieldCreatedAt, product.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case merchant.FieldID:
+		case product.FieldID, product.FieldUserID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -128,98 +113,111 @@ func (*Merchant) scanValues(columns []string) ([]any, error) {
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the Merchant fields.
-func (_m *Merchant) assignValues(columns []string, values []any) error {
+// to the Product fields.
+func (_m *Product) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
 	for i := range columns {
 		switch columns[i] {
-		case merchant.FieldID:
+		case product.FieldID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				_m.ID = *value
 			}
-		case merchant.FieldPid:
+		case product.FieldUserID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+			} else if value != nil {
+				_m.UserID = *value
+			}
+		case product.FieldPid:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field pid", values[i])
 			} else if value.Valid {
 				_m.Pid = int(value.Int64)
 			}
-		case merchant.FieldPkey:
+		case product.FieldPkey:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field pkey", values[i])
 			} else if value.Valid {
 				_m.Pkey = value.String
 			}
-		case merchant.FieldPasswordHash:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field password_hash", values[i])
-			} else if value.Valid {
-				_m.PasswordHash = value.String
-			}
-		case merchant.FieldName:
+		case product.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				_m.Name = value.String
 			}
-		case merchant.FieldFeeRate:
-			if value, ok := values[i].(*sql.NullFloat64); !ok {
-				return fmt.Errorf("unexpected type %T for field fee_rate", values[i])
-			} else if value.Valid {
-				_m.FeeRate = value.Float64
-			}
-		case merchant.FieldStatus:
+		case product.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field status", values[i])
+				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
-				_m.Status = merchant.Status(value.String)
+				_m.Description = value.String
 			}
-		case merchant.FieldNotifyURL:
+		case product.FieldNotifyURL:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field notify_url", values[i])
 			} else if value.Valid {
 				_m.NotifyURL = value.String
 			}
-		case merchant.FieldKeytype:
+		case product.FieldReturnURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field return_url", values[i])
+			} else if value.Valid {
+				_m.ReturnURL = value.String
+			}
+		case product.FieldFeeRate:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field fee_rate", values[i])
+			} else if value.Valid {
+				_m.FeeRate = new(float64)
+				*_m.FeeRate = value.Float64
+			}
+		case product.FieldStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status", values[i])
+			} else if value.Valid {
+				_m.Status = product.Status(value.String)
+			}
+		case product.FieldKeytype:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field keytype", values[i])
 			} else if value.Valid {
 				_m.Keytype = int(value.Int64)
 			}
-		case merchant.FieldPublicKey:
+		case product.FieldPublicKey:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field public_key", values[i])
 			} else if value.Valid {
 				_m.PublicKey = value.String
 			}
-		case merchant.FieldRefundEnabled:
+		case product.FieldRefundEnabled:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field refund_enabled", values[i])
 			} else if value.Valid {
 				_m.RefundEnabled = value.Bool
 			}
-		case merchant.FieldTransferEnabled:
+		case product.FieldTransferEnabled:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field transfer_enabled", values[i])
 			} else if value.Valid {
 				_m.TransferEnabled = value.Bool
 			}
-		case merchant.FieldMode:
+		case product.FieldMode:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field mode", values[i])
 			} else if value.Valid {
 				_m.Mode = int(value.Int64)
 			}
-		case merchant.FieldCreatedAt:
+		case product.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				_m.CreatedAt = value.Time
 			}
-		case merchant.FieldUpdatedAt:
+		case product.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
@@ -232,75 +230,72 @@ func (_m *Merchant) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// Value returns the ent.Value that was dynamically selected and assigned to the Merchant.
+// Value returns the ent.Value that was dynamically selected and assigned to the Product.
 // This includes values selected through modifiers, order, etc.
-func (_m *Merchant) Value(name string) (ent.Value, error) {
+func (_m *Product) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
-// QueryOrders queries the "orders" edge of the Merchant entity.
-func (_m *Merchant) QueryOrders() *OrderQuery {
-	return NewMerchantClient(_m.config).QueryOrders(_m)
+// QueryUser queries the "user" edge of the Product entity.
+func (_m *Product) QueryUser() *UserQuery {
+	return NewProductClient(_m.config).QueryUser(_m)
 }
 
-// QuerySettlements queries the "settlements" edge of the Merchant entity.
-func (_m *Merchant) QuerySettlements() *SettlementQuery {
-	return NewMerchantClient(_m.config).QuerySettlements(_m)
+// QueryOrders queries the "orders" edge of the Product entity.
+func (_m *Product) QueryOrders() *OrderQuery {
+	return NewProductClient(_m.config).QueryOrders(_m)
 }
 
-// QueryWithdraws queries the "withdraws" edge of the Merchant entity.
-func (_m *Merchant) QueryWithdraws() *WithdrawQuery {
-	return NewMerchantClient(_m.config).QueryWithdraws(_m)
-}
-
-// QueryRefunds queries the "refunds" edge of the Merchant entity.
-func (_m *Merchant) QueryRefunds() *RefundQuery {
-	return NewMerchantClient(_m.config).QueryRefunds(_m)
-}
-
-// Update returns a builder for updating this Merchant.
-// Note that you need to call Merchant.Unwrap() before calling this method if this Merchant
+// Update returns a builder for updating this Product.
+// Note that you need to call Product.Unwrap() before calling this method if this Product
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *Merchant) Update() *MerchantUpdateOne {
-	return NewMerchantClient(_m.config).UpdateOne(_m)
+func (_m *Product) Update() *ProductUpdateOne {
+	return NewProductClient(_m.config).UpdateOne(_m)
 }
 
-// Unwrap unwraps the Merchant entity that was returned from a transaction after it was closed,
+// Unwrap unwraps the Product entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *Merchant) Unwrap() *Merchant {
+func (_m *Product) Unwrap() *Product {
 	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
-		panic("ent: Merchant is not a transactional entity")
+		panic("ent: Product is not a transactional entity")
 	}
 	_m.config.driver = _tx.drv
 	return _m
 }
 
 // String implements the fmt.Stringer.
-func (_m *Merchant) String() string {
+func (_m *Product) String() string {
 	var builder strings.Builder
-	builder.WriteString("Merchant(")
+	builder.WriteString("Product(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString("user_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
+	builder.WriteString(", ")
 	builder.WriteString("pid=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Pid))
 	builder.WriteString(", ")
-	builder.WriteString("pkey=")
-	builder.WriteString(_m.Pkey)
-	builder.WriteString(", ")
-	builder.WriteString("password_hash=")
-	builder.WriteString(_m.PasswordHash)
+	builder.WriteString("pkey=<sensitive>")
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
-	builder.WriteString("fee_rate=")
-	builder.WriteString(fmt.Sprintf("%v", _m.FeeRate))
-	builder.WriteString(", ")
-	builder.WriteString("status=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Status))
+	builder.WriteString("description=")
+	builder.WriteString(_m.Description)
 	builder.WriteString(", ")
 	builder.WriteString("notify_url=")
 	builder.WriteString(_m.NotifyURL)
+	builder.WriteString(", ")
+	builder.WriteString("return_url=")
+	builder.WriteString(_m.ReturnURL)
+	builder.WriteString(", ")
+	if v := _m.FeeRate; v != nil {
+		builder.WriteString("fee_rate=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("status=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Status))
 	builder.WriteString(", ")
 	builder.WriteString("keytype=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Keytype))
@@ -326,5 +321,5 @@ func (_m *Merchant) String() string {
 	return builder.String()
 }
 
-// Merchants is a parsable slice of Merchant.
-type Merchants []*Merchant
+// Products is a parsable slice of Product.
+type Products []*Product

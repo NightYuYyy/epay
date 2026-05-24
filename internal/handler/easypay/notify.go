@@ -45,7 +45,7 @@ type NotifyConfig struct {
 //
 // The merchant argument provides Pid + Pkey + (optionally) the merchant's
 // notify_url default; the order's NotifyURL takes precedence.
-func BuildNotifyURL(ord *ent.Order, merch *ent.Merchant, platformPrivKey string) (string, error) {
+func BuildNotifyURL(ord *ent.Order, prod *ent.Product, platformPrivKey string) (string, error) {
 	if ord == nil {
 		return "", fmt.Errorf("nil order")
 	}
@@ -53,12 +53,12 @@ func BuildNotifyURL(ord *ent.Order, merch *ent.Merchant, platformPrivKey string)
 	if notifyURL == "" {
 		return "", fmt.Errorf("notify_url empty")
 	}
-	if merch == nil {
-		return "", fmt.Errorf("nil merchant")
+	if prod == nil {
+		return "", fmt.Errorf("nil product")
 	}
 
 	params := map[string]string{
-		"pid":          strconv.Itoa(merch.Pid),
+		"pid":          strconv.Itoa(prod.Pid),
 		"trade_no":     ord.TradeNo,
 		"out_trade_no": ord.OrderNo,
 		"type":         string(ord.Type),
@@ -85,7 +85,7 @@ func BuildNotifyURL(ord *ent.Order, merch *ent.Merchant, platformPrivKey string)
 		}
 		params["sign"] = sign
 	} else {
-		params["sign"] = SignMD5(params, merch.Pkey)
+		params["sign"] = SignMD5(params, prod.Pkey)
 		params["sign_type"] = SignTypeMD5
 	}
 

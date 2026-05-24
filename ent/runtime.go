@@ -4,12 +4,13 @@ package ent
 
 import (
 	"epay/ent/admin"
-	"epay/ent/merchant"
 	"epay/ent/order"
 	"epay/ent/platformconfig"
+	"epay/ent/product"
 	"epay/ent/refund"
 	"epay/ent/schema"
 	"epay/ent/settlement"
+	"epay/ent/user"
 	"epay/ent/withdraw"
 	"time"
 
@@ -44,62 +45,6 @@ func init() {
 	adminDescID := adminFields[0].Descriptor()
 	// admin.DefaultID holds the default value on creation for the id field.
 	admin.DefaultID = adminDescID.Default.(func() uuid.UUID)
-	merchantFields := schema.Merchant{}.Fields()
-	_ = merchantFields
-	// merchantDescPkey is the schema descriptor for pkey field.
-	merchantDescPkey := merchantFields[2].Descriptor()
-	// merchant.PkeyValidator is a validator for the "pkey" field. It is called by the builders before save.
-	merchant.PkeyValidator = merchantDescPkey.Validators[0].(func(string) error)
-	// merchantDescPasswordHash is the schema descriptor for password_hash field.
-	merchantDescPasswordHash := merchantFields[3].Descriptor()
-	// merchant.DefaultPasswordHash holds the default value on creation for the password_hash field.
-	merchant.DefaultPasswordHash = merchantDescPasswordHash.Default.(string)
-	// merchantDescName is the schema descriptor for name field.
-	merchantDescName := merchantFields[4].Descriptor()
-	// merchant.NameValidator is a validator for the "name" field. It is called by the builders before save.
-	merchant.NameValidator = merchantDescName.Validators[0].(func(string) error)
-	// merchantDescFeeRate is the schema descriptor for fee_rate field.
-	merchantDescFeeRate := merchantFields[5].Descriptor()
-	// merchant.DefaultFeeRate holds the default value on creation for the fee_rate field.
-	merchant.DefaultFeeRate = merchantDescFeeRate.Default.(float64)
-	// merchantDescNotifyURL is the schema descriptor for notify_url field.
-	merchantDescNotifyURL := merchantFields[7].Descriptor()
-	// merchant.DefaultNotifyURL holds the default value on creation for the notify_url field.
-	merchant.DefaultNotifyURL = merchantDescNotifyURL.Default.(string)
-	// merchantDescKeytype is the schema descriptor for keytype field.
-	merchantDescKeytype := merchantFields[8].Descriptor()
-	// merchant.DefaultKeytype holds the default value on creation for the keytype field.
-	merchant.DefaultKeytype = merchantDescKeytype.Default.(int)
-	// merchantDescPublicKey is the schema descriptor for public_key field.
-	merchantDescPublicKey := merchantFields[9].Descriptor()
-	// merchant.DefaultPublicKey holds the default value on creation for the public_key field.
-	merchant.DefaultPublicKey = merchantDescPublicKey.Default.(string)
-	// merchantDescRefundEnabled is the schema descriptor for refund_enabled field.
-	merchantDescRefundEnabled := merchantFields[10].Descriptor()
-	// merchant.DefaultRefundEnabled holds the default value on creation for the refund_enabled field.
-	merchant.DefaultRefundEnabled = merchantDescRefundEnabled.Default.(bool)
-	// merchantDescTransferEnabled is the schema descriptor for transfer_enabled field.
-	merchantDescTransferEnabled := merchantFields[11].Descriptor()
-	// merchant.DefaultTransferEnabled holds the default value on creation for the transfer_enabled field.
-	merchant.DefaultTransferEnabled = merchantDescTransferEnabled.Default.(bool)
-	// merchantDescMode is the schema descriptor for mode field.
-	merchantDescMode := merchantFields[12].Descriptor()
-	// merchant.DefaultMode holds the default value on creation for the mode field.
-	merchant.DefaultMode = merchantDescMode.Default.(int)
-	// merchantDescCreatedAt is the schema descriptor for created_at field.
-	merchantDescCreatedAt := merchantFields[13].Descriptor()
-	// merchant.DefaultCreatedAt holds the default value on creation for the created_at field.
-	merchant.DefaultCreatedAt = merchantDescCreatedAt.Default.(func() time.Time)
-	// merchantDescUpdatedAt is the schema descriptor for updated_at field.
-	merchantDescUpdatedAt := merchantFields[14].Descriptor()
-	// merchant.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	merchant.DefaultUpdatedAt = merchantDescUpdatedAt.Default.(func() time.Time)
-	// merchant.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	merchant.UpdateDefaultUpdatedAt = merchantDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// merchantDescID is the schema descriptor for id field.
-	merchantDescID := merchantFields[0].Descriptor()
-	// merchant.DefaultID holds the default value on creation for the id field.
-	merchant.DefaultID = merchantDescID.Default.(func() uuid.UUID)
 	orderFields := schema.Order{}.Fields()
 	_ = orderFields
 	// orderDescOrderNo is the schema descriptor for order_no field.
@@ -107,87 +52,87 @@ func init() {
 	// order.OrderNoValidator is a validator for the "order_no" field. It is called by the builders before save.
 	order.OrderNoValidator = orderDescOrderNo.Validators[0].(func(string) error)
 	// orderDescFeeOfficial is the schema descriptor for fee_official field.
-	orderDescFeeOfficial := orderFields[5].Descriptor()
+	orderDescFeeOfficial := orderFields[6].Descriptor()
 	// order.DefaultFeeOfficial holds the default value on creation for the fee_official field.
 	order.DefaultFeeOfficial = orderDescFeeOfficial.Default.(float64)
 	// orderDescFeePlatform is the schema descriptor for fee_platform field.
-	orderDescFeePlatform := orderFields[6].Descriptor()
+	orderDescFeePlatform := orderFields[7].Descriptor()
 	// order.DefaultFeePlatform holds the default value on creation for the fee_platform field.
 	order.DefaultFeePlatform = orderDescFeePlatform.Default.(float64)
 	// orderDescNetAmount is the schema descriptor for net_amount field.
-	orderDescNetAmount := orderFields[7].Descriptor()
+	orderDescNetAmount := orderFields[8].Descriptor()
 	// order.DefaultNetAmount holds the default value on creation for the net_amount field.
 	order.DefaultNetAmount = orderDescNetAmount.Default.(float64)
 	// orderDescTradeNo is the schema descriptor for trade_no field.
-	orderDescTradeNo := orderFields[8].Descriptor()
+	orderDescTradeNo := orderFields[9].Descriptor()
 	// order.DefaultTradeNo holds the default value on creation for the trade_no field.
 	order.DefaultTradeNo = orderDescTradeNo.Default.(string)
 	// orderDescNotifyURL is the schema descriptor for notify_url field.
-	orderDescNotifyURL := orderFields[10].Descriptor()
+	orderDescNotifyURL := orderFields[11].Descriptor()
 	// order.NotifyURLValidator is a validator for the "notify_url" field. It is called by the builders before save.
 	order.NotifyURLValidator = orderDescNotifyURL.Validators[0].(func(string) error)
 	// orderDescProviderSnapshot is the schema descriptor for provider_snapshot field.
-	orderDescProviderSnapshot := orderFields[11].Descriptor()
+	orderDescProviderSnapshot := orderFields[12].Descriptor()
 	// order.DefaultProviderSnapshot holds the default value on creation for the provider_snapshot field.
 	order.DefaultProviderSnapshot = orderDescProviderSnapshot.Default.(string)
 	// orderDescAPITradeNo is the schema descriptor for api_trade_no field.
-	orderDescAPITradeNo := orderFields[13].Descriptor()
+	orderDescAPITradeNo := orderFields[14].Descriptor()
 	// order.DefaultAPITradeNo holds the default value on creation for the api_trade_no field.
 	order.DefaultAPITradeNo = orderDescAPITradeNo.Default.(string)
 	// orderDescBuyer is the schema descriptor for buyer field.
-	orderDescBuyer := orderFields[14].Descriptor()
+	orderDescBuyer := orderFields[15].Descriptor()
 	// order.DefaultBuyer holds the default value on creation for the buyer field.
 	order.DefaultBuyer = orderDescBuyer.Default.(string)
 	// orderDescParam is the schema descriptor for param field.
-	orderDescParam := orderFields[15].Descriptor()
+	orderDescParam := orderFields[16].Descriptor()
 	// order.DefaultParam holds the default value on creation for the param field.
 	order.DefaultParam = orderDescParam.Default.(string)
 	// orderDescName is the schema descriptor for name field.
-	orderDescName := orderFields[16].Descriptor()
+	orderDescName := orderFields[17].Descriptor()
 	// order.DefaultName holds the default value on creation for the name field.
 	order.DefaultName = orderDescName.Default.(string)
 	// orderDescClientip is the schema descriptor for clientip field.
-	orderDescClientip := orderFields[17].Descriptor()
+	orderDescClientip := orderFields[18].Descriptor()
 	// order.DefaultClientip holds the default value on creation for the clientip field.
 	order.DefaultClientip = orderDescClientip.Default.(string)
 	// orderDescReturnURL is the schema descriptor for return_url field.
-	orderDescReturnURL := orderFields[18].Descriptor()
+	orderDescReturnURL := orderFields[19].Descriptor()
 	// order.DefaultReturnURL holds the default value on creation for the return_url field.
 	order.DefaultReturnURL = orderDescReturnURL.Default.(string)
 	// orderDescDevice is the schema descriptor for device field.
-	orderDescDevice := orderFields[19].Descriptor()
+	orderDescDevice := orderFields[20].Descriptor()
 	// order.DefaultDevice holds the default value on creation for the device field.
 	order.DefaultDevice = orderDescDevice.Default.(string)
 	// orderDescMethod is the schema descriptor for method field.
-	orderDescMethod := orderFields[20].Descriptor()
+	orderDescMethod := orderFields[21].Descriptor()
 	// order.DefaultMethod holds the default value on creation for the method field.
 	order.DefaultMethod = orderDescMethod.Default.(string)
 	// orderDescSubOpenid is the schema descriptor for sub_openid field.
-	orderDescSubOpenid := orderFields[21].Descriptor()
+	orderDescSubOpenid := orderFields[22].Descriptor()
 	// order.DefaultSubOpenid holds the default value on creation for the sub_openid field.
 	order.DefaultSubOpenid = orderDescSubOpenid.Default.(string)
 	// orderDescSubAppid is the schema descriptor for sub_appid field.
-	orderDescSubAppid := orderFields[22].Descriptor()
+	orderDescSubAppid := orderFields[23].Descriptor()
 	// order.DefaultSubAppid holds the default value on creation for the sub_appid field.
 	order.DefaultSubAppid = orderDescSubAppid.Default.(string)
 	// orderDescAuthCode is the schema descriptor for auth_code field.
-	orderDescAuthCode := orderFields[23].Descriptor()
+	orderDescAuthCode := orderFields[24].Descriptor()
 	// order.DefaultAuthCode holds the default value on creation for the auth_code field.
 	order.DefaultAuthCode = orderDescAuthCode.Default.(string)
 	// orderDescRefundMoney is the schema descriptor for refund_money field.
-	orderDescRefundMoney := orderFields[24].Descriptor()
+	orderDescRefundMoney := orderFields[25].Descriptor()
 	// order.DefaultRefundMoney holds the default value on creation for the refund_money field.
 	order.DefaultRefundMoney = orderDescRefundMoney.Default.(float64)
 	// orderDescVersion is the schema descriptor for version field.
-	orderDescVersion := orderFields[25].Descriptor()
+	orderDescVersion := orderFields[26].Descriptor()
 	// order.DefaultVersion holds the default value on creation for the version field.
 	order.DefaultVersion = orderDescVersion.Default.(int)
 	// orderDescCreatedAt is the schema descriptor for created_at field.
-	orderDescCreatedAt := orderFields[26].Descriptor()
+	orderDescCreatedAt := orderFields[27].Descriptor()
 	// order.DefaultCreatedAt holds the default value on creation for the created_at field.
 	order.DefaultCreatedAt = orderDescCreatedAt.Default.(func() time.Time)
 	// orderDescUpdatedAt is the schema descriptor for updated_at field.
-	orderDescUpdatedAt := orderFields[27].Descriptor()
+	orderDescUpdatedAt := orderFields[28].Descriptor()
 	// order.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	order.DefaultUpdatedAt = orderDescUpdatedAt.Default.(func() time.Time)
 	// order.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -224,6 +169,62 @@ func init() {
 	platformconfigDescID := platformconfigFields[0].Descriptor()
 	// platformconfig.DefaultID holds the default value on creation for the id field.
 	platformconfig.DefaultID = platformconfigDescID.Default.(func() uuid.UUID)
+	productFields := schema.Product{}.Fields()
+	_ = productFields
+	// productDescPkey is the schema descriptor for pkey field.
+	productDescPkey := productFields[3].Descriptor()
+	// product.PkeyValidator is a validator for the "pkey" field. It is called by the builders before save.
+	product.PkeyValidator = productDescPkey.Validators[0].(func(string) error)
+	// productDescName is the schema descriptor for name field.
+	productDescName := productFields[4].Descriptor()
+	// product.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	product.NameValidator = productDescName.Validators[0].(func(string) error)
+	// productDescDescription is the schema descriptor for description field.
+	productDescDescription := productFields[5].Descriptor()
+	// product.DefaultDescription holds the default value on creation for the description field.
+	product.DefaultDescription = productDescDescription.Default.(string)
+	// productDescNotifyURL is the schema descriptor for notify_url field.
+	productDescNotifyURL := productFields[6].Descriptor()
+	// product.DefaultNotifyURL holds the default value on creation for the notify_url field.
+	product.DefaultNotifyURL = productDescNotifyURL.Default.(string)
+	// productDescReturnURL is the schema descriptor for return_url field.
+	productDescReturnURL := productFields[7].Descriptor()
+	// product.DefaultReturnURL holds the default value on creation for the return_url field.
+	product.DefaultReturnURL = productDescReturnURL.Default.(string)
+	// productDescKeytype is the schema descriptor for keytype field.
+	productDescKeytype := productFields[10].Descriptor()
+	// product.DefaultKeytype holds the default value on creation for the keytype field.
+	product.DefaultKeytype = productDescKeytype.Default.(int)
+	// productDescPublicKey is the schema descriptor for public_key field.
+	productDescPublicKey := productFields[11].Descriptor()
+	// product.DefaultPublicKey holds the default value on creation for the public_key field.
+	product.DefaultPublicKey = productDescPublicKey.Default.(string)
+	// productDescRefundEnabled is the schema descriptor for refund_enabled field.
+	productDescRefundEnabled := productFields[12].Descriptor()
+	// product.DefaultRefundEnabled holds the default value on creation for the refund_enabled field.
+	product.DefaultRefundEnabled = productDescRefundEnabled.Default.(bool)
+	// productDescTransferEnabled is the schema descriptor for transfer_enabled field.
+	productDescTransferEnabled := productFields[13].Descriptor()
+	// product.DefaultTransferEnabled holds the default value on creation for the transfer_enabled field.
+	product.DefaultTransferEnabled = productDescTransferEnabled.Default.(bool)
+	// productDescMode is the schema descriptor for mode field.
+	productDescMode := productFields[14].Descriptor()
+	// product.DefaultMode holds the default value on creation for the mode field.
+	product.DefaultMode = productDescMode.Default.(int)
+	// productDescCreatedAt is the schema descriptor for created_at field.
+	productDescCreatedAt := productFields[15].Descriptor()
+	// product.DefaultCreatedAt holds the default value on creation for the created_at field.
+	product.DefaultCreatedAt = productDescCreatedAt.Default.(func() time.Time)
+	// productDescUpdatedAt is the schema descriptor for updated_at field.
+	productDescUpdatedAt := productFields[16].Descriptor()
+	// product.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	product.DefaultUpdatedAt = productDescUpdatedAt.Default.(func() time.Time)
+	// product.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	product.UpdateDefaultUpdatedAt = productDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// productDescID is the schema descriptor for id field.
+	productDescID := productFields[0].Descriptor()
+	// product.DefaultID holds the default value on creation for the id field.
+	product.DefaultID = productDescID.Default.(func() uuid.UUID)
 	refundFields := schema.Refund{}.Fields()
 	_ = refundFields
 	// refundDescRefundNo is the schema descriptor for refund_no field.
@@ -292,6 +293,38 @@ func init() {
 	settlementDescID := settlementFields[0].Descriptor()
 	// settlement.DefaultID holds the default value on creation for the id field.
 	settlement.DefaultID = settlementDescID.Default.(func() uuid.UUID)
+	userFields := schema.User{}.Fields()
+	_ = userFields
+	// userDescEmail is the schema descriptor for email field.
+	userDescEmail := userFields[1].Descriptor()
+	// user.EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	user.EmailValidator = userDescEmail.Validators[0].(func(string) error)
+	// userDescPasswordHash is the schema descriptor for password_hash field.
+	userDescPasswordHash := userFields[2].Descriptor()
+	// user.PasswordHashValidator is a validator for the "password_hash" field. It is called by the builders before save.
+	user.PasswordHashValidator = userDescPasswordHash.Validators[0].(func(string) error)
+	// userDescName is the schema descriptor for name field.
+	userDescName := userFields[3].Descriptor()
+	// user.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	user.NameValidator = userDescName.Validators[0].(func(string) error)
+	// userDescFeeRate is the schema descriptor for fee_rate field.
+	userDescFeeRate := userFields[4].Descriptor()
+	// user.DefaultFeeRate holds the default value on creation for the fee_rate field.
+	user.DefaultFeeRate = userDescFeeRate.Default.(float64)
+	// userDescCreatedAt is the schema descriptor for created_at field.
+	userDescCreatedAt := userFields[6].Descriptor()
+	// user.DefaultCreatedAt holds the default value on creation for the created_at field.
+	user.DefaultCreatedAt = userDescCreatedAt.Default.(func() time.Time)
+	// userDescUpdatedAt is the schema descriptor for updated_at field.
+	userDescUpdatedAt := userFields[7].Descriptor()
+	// user.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	user.DefaultUpdatedAt = userDescUpdatedAt.Default.(func() time.Time)
+	// user.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	user.UpdateDefaultUpdatedAt = userDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// userDescID is the schema descriptor for id field.
+	userDescID := userFields[0].Descriptor()
+	// user.DefaultID holds the default value on creation for the id field.
+	user.DefaultID = userDescID.Default.(func() uuid.UUID)
 	withdrawFields := schema.Withdraw{}.Fields()
 	_ = withdrawFields
 	// withdrawDescAccountInfo is the schema descriptor for account_info field.

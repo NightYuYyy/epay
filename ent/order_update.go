@@ -4,9 +4,10 @@ package ent
 
 import (
 	"context"
-	"epay/ent/merchant"
 	"epay/ent/order"
 	"epay/ent/predicate"
+	"epay/ent/product"
+	"epay/ent/user"
 	"errors"
 	"fmt"
 	"time"
@@ -44,16 +45,30 @@ func (_u *OrderUpdate) SetNillableOrderNo(v *string) *OrderUpdate {
 	return _u
 }
 
-// SetMerchantID sets the "merchant_id" field.
-func (_u *OrderUpdate) SetMerchantID(v uuid.UUID) *OrderUpdate {
-	_u.mutation.SetMerchantID(v)
+// SetProductID sets the "product_id" field.
+func (_u *OrderUpdate) SetProductID(v uuid.UUID) *OrderUpdate {
+	_u.mutation.SetProductID(v)
 	return _u
 }
 
-// SetNillableMerchantID sets the "merchant_id" field if the given value is not nil.
-func (_u *OrderUpdate) SetNillableMerchantID(v *uuid.UUID) *OrderUpdate {
+// SetNillableProductID sets the "product_id" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableProductID(v *uuid.UUID) *OrderUpdate {
 	if v != nil {
-		_u.SetMerchantID(*v)
+		_u.SetProductID(*v)
+	}
+	return _u
+}
+
+// SetUserID sets the "user_id" field.
+func (_u *OrderUpdate) SetUserID(v uuid.UUID) *OrderUpdate {
+	_u.mutation.SetUserID(v)
+	return _u
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableUserID(v *uuid.UUID) *OrderUpdate {
+	if v != nil {
+		_u.SetUserID(*v)
 	}
 	return _u
 }
@@ -512,9 +527,14 @@ func (_u *OrderUpdate) SetUpdatedAt(v time.Time) *OrderUpdate {
 	return _u
 }
 
-// SetMerchant sets the "merchant" edge to the Merchant entity.
-func (_u *OrderUpdate) SetMerchant(v *Merchant) *OrderUpdate {
-	return _u.SetMerchantID(v.ID)
+// SetProduct sets the "product" edge to the Product entity.
+func (_u *OrderUpdate) SetProduct(v *Product) *OrderUpdate {
+	return _u.SetProductID(v.ID)
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (_u *OrderUpdate) SetUser(v *User) *OrderUpdate {
+	return _u.SetUserID(v.ID)
 }
 
 // Mutation returns the OrderMutation object of the builder.
@@ -522,9 +542,15 @@ func (_u *OrderUpdate) Mutation() *OrderMutation {
 	return _u.mutation
 }
 
-// ClearMerchant clears the "merchant" edge to the Merchant entity.
-func (_u *OrderUpdate) ClearMerchant() *OrderUpdate {
-	_u.mutation.ClearMerchant()
+// ClearProduct clears the "product" edge to the Product entity.
+func (_u *OrderUpdate) ClearProduct() *OrderUpdate {
+	_u.mutation.ClearProduct()
+	return _u
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (_u *OrderUpdate) ClearUser() *OrderUpdate {
+	_u.mutation.ClearUser()
 	return _u
 }
 
@@ -586,8 +612,11 @@ func (_u *OrderUpdate) check() error {
 			return &ValidationError{Name: "notify_url", err: fmt.Errorf(`ent: validator failed for field "Order.notify_url": %w`, err)}
 		}
 	}
-	if _u.mutation.MerchantCleared() && len(_u.mutation.MerchantIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Order.merchant"`)
+	if _u.mutation.ProductCleared() && len(_u.mutation.ProductIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Order.product"`)
+	}
+	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Order.user"`)
 	}
 	return nil
 }
@@ -739,28 +768,57 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(order.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if _u.mutation.MerchantCleared() {
+	if _u.mutation.ProductCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   order.MerchantTable,
-			Columns: []string{order.MerchantColumn},
+			Table:   order.ProductTable,
+			Columns: []string{order.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.MerchantIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.ProductIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   order.MerchantTable,
-			Columns: []string{order.MerchantColumn},
+			Table:   order.ProductTable,
+			Columns: []string{order.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.UserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   order.UserTable,
+			Columns: []string{order.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   order.UserTable,
+			Columns: []string{order.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -802,16 +860,30 @@ func (_u *OrderUpdateOne) SetNillableOrderNo(v *string) *OrderUpdateOne {
 	return _u
 }
 
-// SetMerchantID sets the "merchant_id" field.
-func (_u *OrderUpdateOne) SetMerchantID(v uuid.UUID) *OrderUpdateOne {
-	_u.mutation.SetMerchantID(v)
+// SetProductID sets the "product_id" field.
+func (_u *OrderUpdateOne) SetProductID(v uuid.UUID) *OrderUpdateOne {
+	_u.mutation.SetProductID(v)
 	return _u
 }
 
-// SetNillableMerchantID sets the "merchant_id" field if the given value is not nil.
-func (_u *OrderUpdateOne) SetNillableMerchantID(v *uuid.UUID) *OrderUpdateOne {
+// SetNillableProductID sets the "product_id" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableProductID(v *uuid.UUID) *OrderUpdateOne {
 	if v != nil {
-		_u.SetMerchantID(*v)
+		_u.SetProductID(*v)
+	}
+	return _u
+}
+
+// SetUserID sets the "user_id" field.
+func (_u *OrderUpdateOne) SetUserID(v uuid.UUID) *OrderUpdateOne {
+	_u.mutation.SetUserID(v)
+	return _u
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableUserID(v *uuid.UUID) *OrderUpdateOne {
+	if v != nil {
+		_u.SetUserID(*v)
 	}
 	return _u
 }
@@ -1270,9 +1342,14 @@ func (_u *OrderUpdateOne) SetUpdatedAt(v time.Time) *OrderUpdateOne {
 	return _u
 }
 
-// SetMerchant sets the "merchant" edge to the Merchant entity.
-func (_u *OrderUpdateOne) SetMerchant(v *Merchant) *OrderUpdateOne {
-	return _u.SetMerchantID(v.ID)
+// SetProduct sets the "product" edge to the Product entity.
+func (_u *OrderUpdateOne) SetProduct(v *Product) *OrderUpdateOne {
+	return _u.SetProductID(v.ID)
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (_u *OrderUpdateOne) SetUser(v *User) *OrderUpdateOne {
+	return _u.SetUserID(v.ID)
 }
 
 // Mutation returns the OrderMutation object of the builder.
@@ -1280,9 +1357,15 @@ func (_u *OrderUpdateOne) Mutation() *OrderMutation {
 	return _u.mutation
 }
 
-// ClearMerchant clears the "merchant" edge to the Merchant entity.
-func (_u *OrderUpdateOne) ClearMerchant() *OrderUpdateOne {
-	_u.mutation.ClearMerchant()
+// ClearProduct clears the "product" edge to the Product entity.
+func (_u *OrderUpdateOne) ClearProduct() *OrderUpdateOne {
+	_u.mutation.ClearProduct()
+	return _u
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (_u *OrderUpdateOne) ClearUser() *OrderUpdateOne {
+	_u.mutation.ClearUser()
 	return _u
 }
 
@@ -1357,8 +1440,11 @@ func (_u *OrderUpdateOne) check() error {
 			return &ValidationError{Name: "notify_url", err: fmt.Errorf(`ent: validator failed for field "Order.notify_url": %w`, err)}
 		}
 	}
-	if _u.mutation.MerchantCleared() && len(_u.mutation.MerchantIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Order.merchant"`)
+	if _u.mutation.ProductCleared() && len(_u.mutation.ProductIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Order.product"`)
+	}
+	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Order.user"`)
 	}
 	return nil
 }
@@ -1527,28 +1613,57 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(order.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if _u.mutation.MerchantCleared() {
+	if _u.mutation.ProductCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   order.MerchantTable,
-			Columns: []string{order.MerchantColumn},
+			Table:   order.ProductTable,
+			Columns: []string{order.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.MerchantIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.ProductIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   order.MerchantTable,
-			Columns: []string{order.MerchantColumn},
+			Table:   order.ProductTable,
+			Columns: []string{order.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.UserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   order.UserTable,
+			Columns: []string{order.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   order.UserTable,
+			Columns: []string{order.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

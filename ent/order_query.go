@@ -4,9 +4,10 @@ package ent
 
 import (
 	"context"
-	"epay/ent/merchant"
 	"epay/ent/order"
 	"epay/ent/predicate"
+	"epay/ent/product"
+	"epay/ent/user"
 	"fmt"
 	"math"
 
@@ -21,12 +22,13 @@ import (
 // OrderQuery is the builder for querying Order entities.
 type OrderQuery struct {
 	config
-	ctx          *QueryContext
-	order        []order.OrderOption
-	inters       []Interceptor
-	predicates   []predicate.Order
-	withMerchant *MerchantQuery
-	modifiers    []func(*sql.Selector)
+	ctx         *QueryContext
+	order       []order.OrderOption
+	inters      []Interceptor
+	predicates  []predicate.Order
+	withProduct *ProductQuery
+	withUser    *UserQuery
+	modifiers   []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -63,9 +65,9 @@ func (_q *OrderQuery) Order(o ...order.OrderOption) *OrderQuery {
 	return _q
 }
 
-// QueryMerchant chains the current query on the "merchant" edge.
-func (_q *OrderQuery) QueryMerchant() *MerchantQuery {
-	query := (&MerchantClient{config: _q.config}).Query()
+// QueryProduct chains the current query on the "product" edge.
+func (_q *OrderQuery) QueryProduct() *ProductQuery {
+	query := (&ProductClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -76,8 +78,30 @@ func (_q *OrderQuery) QueryMerchant() *MerchantQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(order.Table, order.FieldID, selector),
-			sqlgraph.To(merchant.Table, merchant.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, order.MerchantTable, order.MerchantColumn),
+			sqlgraph.To(product.Table, product.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, order.ProductTable, order.ProductColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryUser chains the current query on the "user" edge.
+func (_q *OrderQuery) QueryUser() *UserQuery {
+	query := (&UserClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, order.UserTable, order.UserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -272,26 +296,38 @@ func (_q *OrderQuery) Clone() *OrderQuery {
 		return nil
 	}
 	return &OrderQuery{
-		config:       _q.config,
-		ctx:          _q.ctx.Clone(),
-		order:        append([]order.OrderOption{}, _q.order...),
-		inters:       append([]Interceptor{}, _q.inters...),
-		predicates:   append([]predicate.Order{}, _q.predicates...),
-		withMerchant: _q.withMerchant.Clone(),
+		config:      _q.config,
+		ctx:         _q.ctx.Clone(),
+		order:       append([]order.OrderOption{}, _q.order...),
+		inters:      append([]Interceptor{}, _q.inters...),
+		predicates:  append([]predicate.Order{}, _q.predicates...),
+		withProduct: _q.withProduct.Clone(),
+		withUser:    _q.withUser.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
 }
 
-// WithMerchant tells the query-builder to eager-load the nodes that are connected to
-// the "merchant" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *OrderQuery) WithMerchant(opts ...func(*MerchantQuery)) *OrderQuery {
-	query := (&MerchantClient{config: _q.config}).Query()
+// WithProduct tells the query-builder to eager-load the nodes that are connected to
+// the "product" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OrderQuery) WithProduct(opts ...func(*ProductQuery)) *OrderQuery {
+	query := (&ProductClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withMerchant = query
+	_q.withProduct = query
+	return _q
+}
+
+// WithUser tells the query-builder to eager-load the nodes that are connected to
+// the "user" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OrderQuery) WithUser(opts ...func(*UserQuery)) *OrderQuery {
+	query := (&UserClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withUser = query
 	return _q
 }
 
@@ -373,8 +409,9 @@ func (_q *OrderQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Order,
 	var (
 		nodes       = []*Order{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
-			_q.withMerchant != nil,
+		loadedTypes = [2]bool{
+			_q.withProduct != nil,
+			_q.withUser != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -398,20 +435,26 @@ func (_q *OrderQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Order,
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withMerchant; query != nil {
-		if err := _q.loadMerchant(ctx, query, nodes, nil,
-			func(n *Order, e *Merchant) { n.Edges.Merchant = e }); err != nil {
+	if query := _q.withProduct; query != nil {
+		if err := _q.loadProduct(ctx, query, nodes, nil,
+			func(n *Order, e *Product) { n.Edges.Product = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withUser; query != nil {
+		if err := _q.loadUser(ctx, query, nodes, nil,
+			func(n *Order, e *User) { n.Edges.User = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (_q *OrderQuery) loadMerchant(ctx context.Context, query *MerchantQuery, nodes []*Order, init func(*Order), assign func(*Order, *Merchant)) error {
+func (_q *OrderQuery) loadProduct(ctx context.Context, query *ProductQuery, nodes []*Order, init func(*Order), assign func(*Order, *Product)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Order)
 	for i := range nodes {
-		fk := nodes[i].MerchantID
+		fk := nodes[i].ProductID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -420,7 +463,7 @@ func (_q *OrderQuery) loadMerchant(ctx context.Context, query *MerchantQuery, no
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(merchant.IDIn(ids...))
+	query.Where(product.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -428,7 +471,36 @@ func (_q *OrderQuery) loadMerchant(ctx context.Context, query *MerchantQuery, no
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "merchant_id" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "product_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *OrderQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*Order, init func(*Order), assign func(*Order, *User)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Order)
+	for i := range nodes {
+		fk := nodes[i].UserID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -465,8 +537,11 @@ func (_q *OrderQuery) querySpec() *sqlgraph.QuerySpec {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
-		if _q.withMerchant != nil {
-			_spec.Node.AddColumnOnce(order.FieldMerchantID)
+		if _q.withProduct != nil {
+			_spec.Node.AddColumnOnce(order.FieldProductID)
+		}
+		if _q.withUser != nil {
+			_spec.Node.AddColumnOnce(order.FieldUserID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

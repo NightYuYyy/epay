@@ -4,8 +4,9 @@ package ent
 
 import (
 	"context"
-	"epay/ent/merchant"
 	"epay/ent/order"
+	"epay/ent/product"
+	"epay/ent/user"
 	"errors"
 	"fmt"
 	"time"
@@ -28,9 +29,15 @@ func (_c *OrderCreate) SetOrderNo(v string) *OrderCreate {
 	return _c
 }
 
-// SetMerchantID sets the "merchant_id" field.
-func (_c *OrderCreate) SetMerchantID(v uuid.UUID) *OrderCreate {
-	_c.mutation.SetMerchantID(v)
+// SetProductID sets the "product_id" field.
+func (_c *OrderCreate) SetProductID(v uuid.UUID) *OrderCreate {
+	_c.mutation.SetProductID(v)
+	return _c
+}
+
+// SetUserID sets the "user_id" field.
+func (_c *OrderCreate) SetUserID(v uuid.UUID) *OrderCreate {
+	_c.mutation.SetUserID(v)
 	return _c
 }
 
@@ -374,9 +381,14 @@ func (_c *OrderCreate) SetNillableID(v *uuid.UUID) *OrderCreate {
 	return _c
 }
 
-// SetMerchant sets the "merchant" edge to the Merchant entity.
-func (_c *OrderCreate) SetMerchant(v *Merchant) *OrderCreate {
-	return _c.SetMerchantID(v.ID)
+// SetProduct sets the "product" edge to the Product entity.
+func (_c *OrderCreate) SetProduct(v *Product) *OrderCreate {
+	return _c.SetProductID(v.ID)
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (_c *OrderCreate) SetUser(v *User) *OrderCreate {
+	return _c.SetUserID(v.ID)
 }
 
 // Mutation returns the OrderMutation object of the builder.
@@ -514,8 +526,11 @@ func (_c *OrderCreate) check() error {
 			return &ValidationError{Name: "order_no", err: fmt.Errorf(`ent: validator failed for field "Order.order_no": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.MerchantID(); !ok {
-		return &ValidationError{Name: "merchant_id", err: errors.New(`ent: missing required field "Order.merchant_id"`)}
+	if _, ok := _c.mutation.ProductID(); !ok {
+		return &ValidationError{Name: "product_id", err: errors.New(`ent: missing required field "Order.product_id"`)}
+	}
+	if _, ok := _c.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "Order.user_id"`)}
 	}
 	if _, ok := _c.mutation.GetType(); !ok {
 		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "Order.type"`)}
@@ -565,8 +580,11 @@ func (_c *OrderCreate) check() error {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Order.updated_at"`)}
 	}
-	if len(_c.mutation.MerchantIDs()) == 0 {
-		return &ValidationError{Name: "merchant", err: errors.New(`ent: missing required edge "Order.merchant"`)}
+	if len(_c.mutation.ProductIDs()) == 0 {
+		return &ValidationError{Name: "product", err: errors.New(`ent: missing required edge "Order.product"`)}
+	}
+	if len(_c.mutation.UserIDs()) == 0 {
+		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "Order.user"`)}
 	}
 	return nil
 }
@@ -707,21 +725,38 @@ func (_c *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 		_spec.SetField(order.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if nodes := _c.mutation.MerchantIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.ProductIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   order.MerchantTable,
-			Columns: []string{order.MerchantColumn},
+			Table:   order.ProductTable,
+			Columns: []string{order.ProductColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.MerchantID = nodes[0]
+		_node.ProductID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   order.UserTable,
+			Columns: []string{order.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.UserID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

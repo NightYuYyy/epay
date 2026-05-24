@@ -1,4 +1,4 @@
-// Package settlement provides the SettlementService for handling merchant
+// Package settlement provides the SettlementService for handling user
 // withdrawal requests, approval, confirmation, and rejection.
 package settlement
 
@@ -17,7 +17,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// SettlementService manages merchant withdrawal operations, coordinating
+// SettlementService manages user withdrawal operations, coordinating
 // between the Settlement balance and Withdraw records.
 type SettlementService struct {
 	ent *ent.Client
@@ -29,38 +29,36 @@ func New(ent *ent.Client, rdb *redis.Client) *SettlementService {
 	return &SettlementService{ent: ent, rdb: rdb}
 }
 
-// RequestWithdraw initiates a withdrawal request for a merchant.
-// It locks the merchant, validates the balance, updates the settlement
+// RequestWithdraw initiates a withdrawal request for a user.
+// It locks the user, validates the balance, updates the settlement
 // (balance -= amount, frozen += amount), and creates a PENDING Withdraw record.
-func (s *SettlementService) RequestWithdraw(ctx context.Context, merchantID uuid.UUID, amount float64, accountInfo string) (*ent.Withdraw, error) {
+func (s *SettlementService) RequestWithdraw(ctx context.Context, userID uuid.UUID, amount float64, accountInfo string) (*ent.Withdraw, error) {
 	if amount <= 0 {
 		return nil, fmt.Errorf("withdraw amount must be positive, got %.2f", amount)
 	}
 
-	lockKey := fmt.Sprintf("withdraw:%s", merchantID.String())
+	lockKey := fmt.Sprintf("withdraw:user:%s", userID.String())
 	ok, err := redisutil.AcquireLock(ctx, s.rdb, lockKey, 10*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("acquire lock: %w", err)
 	}
 	if !ok {
-		return nil, fmt.Errorf("withdraw request already in progress for merchant %s", merchantID)
+		return nil, fmt.Errorf("withdraw request already in progress for user %s", userID)
 	}
 	defer func() {
 		_ = redisutil.ReleaseLock(ctx, s.rdb, lockKey)
 	}()
 
-	// Load settlement and validate balance
 	sett, err := s.ent.Settlement.Query().
-		Where(settlement.MerchantIDEQ(merchantID)).
+		Where(settlement.UserIDEQ(userID)).
 		First(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("load settlement for merchant %s: %w", merchantID, err)
+		return nil, fmt.Errorf("load settlement for user %s: %w", userID, err)
 	}
 	if sett.Balance < amount {
 		return nil, fmt.Errorf("insufficient balance: have %.2f, need %.2f", sett.Balance, amount)
 	}
 
-	// Transaction: update settlement + create withdraw
 	tx, err := s.ent.Tx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("start transaction: %w", err)
@@ -70,7 +68,7 @@ func (s *SettlementService) RequestWithdraw(ctx context.Context, merchantID uuid
 	}()
 
 	_, err = tx.Settlement.Update().
-		Where(settlement.MerchantIDEQ(merchantID)).
+		Where(settlement.UserIDEQ(userID)).
 		AddBalance(-amount).
 		AddFrozen(amount).
 		Save(ctx)
@@ -79,7 +77,7 @@ func (s *SettlementService) RequestWithdraw(ctx context.Context, merchantID uuid
 	}
 
 	wd, err := tx.Withdraw.Create().
-		SetMerchantID(merchantID).
+		SetUserID(userID).
 		SetAmount(amount).
 		SetAccountInfo(accountInfo).
 		SetStatus(withdraw.StatusPENDING).
@@ -95,13 +93,30 @@ func (s *SettlementService) RequestWithdraw(ctx context.Context, merchantID uuid
 	return wd, nil
 }
 
-// ApproveWithdraw updates a withdrawal request status to APPROVED.
+// ApproveWithdraw updates a PENDING withdrawal request status to APPROVED.
 func (s *SettlementService) ApproveWithdraw(ctx context.Context, withdrawID uuid.UUID) error {
-	_, err := s.ent.Withdraw.UpdateOneID(withdrawID).
+	unlock, err := s.lockWithdraw(ctx, withdrawID)
+	if err != nil {
+		return fmt.Errorf("approve withdraw %s: %w", withdrawID, err)
+	}
+	defer unlock()
+
+	wd, err := s.ent.Withdraw.Get(ctx, withdrawID)
+	if err != nil {
+		return fmt.Errorf("approve withdraw %s: %w", withdrawID, err)
+	}
+	if wd.Status != withdraw.StatusPENDING {
+		return fmt.Errorf("withdraw %s is not in PENDING status (current: %s)", withdrawID, wd.Status)
+	}
+	affected, err := s.ent.Withdraw.Update().
+		Where(withdraw.IDEQ(withdrawID), withdraw.StatusEQ(withdraw.StatusPENDING)).
 		SetStatus(withdraw.StatusAPPROVED).
 		Save(ctx)
 	if err != nil {
 		return fmt.Errorf("approve withdraw %s: %w", withdrawID, err)
+	}
+	if affected != 1 {
+		return fmt.Errorf("withdraw %s is not in PENDING status", withdrawID)
 	}
 	return nil
 }
@@ -109,13 +124,11 @@ func (s *SettlementService) ApproveWithdraw(ctx context.Context, withdrawID uuid
 // ConfirmWithdraw finalizes an APPROVED withdrawal: marks it PAID and
 // updates the settlement (frozen -= amount, total_withdrawn += amount).
 func (s *SettlementService) ConfirmWithdraw(ctx context.Context, withdrawID uuid.UUID) error {
-	wd, err := s.ent.Withdraw.Get(ctx, withdrawID)
+	unlock, err := s.lockWithdraw(ctx, withdrawID)
 	if err != nil {
-		return fmt.Errorf("load withdraw %s: %w", withdrawID, err)
+		return fmt.Errorf("confirm withdraw %s: %w", withdrawID, err)
 	}
-	if wd.Status != withdraw.StatusAPPROVED {
-		return fmt.Errorf("withdraw %s is not in APPROVED status (current: %s)", withdrawID, wd.Status)
-	}
+	defer unlock()
 
 	tx, err := s.ent.Tx(ctx)
 	if err != nil {
@@ -125,15 +138,27 @@ func (s *SettlementService) ConfirmWithdraw(ctx context.Context, withdrawID uuid
 		_ = tx.Rollback()
 	}()
 
-	_, err = tx.Withdraw.UpdateOneID(withdrawID).
+	wd, err := tx.Withdraw.Get(ctx, withdrawID)
+	if err != nil {
+		return fmt.Errorf("load withdraw %s: %w", withdrawID, err)
+	}
+	if wd.Status != withdraw.StatusAPPROVED {
+		return fmt.Errorf("withdraw %s is not in APPROVED status (current: %s)", withdrawID, wd.Status)
+	}
+
+	affected, err := tx.Withdraw.Update().
+		Where(withdraw.IDEQ(withdrawID), withdraw.StatusEQ(withdraw.StatusAPPROVED)).
 		SetStatus(withdraw.StatusPAID).
 		Save(ctx)
 	if err != nil {
 		return fmt.Errorf("update withdraw status to PAID: %w", err)
 	}
+	if affected != 1 {
+		return fmt.Errorf("withdraw %s is not in APPROVED status", withdrawID)
+	}
 
 	_, err = tx.Settlement.Update().
-		Where(settlement.MerchantIDEQ(wd.MerchantID)).
+		Where(settlement.UserIDEQ(wd.UserID)).
 		AddFrozen(-wd.Amount).
 		AddTotalWithdrawn(wd.Amount).
 		Save(ctx)
@@ -148,16 +173,13 @@ func (s *SettlementService) ConfirmWithdraw(ctx context.Context, withdrawID uuid
 }
 
 // RejectWithdraw rejects a PENDING withdrawal: marks it REJECTED and
-// refunds the frozen amount back to the merchant's balance
-// (frozen -= amount, balance += amount).
+// refunds the frozen amount back to the user's balance.
 func (s *SettlementService) RejectWithdraw(ctx context.Context, withdrawID uuid.UUID, remark string) error {
-	wd, err := s.ent.Withdraw.Get(ctx, withdrawID)
+	unlock, err := s.lockWithdraw(ctx, withdrawID)
 	if err != nil {
-		return fmt.Errorf("load withdraw %s: %w", withdrawID, err)
+		return fmt.Errorf("reject withdraw %s: %w", withdrawID, err)
 	}
-	if wd.Status != withdraw.StatusPENDING {
-		return fmt.Errorf("withdraw %s is not in PENDING status (current: %s)", withdrawID, wd.Status)
-	}
+	defer unlock()
 
 	tx, err := s.ent.Tx(ctx)
 	if err != nil {
@@ -167,17 +189,28 @@ func (s *SettlementService) RejectWithdraw(ctx context.Context, withdrawID uuid.
 		_ = tx.Rollback()
 	}()
 
-	_, err = tx.Withdraw.UpdateOneID(withdrawID).
+	wd, err := tx.Withdraw.Get(ctx, withdrawID)
+	if err != nil {
+		return fmt.Errorf("load withdraw %s: %w", withdrawID, err)
+	}
+	if wd.Status != withdraw.StatusPENDING {
+		return fmt.Errorf("withdraw %s is not in PENDING status (current: %s)", withdrawID, wd.Status)
+	}
+
+	affected, err := tx.Withdraw.Update().
+		Where(withdraw.IDEQ(withdrawID), withdraw.StatusEQ(withdraw.StatusPENDING)).
 		SetStatus(withdraw.StatusREJECTED).
 		SetRemark(remark).
 		Save(ctx)
 	if err != nil {
 		return fmt.Errorf("update withdraw status to REJECTED: %w", err)
 	}
+	if affected != 1 {
+		return fmt.Errorf("withdraw %s is not in PENDING status", withdrawID)
+	}
 
-	// Refund the frozen amount
 	_, err = tx.Settlement.Update().
-		Where(settlement.MerchantIDEQ(wd.MerchantID)).
+		Where(settlement.UserIDEQ(wd.UserID)).
 		AddFrozen(-wd.Amount).
 		AddBalance(wd.Amount).
 		Save(ctx)
@@ -191,13 +224,27 @@ func (s *SettlementService) RejectWithdraw(ctx context.Context, withdrawID uuid.
 	return nil
 }
 
+func (s *SettlementService) lockWithdraw(ctx context.Context, withdrawID uuid.UUID) (func(), error) {
+	lockKey := fmt.Sprintf("withdraw:id:%s", withdrawID.String())
+	ok, err := redisutil.AcquireLock(ctx, s.rdb, lockKey, 10*time.Second)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, fmt.Errorf("withdraw %s is already being processed", withdrawID)
+	}
+	return func() {
+		_ = redisutil.ReleaseLock(ctx, s.rdb, lockKey)
+	}, nil
+}
+
 // ListWithdraws returns a paginated list of withdrawal records, optionally
-// filtered by merchant_id and status. Returns the records, total count, and any error.
-func (s *SettlementService) ListWithdraws(ctx context.Context, merchantID uuid.UUID, statusVal withdraw.Status, page, limit int) ([]*ent.Withdraw, int, error) {
+// filtered by user_id and status. Returns the records, total count, and any error.
+func (s *SettlementService) ListWithdraws(ctx context.Context, userID uuid.UUID, statusVal withdraw.Status, page, limit int) ([]*ent.Withdraw, int, error) {
 	q := s.ent.Withdraw.Query()
 
-	if merchantID != uuid.Nil {
-		q.Where(withdraw.MerchantIDEQ(merchantID))
+	if userID != uuid.Nil {
+		q.Where(withdraw.UserIDEQ(userID))
 	}
 	if statusVal != "" {
 		q.Where(withdraw.StatusEQ(statusVal))
@@ -211,7 +258,7 @@ func (s *SettlementService) ListWithdraws(ctx context.Context, merchantID uuid.U
 	if page <= 0 {
 		page = 1
 	}
-	if limit <= 0 {
+	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
 

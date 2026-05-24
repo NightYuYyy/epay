@@ -307,3 +307,12 @@ input('notify_url').value = `${window.location.origin}/demo/notify`
 input('return_url').value = `${window.location.origin}/demo.html`
 platformNotifyUrlEl.textContent = `${window.location.origin}/api/alipay/notify`
 clearResult()
+const params = new URLSearchParams(window.location.search)
+const pidParam = params.get('pid')
+if (pidParam) input('pid').value = pidParam
+if (params.has('pkey')) {
+  params.delete('pkey')
+  const query = params.toString()
+  const nextURL = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`
+  window.history.replaceState(null, '', nextURL)
+}

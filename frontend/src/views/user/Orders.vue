@@ -13,28 +13,38 @@ const statusFilter = ref('')
 
 const statusOptions = [
   { label: '全部', value: '' },
-  { label: '待支付', value: 'pending' },
-  { label: '已支付', value: 'paid' },
-  { label: '已关闭', value: 'closed' },
-  { label: '已退款', value: 'refunded' },
+  { label: '待支付', value: 'PENDING' },
+  { label: '已支付', value: 'PAID' },
+  { label: '已结算', value: 'SETTLED' },
+  { label: '已过期', value: 'EXPIRED' },
+  { label: '已取消', value: 'CANCELLED' },
 ]
 
 const statusTagMap: Record<string, any> = {
-  pending: { type: 'warning' as const, text: '待支付' },
-  paid: { type: 'success' as const, text: '已支付' },
-  closed: { type: 'default' as const, text: '已关闭' },
-  refunded: { type: 'error' as const, text: '已退款' },
+  PENDING: { type: 'warning' as const, text: '待支付' },
+  PAID: { type: 'info' as const, text: '已支付' },
+  SETTLED: { type: 'success' as const, text: '已结算' },
+  EXPIRED: { type: 'default' as const, text: '已过期' },
+  CANCELLED: { type: 'error' as const, text: '已取消' },
 }
 
 const columns = [
   { title: '订单号', key: 'order_no', width: 180, ellipsis: { tooltip: true } },
+  {
+    title: 'PID',
+    key: 'product_pid',
+    width: 100,
+    render(row: any) {
+      return row.product_pid ?? '-'
+    },
+  },
   { title: '支付类型', key: 'type', width: 100 },
   {
     title: '金额',
     key: 'amount',
     width: 100,
     render(row: any) {
-      return `¥${(row.amount / 100).toFixed(2)}`
+      return `¥${row.amount.toFixed(2)}`
     },
   },
   {
@@ -42,7 +52,7 @@ const columns = [
     key: 'fee_platform',
     width: 100,
     render(row: any) {
-      return `¥${(row.fee_platform / 100).toFixed(2)}`
+      return `¥${row.fee_platform.toFixed(2)}`
     },
   },
   {
@@ -50,7 +60,7 @@ const columns = [
     key: 'net_amount',
     width: 100,
     render(row: any) {
-      return `¥${(row.net_amount / 100).toFixed(2)}`
+      return `¥${row.net_amount.toFixed(2)}`
     },
   },
   {
@@ -77,14 +87,14 @@ async function fetchOrders() {
   try {
     const params: any = {
       page: pagination.value.page,
-      page_size: pagination.value.pageSize,
+      limit: pagination.value.pageSize,
     }
     if (statusFilter.value) {
       params.status = statusFilter.value
     }
-    const { data } = await api.get('/api/merchant/orders', { params })
+    const { data } = await api.get('/api/user/orders', { params })
     if (data.code === 0) {
-      orders.value = data.data?.list || data.data || []
+      orders.value = data.data?.items || []
       pagination.value.itemCount = data.data?.total || 0
     } else {
       message.error(data.msg || '获取订单列表失败')
@@ -130,7 +140,7 @@ onMounted(() => {
         @update:value="handleStatusChange"
       />
     </template>
-    <n-dataTable
+    <n-data-table
       :columns="columns"
       :data="orders"
       :loading="loading"

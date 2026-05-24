@@ -153,10 +153,10 @@ func (h *Handler) sPayQuery(c *gin.Context) {
 	var err error
 	if outTradeNo != "" {
 		ord, err = h.client.Order.Query().
-			Where(order.MerchantID(m.ID), order.OrderNo(outTradeNo)).First(ctx)
+			Where(order.ProductID(m.ID), order.OrderNo(outTradeNo)).First(ctx)
 	} else {
 		ord, err = h.client.Order.Query().
-			Where(order.MerchantID(m.ID), order.TradeNo(tradeNo)).First(ctx)
+			Where(order.ProductID(m.ID), order.TradeNo(tradeNo)).First(ctx)
 	}
 	if err != nil || ord == nil {
 		h.sError(c, -1, "订单号不存在")

@@ -12,6 +12,8 @@ import (
 )
 
 // Settlement holds the schema definition for the Settlement entity.
+//
+// One row per User. Tracks net balance available for withdrawal.
 type Settlement struct {
 	ent.Schema
 }
@@ -21,7 +23,7 @@ func (Settlement) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New).
 			Immutable(),
-		field.UUID("merchant_id", uuid.UUID{}).
+		field.UUID("user_id", uuid.UUID{}).
 			Unique(),
 		field.Float("balance").
 			SchemaType(map[string]string{
@@ -54,9 +56,9 @@ func (Settlement) Fields() []ent.Field {
 
 func (Settlement) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("merchant", Merchant.Type).
+		edge.From("user", User.Type).
 			Ref("settlements").
-			Field("merchant_id").
+			Field("user_id").
 			Unique().
 			Required(),
 	}

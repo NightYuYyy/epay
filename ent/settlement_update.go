@@ -4,9 +4,9 @@ package ent
 
 import (
 	"context"
-	"epay/ent/merchant"
 	"epay/ent/predicate"
 	"epay/ent/settlement"
+	"epay/ent/user"
 	"errors"
 	"fmt"
 	"time"
@@ -30,16 +30,16 @@ func (_u *SettlementUpdate) Where(ps ...predicate.Settlement) *SettlementUpdate 
 	return _u
 }
 
-// SetMerchantID sets the "merchant_id" field.
-func (_u *SettlementUpdate) SetMerchantID(v uuid.UUID) *SettlementUpdate {
-	_u.mutation.SetMerchantID(v)
+// SetUserID sets the "user_id" field.
+func (_u *SettlementUpdate) SetUserID(v uuid.UUID) *SettlementUpdate {
+	_u.mutation.SetUserID(v)
 	return _u
 }
 
-// SetNillableMerchantID sets the "merchant_id" field if the given value is not nil.
-func (_u *SettlementUpdate) SetNillableMerchantID(v *uuid.UUID) *SettlementUpdate {
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *SettlementUpdate) SetNillableUserID(v *uuid.UUID) *SettlementUpdate {
 	if v != nil {
-		_u.SetMerchantID(*v)
+		_u.SetUserID(*v)
 	}
 	return _u
 }
@@ -134,9 +134,9 @@ func (_u *SettlementUpdate) SetUpdatedAt(v time.Time) *SettlementUpdate {
 	return _u
 }
 
-// SetMerchant sets the "merchant" edge to the Merchant entity.
-func (_u *SettlementUpdate) SetMerchant(v *Merchant) *SettlementUpdate {
-	return _u.SetMerchantID(v.ID)
+// SetUser sets the "user" edge to the User entity.
+func (_u *SettlementUpdate) SetUser(v *User) *SettlementUpdate {
+	return _u.SetUserID(v.ID)
 }
 
 // Mutation returns the SettlementMutation object of the builder.
@@ -144,9 +144,9 @@ func (_u *SettlementUpdate) Mutation() *SettlementMutation {
 	return _u.mutation
 }
 
-// ClearMerchant clears the "merchant" edge to the Merchant entity.
-func (_u *SettlementUpdate) ClearMerchant() *SettlementUpdate {
-	_u.mutation.ClearMerchant()
+// ClearUser clears the "user" edge to the User entity.
+func (_u *SettlementUpdate) ClearUser() *SettlementUpdate {
+	_u.mutation.ClearUser()
 	return _u
 }
 
@@ -188,8 +188,8 @@ func (_u *SettlementUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *SettlementUpdate) check() error {
-	if _u.mutation.MerchantCleared() && len(_u.mutation.MerchantIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Settlement.merchant"`)
+	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Settlement.user"`)
 	}
 	return nil
 }
@@ -233,28 +233,28 @@ func (_u *SettlementUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(settlement.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if _u.mutation.MerchantCleared() {
+	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   settlement.MerchantTable,
-			Columns: []string{settlement.MerchantColumn},
+			Table:   settlement.UserTable,
+			Columns: []string{settlement.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.MerchantIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   settlement.MerchantTable,
-			Columns: []string{settlement.MerchantColumn},
+			Table:   settlement.UserTable,
+			Columns: []string{settlement.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -282,16 +282,16 @@ type SettlementUpdateOne struct {
 	mutation *SettlementMutation
 }
 
-// SetMerchantID sets the "merchant_id" field.
-func (_u *SettlementUpdateOne) SetMerchantID(v uuid.UUID) *SettlementUpdateOne {
-	_u.mutation.SetMerchantID(v)
+// SetUserID sets the "user_id" field.
+func (_u *SettlementUpdateOne) SetUserID(v uuid.UUID) *SettlementUpdateOne {
+	_u.mutation.SetUserID(v)
 	return _u
 }
 
-// SetNillableMerchantID sets the "merchant_id" field if the given value is not nil.
-func (_u *SettlementUpdateOne) SetNillableMerchantID(v *uuid.UUID) *SettlementUpdateOne {
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *SettlementUpdateOne) SetNillableUserID(v *uuid.UUID) *SettlementUpdateOne {
 	if v != nil {
-		_u.SetMerchantID(*v)
+		_u.SetUserID(*v)
 	}
 	return _u
 }
@@ -386,9 +386,9 @@ func (_u *SettlementUpdateOne) SetUpdatedAt(v time.Time) *SettlementUpdateOne {
 	return _u
 }
 
-// SetMerchant sets the "merchant" edge to the Merchant entity.
-func (_u *SettlementUpdateOne) SetMerchant(v *Merchant) *SettlementUpdateOne {
-	return _u.SetMerchantID(v.ID)
+// SetUser sets the "user" edge to the User entity.
+func (_u *SettlementUpdateOne) SetUser(v *User) *SettlementUpdateOne {
+	return _u.SetUserID(v.ID)
 }
 
 // Mutation returns the SettlementMutation object of the builder.
@@ -396,9 +396,9 @@ func (_u *SettlementUpdateOne) Mutation() *SettlementMutation {
 	return _u.mutation
 }
 
-// ClearMerchant clears the "merchant" edge to the Merchant entity.
-func (_u *SettlementUpdateOne) ClearMerchant() *SettlementUpdateOne {
-	_u.mutation.ClearMerchant()
+// ClearUser clears the "user" edge to the User entity.
+func (_u *SettlementUpdateOne) ClearUser() *SettlementUpdateOne {
+	_u.mutation.ClearUser()
 	return _u
 }
 
@@ -453,8 +453,8 @@ func (_u *SettlementUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *SettlementUpdateOne) check() error {
-	if _u.mutation.MerchantCleared() && len(_u.mutation.MerchantIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Settlement.merchant"`)
+	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Settlement.user"`)
 	}
 	return nil
 }
@@ -515,28 +515,28 @@ func (_u *SettlementUpdateOne) sqlSave(ctx context.Context) (_node *Settlement, 
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(settlement.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if _u.mutation.MerchantCleared() {
+	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   settlement.MerchantTable,
-			Columns: []string{settlement.MerchantColumn},
+			Table:   settlement.UserTable,
+			Columns: []string{settlement.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.MerchantIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   settlement.MerchantTable,
-			Columns: []string{settlement.MerchantColumn},
+			Table:   settlement.UserTable,
+			Columns: []string{settlement.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

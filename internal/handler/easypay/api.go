@@ -11,8 +11,9 @@ import (
 	"time"
 
 	"epay/ent"
-	"epay/ent/merchant"
 	"epay/ent/order"
+	"epay/ent/product"
+	"epay/ent/settlement"
 	"epay/ent/withdraw"
 
 	"github.com/gin-gonic/gin"
@@ -54,10 +55,10 @@ func (h *Handler) HandleAPI(c *gin.Context) {
 // ----- shared helpers for act endpoints -----------------------------------
 
 // authMerchantByKey validates the legacy pid+key plaintext credentials used
-// by rainbow's GET act endpoints. Returns nil merchant + (code, msg) on
+// by rainbow's GET act endpoints. Returns nil product + (code, msg) on
 // failure suitable for direct response. Also enforces the keytype=1 → RSA
 // rule documented in the rainbow protocol ("该商户只能使用RSA签名类型").
-func (h *Handler) authMerchantByKey(ctx context.Context, c *gin.Context) (*ent.Merchant, int, string) {
+func (h *Handler) authMerchantByKey(ctx context.Context, c *gin.Context) (*ent.Product, int, string) {
 	pidStr := c.Query("pid")
 	if pidStr == "" {
 		pidStr = c.PostForm("pid")
@@ -70,7 +71,7 @@ func (h *Handler) authMerchantByKey(ctx context.Context, c *gin.Context) (*ent.M
 	if err != nil || pid <= 0 {
 		return nil, -3, "商户ID不存在"
 	}
-	m, err := h.client.Merchant.Query().Where(merchant.Pid(pid)).First(ctx)
+	m, err := h.client.Product.Query().Where(product.Pid(pid)).First(ctx)
 	if err != nil {
 		return nil, -3, "商户ID不存在"
 	}
@@ -102,6 +103,8 @@ func clampLimitOffset(c *gin.Context) (limit, offset int) {
 
 // actQuery returns merchant overview info — balance, total orders, today and
 // yesterday order counts. Compatible with rainbow `act=query` response shape.
+// Balance is per-user (the product's owner); order counts are scoped to the
+// authenticated product.
 func (h *Handler) actQuery(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
@@ -111,29 +114,23 @@ func (h *Handler) actQuery(c *gin.Context) {
 		return
 	}
 
-	// Balance is read from the Settlement ledger (1:1 with merchant).
 	var balance float64
-	if s, err := h.client.Settlement.Query().Where().All(ctx); err == nil {
-		for _, item := range s {
-			if item.MerchantID == m.ID {
-				balance = item.Balance
-				break
-			}
-		}
+	if stl, err := h.client.Settlement.Query().Where(settlement.UserIDEQ(m.UserID)).First(ctx); err == nil {
+		balance = stl.Balance
 	}
 
 	now := time.Now()
 	today := now.Format("2006-01-02")
 	yesterday := now.AddDate(0, 0, -1).Format("2006-01-02")
-	totalOrders, _ := h.client.Order.Query().Where(order.MerchantID(m.ID)).Count(ctx)
+	totalOrders, _ := h.client.Order.Query().Where(order.ProductID(m.ID)).Count(ctx)
 	ordersToday, _ := h.client.Order.Query().
-		Where(order.MerchantID(m.ID),
+		Where(order.ProductID(m.ID),
 			order.StatusIn(order.StatusPAID, order.StatusSETTLED),
 			order.CreatedAtGTE(parseDate(today)),
 			order.CreatedAtLT(parseDate(today).Add(24*time.Hour)),
 		).Count(ctx)
 	ordersYesterday, _ := h.client.Order.Query().
-		Where(order.MerchantID(m.ID),
+		Where(order.ProductID(m.ID),
 			order.StatusIn(order.StatusPAID, order.StatusSETTLED),
 			order.CreatedAtGTE(parseDate(yesterday)),
 			order.CreatedAtLT(parseDate(yesterday).Add(24*time.Hour)),
@@ -168,8 +165,8 @@ func boolTo01(b bool) int {
 
 // ----- act=settle ---------------------------------------------------------
 
-// actSettle returns paginated withdrawal/settlement records for the merchant.
-// Rainbow's pre_settle equivalent.
+// actSettle returns paginated withdrawal/settlement records for the user
+// that owns the authenticated product. Rainbow's pre_settle equivalent.
 func (h *Handler) actSettle(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
@@ -180,7 +177,7 @@ func (h *Handler) actSettle(c *gin.Context) {
 	}
 	limit, offset := clampLimitOffset(c)
 	rows, err := h.client.Withdraw.Query().
-		Where(withdraw.MerchantID(m.ID)).
+		Where(withdraw.UserID(m.UserID)).
 		Order(ent.Desc("created_at")).
 		Limit(limit).
 		Offset(offset).
@@ -192,14 +189,14 @@ func (h *Handler) actSettle(c *gin.Context) {
 	data := make([]gin.H, 0, len(rows))
 	for _, w := range rows {
 		data = append(data, gin.H{
-			"id":          w.ID.String(),
-			"uid":         m.Pid,
-			"money":       formatMoneyTwo(w.Amount),
-			"status":      withdrawStatusToInt(w.Status),
-			"account":     w.AccountInfo,
-			"remark":      w.Remark,
-			"addtime":     w.CreatedAt.Format("2006-01-02 15:04:05"),
-			"endtime":     w.UpdatedAt.Format("2006-01-02 15:04:05"),
+			"id":      w.ID.String(),
+			"uid":     m.Pid,
+			"money":   formatMoneyTwo(w.Amount),
+			"status":  withdrawStatusToInt(w.Status),
+			"account": w.AccountInfo,
+			"remark":  w.Remark,
+			"addtime": w.CreatedAt.Format("2006-01-02 15:04:05"),
+			"endtime": w.UpdatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -225,8 +222,8 @@ func withdrawStatusToInt(s withdraw.Status) int {
 // actOrder returns a single order's full details. Authentication has two modes:
 //
 //   - Platform mode: ?sign=...&trade_no=... where
-//     sign == md5(SYS_KEY + trade_no + SYS_KEY). Allows cross-merchant query.
-//   - Merchant mode: ?pid=&key=&[out_trade_no=|trade_no=]. Per-merchant scope.
+//     sign == md5(SYS_KEY + trade_no + SYS_KEY). Allows cross-product query.
+//   - Caller mode: ?pid=&key=&[out_trade_no=|trade_no=]. Scoped to the product.
 func (h *Handler) actOrder(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
@@ -264,11 +261,11 @@ func (h *Handler) actOrder(c *gin.Context) {
 		switch {
 		case outTradeNo != "":
 			ord, err = h.client.Order.Query().
-				Where(order.MerchantID(m.ID), order.OrderNo(outTradeNo)).
+				Where(order.ProductID(m.ID), order.OrderNo(outTradeNo)).
 				First(ctx)
 		case tradeNo != "":
 			ord, err = h.client.Order.Query().
-				Where(order.MerchantID(m.ID), order.TradeNo(tradeNo)).
+				Where(order.ProductID(m.ID), order.TradeNo(tradeNo)).
 				First(ctx)
 		default:
 			c.JSON(http.StatusOK, gin.H{"code": -4, "msg": "订单号不能为空"})
@@ -294,10 +291,10 @@ func (h *Handler) orderToFullResponse(ctx context.Context, ord *ent.Order) gin.H
 	if ord.PaidAt != nil {
 		endTime = ord.PaidAt.Format("2006-01-02 15:04:05")
 	}
-	merch, _ := h.client.Merchant.Query().Where(merchant.ID(ord.MerchantID)).First(ctx)
+	prod, _ := h.client.Product.Query().Where(product.ID(ord.ProductID)).First(ctx)
 	pid := 0
-	if merch != nil {
-		pid = merch.Pid
+	if prod != nil {
+		pid = prod.Pid
 	}
 	return gin.H{
 		"code":         1,
@@ -334,8 +331,8 @@ func orderStatusToInt(s order.Status) int {
 
 // ----- act=orders ---------------------------------------------------------
 
-// actOrders returns a paginated list of orders for the authenticated merchant.
-// Supports filtering by status (0=pending, 1=paid).
+// actOrders returns a paginated list of orders for the authenticated product.
+// Supports filtering by status (0=pending, 1=paid, 2=cancelled).
 func (h *Handler) actOrders(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
@@ -345,7 +342,7 @@ func (h *Handler) actOrders(c *gin.Context) {
 		return
 	}
 	limit, offset := clampLimitOffset(c)
-	q := h.client.Order.Query().Where(order.MerchantID(m.ID))
+	q := h.client.Order.Query().Where(order.ProductID(m.ID))
 	if s := c.Query("status"); s != "" {
 		if status, err := strconv.Atoi(s); err == nil {
 			switch status {

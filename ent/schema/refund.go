@@ -5,13 +5,15 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
-// Refund records a merchant refund request and its lifecycle.
+// Refund records a refund request and its lifecycle.
 // Aligned with rainbow-epay `pre_refundorder` table.
 type Refund struct {
 	ent.Schema
@@ -29,10 +31,10 @@ func (Refund) Fields() []ent.Field {
 		field.String("out_refund_no").
 			Optional().
 			Default("").
-			Comment("Merchant-supplied refund number for idempotency"),
+			Comment("Caller-supplied refund number for idempotency"),
 		field.String("trade_no").
 			NotEmpty(),
-		field.UUID("merchant_id", uuid.UUID{}),
+		field.UUID("user_id", uuid.UUID{}),
 		field.Float("money").
 			SchemaType(map[string]string{
 				dialect.Postgres: "decimal(20,2)",
@@ -42,7 +44,7 @@ func (Refund) Fields() []ent.Field {
 				dialect.Postgres: "decimal(20,2)",
 			}).
 			Default(0).
-			Comment("Amount deducted from merchant balance (may differ from refund money)"),
+			Comment("Amount deducted from the user's balance (may differ from refund money)"),
 		field.Enum("status").
 			Values("PENDING", "SUCCESS", "FAILED").
 			Default("PENDING"),
@@ -63,11 +65,19 @@ func (Refund) Fields() []ent.Field {
 
 func (Refund) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("merchant", Merchant.Type).
+		edge.From("user", User.Type).
 			Ref("refunds").
-			Field("merchant_id").
+			Field("user_id").
 			Unique().
 			Required(),
+	}
+}
+
+func (Refund) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("user_id", "out_refund_no").
+			Unique().
+			Annotations(entsql.IndexWhere("out_refund_no <> ''")),
 	}
 }
 

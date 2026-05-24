@@ -85,22 +85,34 @@ func snapshotJSON(t *testing.T) string {
 	return string(raw)
 }
 
-func createMerchant(t *testing.T, client *ent.Client) *ent.Merchant {
+// createUserAndProduct provisions a User + a default Product for use in tests.
+// Fee rate is set to 2% (0.02) so a 100-amount order produces a 2.00 platform
+// fee — preserving the asserts of the legacy tests.
+func createUserAndProduct(t *testing.T, client *ent.Client) (*ent.User, *ent.Product) {
 	t.Helper()
-	return client.Merchant.Create().
+	ctx := context.Background()
+	u := client.User.Create().
+		SetEmail(t.Name() + "@example.com").
+		SetPasswordHash("x").
+		SetName("user").
+		SetFeeRate(0.02).
+		SaveX(ctx)
+	p := client.Product.Create().
+		SetUserID(u.ID).
 		SetPid(1001).
-		SetPkey("merchant-key").
-		SetName("merchant").
-		SetFeeRate(2).
-		SaveX(context.Background())
+		SetPkey("product-key").
+		SetName("default product").
+		SaveX(ctx)
+	return u, p
 }
 
 func TestHandleCallbackAppliesSettlementBeforeReturningSuccess(t *testing.T) {
 	ctx := context.Background()
 	client := newTestClient(t)
-	merchant := createMerchant(t, client)
+	usr, prod := createUserAndProduct(t, client)
 	ord := client.Order.Create().
-		SetMerchantID(merchant.ID).
+		SetProductID(prod.ID).
+		SetUserID(usr.ID).
 		SetOrderNo("ORDER-CALLBACK").
 		SetTradeNo("TRADE-CALLBACK").
 		SetType(order.TypeAlipay).
@@ -139,7 +151,7 @@ func TestHandleCallbackAppliesSettlementBeforeReturningSuccess(t *testing.T) {
 	if updated.FeePlatform != 2 || updated.NetAmount != 98 {
 		t.Fatalf("settlement fields fee_platform=%.2f net_amount=%.2f, want 2.00 and 98.00", updated.FeePlatform, updated.NetAmount)
 	}
-	sett := client.Settlement.Query().Where(settlement.MerchantIDEQ(merchant.ID)).OnlyX(ctx)
+	sett := client.Settlement.Query().Where(settlement.UserIDEQ(usr.ID)).OnlyX(ctx)
 	if sett.Balance != 98 || sett.TotalIncome != 100 {
 		t.Fatalf("settlement balance=%.2f total_income=%.2f, want 98.00 and 100.00", sett.Balance, sett.TotalIncome)
 	}
@@ -148,12 +160,45 @@ func TestHandleCallbackAppliesSettlementBeforeReturningSuccess(t *testing.T) {
 	}
 }
 
+func TestHandleCallbackRejectsExactCentUnderpayment(t *testing.T) {
+	ctx := context.Background()
+	client := newTestClient(t)
+	usr, prod := createUserAndProduct(t, client)
+	client.Order.Create().
+		SetProductID(prod.ID).
+		SetUserID(usr.ID).
+		SetOrderNo("ORDER-UNDERPAID").
+		SetTradeNo("TRADE-UNDERPAID").
+		SetType(order.TypeAlipay).
+		SetAmount(100.00).
+		SetNotifyURL("https://merchant.example/notify").
+		SetReturnURL("https://merchant.example/return").
+		SetName("underpaid order").
+		SetProviderSnapshot(snapshotJSON(t)).
+		SaveX(ctx)
+
+	provider.Register("alipay", func(string, map[string]string) (provider.Provider, error) {
+		return fakeProvider{notification: &provider.PaymentNotification{
+			TradeNo: "TRADE-UNDERPAID",
+			OrderID: "ORDER-UNDERPAID",
+			Amount:  99.99,
+			Status:  provider.ProviderStatusSuccess,
+		}}, nil
+	})
+	service := NewPaymentService(client, nil, testConfig(), WithSettlementApplier(feesvc.New(client, nil)))
+
+	if _, err := service.HandleCallback(ctx, provider.TypeAlipay, "provider-body", map[string]string{}); err == nil {
+		t.Fatalf("HandleCallback accepted exact-cent underpayment")
+	}
+}
+
 func TestHandleCallbackForAlreadyPaidOrderSettlesAndNotifies(t *testing.T) {
 	ctx := context.Background()
 	client := newTestClient(t)
-	merchant := createMerchant(t, client)
+	usr, prod := createUserAndProduct(t, client)
 	ord := client.Order.Create().
-		SetMerchantID(merchant.ID).
+		SetProductID(prod.ID).
+		SetUserID(usr.ID).
 		SetOrderNo("ORDER-PAID-CALLBACK").
 		SetTradeNo("TRADE-PAID-CALLBACK").
 		SetType(order.TypeAlipay).
@@ -197,9 +242,10 @@ func TestHandleCallbackForAlreadyPaidOrderSettlesAndNotifies(t *testing.T) {
 func TestCreateOrderReusesPendingOrderWithoutCreatingDuplicate(t *testing.T) {
 	ctx := context.Background()
 	client := newTestClient(t)
-	merchant := createMerchant(t, client)
+	usr, prod := createUserAndProduct(t, client)
 	existing := client.Order.Create().
-		SetMerchantID(merchant.ID).
+		SetProductID(prod.ID).
+		SetUserID(usr.ID).
 		SetOrderNo("ORDER-IDEMPOTENT").
 		SetTradeNo("OLD-PREPAY").
 		SetType(order.TypeAlipay).
@@ -223,7 +269,7 @@ func TestCreateOrderReusesPendingOrderWithoutCreatingDuplicate(t *testing.T) {
 
 	service := NewPaymentService(client, nil, testConfig())
 	resp, err := service.CreateOrder(ctx, CreateOrderRequest{
-		PID:       merchant.Pid,
+		PID:       prod.Pid,
 		OrderNo:   existing.OrderNo,
 		Type:      provider.TypeAlipay,
 		Amount:    existing.Amount,
@@ -259,10 +305,11 @@ func TestCreateOrderReusesPendingOrderWithoutCreatingDuplicate(t *testing.T) {
 func TestScanExpiredOrdersSettlesPaidOrdersLeftUnsettled(t *testing.T) {
 	ctx := context.Background()
 	client := newTestClient(t)
-	merchant := createMerchant(t, client)
+	usr, prod := createUserAndProduct(t, client)
 	paidAt := time.Now().Add(-10 * time.Minute)
 	ord := client.Order.Create().
-		SetMerchantID(merchant.ID).
+		SetProductID(prod.ID).
+		SetUserID(usr.ID).
 		SetOrderNo("ORDER-PAID-UNSETTLED").
 		SetTradeNo("TRADE-PAID-UNSETTLED").
 		SetType(order.TypeAlipay).
@@ -285,7 +332,7 @@ func TestScanExpiredOrdersSettlesPaidOrdersLeftUnsettled(t *testing.T) {
 	if updated.Status != order.StatusSETTLED {
 		t.Fatalf("order status = %s, want SETTLED", updated.Status)
 	}
-	sett := client.Settlement.Query().Where(settlement.MerchantIDEQ(merchant.ID)).OnlyX(ctx)
+	sett := client.Settlement.Query().Where(settlement.UserIDEQ(usr.ID)).OnlyX(ctx)
 	if sett.Balance != 49 || sett.TotalIncome != 50 {
 		t.Fatalf("settlement balance=%.2f total_income=%.2f, want 49.00 and 50.00", sett.Balance, sett.TotalIncome)
 	}

@@ -4,11 +4,12 @@ package ent
 
 import (
 	"context"
-	"epay/ent/merchant"
 	"epay/ent/order"
 	"epay/ent/predicate"
+	"epay/ent/product"
 	"epay/ent/refund"
 	"epay/ent/settlement"
+	"epay/ent/user"
 	"epay/ent/withdraw"
 	"errors"
 	"fmt"
@@ -20,61 +21,55 @@ import (
 	"github.com/google/uuid"
 )
 
-// MerchantUpdate is the builder for updating Merchant entities.
-type MerchantUpdate struct {
+// UserUpdate is the builder for updating User entities.
+type UserUpdate struct {
 	config
 	hooks    []Hook
-	mutation *MerchantMutation
+	mutation *UserMutation
 }
 
-// Where appends a list predicates to the MerchantUpdate builder.
-func (_u *MerchantUpdate) Where(ps ...predicate.Merchant) *MerchantUpdate {
+// Where appends a list predicates to the UserUpdate builder.
+func (_u *UserUpdate) Where(ps ...predicate.User) *UserUpdate {
 	_u.mutation.Where(ps...)
 	return _u
 }
 
-// SetPkey sets the "pkey" field.
-func (_u *MerchantUpdate) SetPkey(v string) *MerchantUpdate {
-	_u.mutation.SetPkey(v)
+// SetEmail sets the "email" field.
+func (_u *UserUpdate) SetEmail(v string) *UserUpdate {
+	_u.mutation.SetEmail(v)
 	return _u
 }
 
-// SetNillablePkey sets the "pkey" field if the given value is not nil.
-func (_u *MerchantUpdate) SetNillablePkey(v *string) *MerchantUpdate {
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableEmail(v *string) *UserUpdate {
 	if v != nil {
-		_u.SetPkey(*v)
+		_u.SetEmail(*v)
 	}
 	return _u
 }
 
 // SetPasswordHash sets the "password_hash" field.
-func (_u *MerchantUpdate) SetPasswordHash(v string) *MerchantUpdate {
+func (_u *UserUpdate) SetPasswordHash(v string) *UserUpdate {
 	_u.mutation.SetPasswordHash(v)
 	return _u
 }
 
 // SetNillablePasswordHash sets the "password_hash" field if the given value is not nil.
-func (_u *MerchantUpdate) SetNillablePasswordHash(v *string) *MerchantUpdate {
+func (_u *UserUpdate) SetNillablePasswordHash(v *string) *UserUpdate {
 	if v != nil {
 		_u.SetPasswordHash(*v)
 	}
 	return _u
 }
 
-// ClearPasswordHash clears the value of the "password_hash" field.
-func (_u *MerchantUpdate) ClearPasswordHash() *MerchantUpdate {
-	_u.mutation.ClearPasswordHash()
-	return _u
-}
-
 // SetName sets the "name" field.
-func (_u *MerchantUpdate) SetName(v string) *MerchantUpdate {
+func (_u *UserUpdate) SetName(v string) *UserUpdate {
 	_u.mutation.SetName(v)
 	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (_u *MerchantUpdate) SetNillableName(v *string) *MerchantUpdate {
+func (_u *UserUpdate) SetNillableName(v *string) *UserUpdate {
 	if v != nil {
 		_u.SetName(*v)
 	}
@@ -82,14 +77,14 @@ func (_u *MerchantUpdate) SetNillableName(v *string) *MerchantUpdate {
 }
 
 // SetFeeRate sets the "fee_rate" field.
-func (_u *MerchantUpdate) SetFeeRate(v float64) *MerchantUpdate {
+func (_u *UserUpdate) SetFeeRate(v float64) *UserUpdate {
 	_u.mutation.ResetFeeRate()
 	_u.mutation.SetFeeRate(v)
 	return _u
 }
 
 // SetNillableFeeRate sets the "fee_rate" field if the given value is not nil.
-func (_u *MerchantUpdate) SetNillableFeeRate(v *float64) *MerchantUpdate {
+func (_u *UserUpdate) SetNillableFeeRate(v *float64) *UserUpdate {
 	if v != nil {
 		_u.SetFeeRate(*v)
 	}
@@ -97,149 +92,54 @@ func (_u *MerchantUpdate) SetNillableFeeRate(v *float64) *MerchantUpdate {
 }
 
 // AddFeeRate adds value to the "fee_rate" field.
-func (_u *MerchantUpdate) AddFeeRate(v float64) *MerchantUpdate {
+func (_u *UserUpdate) AddFeeRate(v float64) *UserUpdate {
 	_u.mutation.AddFeeRate(v)
 	return _u
 }
 
 // SetStatus sets the "status" field.
-func (_u *MerchantUpdate) SetStatus(v merchant.Status) *MerchantUpdate {
+func (_u *UserUpdate) SetStatus(v user.Status) *UserUpdate {
 	_u.mutation.SetStatus(v)
 	return _u
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (_u *MerchantUpdate) SetNillableStatus(v *merchant.Status) *MerchantUpdate {
+func (_u *UserUpdate) SetNillableStatus(v *user.Status) *UserUpdate {
 	if v != nil {
 		_u.SetStatus(*v)
 	}
 	return _u
 }
 
-// SetNotifyURL sets the "notify_url" field.
-func (_u *MerchantUpdate) SetNotifyURL(v string) *MerchantUpdate {
-	_u.mutation.SetNotifyURL(v)
-	return _u
-}
-
-// SetNillableNotifyURL sets the "notify_url" field if the given value is not nil.
-func (_u *MerchantUpdate) SetNillableNotifyURL(v *string) *MerchantUpdate {
-	if v != nil {
-		_u.SetNotifyURL(*v)
-	}
-	return _u
-}
-
-// ClearNotifyURL clears the value of the "notify_url" field.
-func (_u *MerchantUpdate) ClearNotifyURL() *MerchantUpdate {
-	_u.mutation.ClearNotifyURL()
-	return _u
-}
-
-// SetKeytype sets the "keytype" field.
-func (_u *MerchantUpdate) SetKeytype(v int) *MerchantUpdate {
-	_u.mutation.ResetKeytype()
-	_u.mutation.SetKeytype(v)
-	return _u
-}
-
-// SetNillableKeytype sets the "keytype" field if the given value is not nil.
-func (_u *MerchantUpdate) SetNillableKeytype(v *int) *MerchantUpdate {
-	if v != nil {
-		_u.SetKeytype(*v)
-	}
-	return _u
-}
-
-// AddKeytype adds value to the "keytype" field.
-func (_u *MerchantUpdate) AddKeytype(v int) *MerchantUpdate {
-	_u.mutation.AddKeytype(v)
-	return _u
-}
-
-// SetPublicKey sets the "public_key" field.
-func (_u *MerchantUpdate) SetPublicKey(v string) *MerchantUpdate {
-	_u.mutation.SetPublicKey(v)
-	return _u
-}
-
-// SetNillablePublicKey sets the "public_key" field if the given value is not nil.
-func (_u *MerchantUpdate) SetNillablePublicKey(v *string) *MerchantUpdate {
-	if v != nil {
-		_u.SetPublicKey(*v)
-	}
-	return _u
-}
-
-// ClearPublicKey clears the value of the "public_key" field.
-func (_u *MerchantUpdate) ClearPublicKey() *MerchantUpdate {
-	_u.mutation.ClearPublicKey()
-	return _u
-}
-
-// SetRefundEnabled sets the "refund_enabled" field.
-func (_u *MerchantUpdate) SetRefundEnabled(v bool) *MerchantUpdate {
-	_u.mutation.SetRefundEnabled(v)
-	return _u
-}
-
-// SetNillableRefundEnabled sets the "refund_enabled" field if the given value is not nil.
-func (_u *MerchantUpdate) SetNillableRefundEnabled(v *bool) *MerchantUpdate {
-	if v != nil {
-		_u.SetRefundEnabled(*v)
-	}
-	return _u
-}
-
-// SetTransferEnabled sets the "transfer_enabled" field.
-func (_u *MerchantUpdate) SetTransferEnabled(v bool) *MerchantUpdate {
-	_u.mutation.SetTransferEnabled(v)
-	return _u
-}
-
-// SetNillableTransferEnabled sets the "transfer_enabled" field if the given value is not nil.
-func (_u *MerchantUpdate) SetNillableTransferEnabled(v *bool) *MerchantUpdate {
-	if v != nil {
-		_u.SetTransferEnabled(*v)
-	}
-	return _u
-}
-
-// SetMode sets the "mode" field.
-func (_u *MerchantUpdate) SetMode(v int) *MerchantUpdate {
-	_u.mutation.ResetMode()
-	_u.mutation.SetMode(v)
-	return _u
-}
-
-// SetNillableMode sets the "mode" field if the given value is not nil.
-func (_u *MerchantUpdate) SetNillableMode(v *int) *MerchantUpdate {
-	if v != nil {
-		_u.SetMode(*v)
-	}
-	return _u
-}
-
-// AddMode adds value to the "mode" field.
-func (_u *MerchantUpdate) AddMode(v int) *MerchantUpdate {
-	_u.mutation.AddMode(v)
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
-func (_u *MerchantUpdate) SetUpdatedAt(v time.Time) *MerchantUpdate {
+func (_u *UserUpdate) SetUpdatedAt(v time.Time) *UserUpdate {
 	_u.mutation.SetUpdatedAt(v)
 	return _u
 }
 
+// AddProductIDs adds the "products" edge to the Product entity by IDs.
+func (_u *UserUpdate) AddProductIDs(ids ...uuid.UUID) *UserUpdate {
+	_u.mutation.AddProductIDs(ids...)
+	return _u
+}
+
+// AddProducts adds the "products" edges to the Product entity.
+func (_u *UserUpdate) AddProducts(v ...*Product) *UserUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddProductIDs(ids...)
+}
+
 // AddOrderIDs adds the "orders" edge to the Order entity by IDs.
-func (_u *MerchantUpdate) AddOrderIDs(ids ...uuid.UUID) *MerchantUpdate {
+func (_u *UserUpdate) AddOrderIDs(ids ...uuid.UUID) *UserUpdate {
 	_u.mutation.AddOrderIDs(ids...)
 	return _u
 }
 
 // AddOrders adds the "orders" edges to the Order entity.
-func (_u *MerchantUpdate) AddOrders(v ...*Order) *MerchantUpdate {
+func (_u *UserUpdate) AddOrders(v ...*Order) *UserUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -248,13 +148,13 @@ func (_u *MerchantUpdate) AddOrders(v ...*Order) *MerchantUpdate {
 }
 
 // AddSettlementIDs adds the "settlements" edge to the Settlement entity by IDs.
-func (_u *MerchantUpdate) AddSettlementIDs(ids ...uuid.UUID) *MerchantUpdate {
+func (_u *UserUpdate) AddSettlementIDs(ids ...uuid.UUID) *UserUpdate {
 	_u.mutation.AddSettlementIDs(ids...)
 	return _u
 }
 
 // AddSettlements adds the "settlements" edges to the Settlement entity.
-func (_u *MerchantUpdate) AddSettlements(v ...*Settlement) *MerchantUpdate {
+func (_u *UserUpdate) AddSettlements(v ...*Settlement) *UserUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -263,13 +163,13 @@ func (_u *MerchantUpdate) AddSettlements(v ...*Settlement) *MerchantUpdate {
 }
 
 // AddWithdrawIDs adds the "withdraws" edge to the Withdraw entity by IDs.
-func (_u *MerchantUpdate) AddWithdrawIDs(ids ...uuid.UUID) *MerchantUpdate {
+func (_u *UserUpdate) AddWithdrawIDs(ids ...uuid.UUID) *UserUpdate {
 	_u.mutation.AddWithdrawIDs(ids...)
 	return _u
 }
 
 // AddWithdraws adds the "withdraws" edges to the Withdraw entity.
-func (_u *MerchantUpdate) AddWithdraws(v ...*Withdraw) *MerchantUpdate {
+func (_u *UserUpdate) AddWithdraws(v ...*Withdraw) *UserUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -278,13 +178,13 @@ func (_u *MerchantUpdate) AddWithdraws(v ...*Withdraw) *MerchantUpdate {
 }
 
 // AddRefundIDs adds the "refunds" edge to the Refund entity by IDs.
-func (_u *MerchantUpdate) AddRefundIDs(ids ...uuid.UUID) *MerchantUpdate {
+func (_u *UserUpdate) AddRefundIDs(ids ...uuid.UUID) *UserUpdate {
 	_u.mutation.AddRefundIDs(ids...)
 	return _u
 }
 
 // AddRefunds adds the "refunds" edges to the Refund entity.
-func (_u *MerchantUpdate) AddRefunds(v ...*Refund) *MerchantUpdate {
+func (_u *UserUpdate) AddRefunds(v ...*Refund) *UserUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -292,25 +192,46 @@ func (_u *MerchantUpdate) AddRefunds(v ...*Refund) *MerchantUpdate {
 	return _u.AddRefundIDs(ids...)
 }
 
-// Mutation returns the MerchantMutation object of the builder.
-func (_u *MerchantUpdate) Mutation() *MerchantMutation {
+// Mutation returns the UserMutation object of the builder.
+func (_u *UserUpdate) Mutation() *UserMutation {
 	return _u.mutation
 }
 
+// ClearProducts clears all "products" edges to the Product entity.
+func (_u *UserUpdate) ClearProducts() *UserUpdate {
+	_u.mutation.ClearProducts()
+	return _u
+}
+
+// RemoveProductIDs removes the "products" edge to Product entities by IDs.
+func (_u *UserUpdate) RemoveProductIDs(ids ...uuid.UUID) *UserUpdate {
+	_u.mutation.RemoveProductIDs(ids...)
+	return _u
+}
+
+// RemoveProducts removes "products" edges to Product entities.
+func (_u *UserUpdate) RemoveProducts(v ...*Product) *UserUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveProductIDs(ids...)
+}
+
 // ClearOrders clears all "orders" edges to the Order entity.
-func (_u *MerchantUpdate) ClearOrders() *MerchantUpdate {
+func (_u *UserUpdate) ClearOrders() *UserUpdate {
 	_u.mutation.ClearOrders()
 	return _u
 }
 
 // RemoveOrderIDs removes the "orders" edge to Order entities by IDs.
-func (_u *MerchantUpdate) RemoveOrderIDs(ids ...uuid.UUID) *MerchantUpdate {
+func (_u *UserUpdate) RemoveOrderIDs(ids ...uuid.UUID) *UserUpdate {
 	_u.mutation.RemoveOrderIDs(ids...)
 	return _u
 }
 
 // RemoveOrders removes "orders" edges to Order entities.
-func (_u *MerchantUpdate) RemoveOrders(v ...*Order) *MerchantUpdate {
+func (_u *UserUpdate) RemoveOrders(v ...*Order) *UserUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -319,19 +240,19 @@ func (_u *MerchantUpdate) RemoveOrders(v ...*Order) *MerchantUpdate {
 }
 
 // ClearSettlements clears all "settlements" edges to the Settlement entity.
-func (_u *MerchantUpdate) ClearSettlements() *MerchantUpdate {
+func (_u *UserUpdate) ClearSettlements() *UserUpdate {
 	_u.mutation.ClearSettlements()
 	return _u
 }
 
 // RemoveSettlementIDs removes the "settlements" edge to Settlement entities by IDs.
-func (_u *MerchantUpdate) RemoveSettlementIDs(ids ...uuid.UUID) *MerchantUpdate {
+func (_u *UserUpdate) RemoveSettlementIDs(ids ...uuid.UUID) *UserUpdate {
 	_u.mutation.RemoveSettlementIDs(ids...)
 	return _u
 }
 
 // RemoveSettlements removes "settlements" edges to Settlement entities.
-func (_u *MerchantUpdate) RemoveSettlements(v ...*Settlement) *MerchantUpdate {
+func (_u *UserUpdate) RemoveSettlements(v ...*Settlement) *UserUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -340,19 +261,19 @@ func (_u *MerchantUpdate) RemoveSettlements(v ...*Settlement) *MerchantUpdate {
 }
 
 // ClearWithdraws clears all "withdraws" edges to the Withdraw entity.
-func (_u *MerchantUpdate) ClearWithdraws() *MerchantUpdate {
+func (_u *UserUpdate) ClearWithdraws() *UserUpdate {
 	_u.mutation.ClearWithdraws()
 	return _u
 }
 
 // RemoveWithdrawIDs removes the "withdraws" edge to Withdraw entities by IDs.
-func (_u *MerchantUpdate) RemoveWithdrawIDs(ids ...uuid.UUID) *MerchantUpdate {
+func (_u *UserUpdate) RemoveWithdrawIDs(ids ...uuid.UUID) *UserUpdate {
 	_u.mutation.RemoveWithdrawIDs(ids...)
 	return _u
 }
 
 // RemoveWithdraws removes "withdraws" edges to Withdraw entities.
-func (_u *MerchantUpdate) RemoveWithdraws(v ...*Withdraw) *MerchantUpdate {
+func (_u *UserUpdate) RemoveWithdraws(v ...*Withdraw) *UserUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -361,19 +282,19 @@ func (_u *MerchantUpdate) RemoveWithdraws(v ...*Withdraw) *MerchantUpdate {
 }
 
 // ClearRefunds clears all "refunds" edges to the Refund entity.
-func (_u *MerchantUpdate) ClearRefunds() *MerchantUpdate {
+func (_u *UserUpdate) ClearRefunds() *UserUpdate {
 	_u.mutation.ClearRefunds()
 	return _u
 }
 
 // RemoveRefundIDs removes the "refunds" edge to Refund entities by IDs.
-func (_u *MerchantUpdate) RemoveRefundIDs(ids ...uuid.UUID) *MerchantUpdate {
+func (_u *UserUpdate) RemoveRefundIDs(ids ...uuid.UUID) *UserUpdate {
 	_u.mutation.RemoveRefundIDs(ids...)
 	return _u
 }
 
 // RemoveRefunds removes "refunds" edges to Refund entities.
-func (_u *MerchantUpdate) RemoveRefunds(v ...*Refund) *MerchantUpdate {
+func (_u *UserUpdate) RemoveRefunds(v ...*Refund) *UserUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -382,13 +303,13 @@ func (_u *MerchantUpdate) RemoveRefunds(v ...*Refund) *MerchantUpdate {
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (_u *MerchantUpdate) Save(ctx context.Context) (int, error) {
+func (_u *UserUpdate) Save(ctx context.Context) (int, error) {
 	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *MerchantUpdate) SaveX(ctx context.Context) int {
+func (_u *UserUpdate) SaveX(ctx context.Context) int {
 	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -397,51 +318,56 @@ func (_u *MerchantUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (_u *MerchantUpdate) Exec(ctx context.Context) error {
+func (_u *UserUpdate) Exec(ctx context.Context) error {
 	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *MerchantUpdate) ExecX(ctx context.Context) {
+func (_u *UserUpdate) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *MerchantUpdate) defaults() {
+func (_u *UserUpdate) defaults() {
 	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := merchant.UpdateDefaultUpdatedAt()
+		v := user.UpdateDefaultUpdatedAt()
 		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *MerchantUpdate) check() error {
-	if v, ok := _u.mutation.Pkey(); ok {
-		if err := merchant.PkeyValidator(v); err != nil {
-			return &ValidationError{Name: "pkey", err: fmt.Errorf(`ent: validator failed for field "Merchant.pkey": %w`, err)}
+func (_u *UserUpdate) check() error {
+	if v, ok := _u.mutation.Email(); ok {
+		if err := user.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PasswordHash(); ok {
+		if err := user.PasswordHashValidator(v); err != nil {
+			return &ValidationError{Name: "password_hash", err: fmt.Errorf(`ent: validator failed for field "User.password_hash": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.Name(); ok {
-		if err := merchant.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Merchant.name": %w`, err)}
+		if err := user.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "User.name": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.Status(); ok {
-		if err := merchant.StatusValidator(v); err != nil {
-			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Merchant.status": %w`, err)}
+		if err := user.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "User.status": %w`, err)}
 		}
 	}
 	return nil
 }
 
-func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(merchant.Table, merchant.Columns, sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -449,66 +375,78 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			}
 		}
 	}
-	if value, ok := _u.mutation.Pkey(); ok {
-		_spec.SetField(merchant.FieldPkey, field.TypeString, value)
+	if value, ok := _u.mutation.Email(); ok {
+		_spec.SetField(user.FieldEmail, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.PasswordHash(); ok {
-		_spec.SetField(merchant.FieldPasswordHash, field.TypeString, value)
-	}
-	if _u.mutation.PasswordHashCleared() {
-		_spec.ClearField(merchant.FieldPasswordHash, field.TypeString)
+		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
-		_spec.SetField(merchant.FieldName, field.TypeString, value)
+		_spec.SetField(user.FieldName, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.FeeRate(); ok {
-		_spec.SetField(merchant.FieldFeeRate, field.TypeFloat64, value)
+		_spec.SetField(user.FieldFeeRate, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedFeeRate(); ok {
-		_spec.AddField(merchant.FieldFeeRate, field.TypeFloat64, value)
+		_spec.AddField(user.FieldFeeRate, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
-		_spec.SetField(merchant.FieldStatus, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.NotifyURL(); ok {
-		_spec.SetField(merchant.FieldNotifyURL, field.TypeString, value)
-	}
-	if _u.mutation.NotifyURLCleared() {
-		_spec.ClearField(merchant.FieldNotifyURL, field.TypeString)
-	}
-	if value, ok := _u.mutation.Keytype(); ok {
-		_spec.SetField(merchant.FieldKeytype, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedKeytype(); ok {
-		_spec.AddField(merchant.FieldKeytype, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.PublicKey(); ok {
-		_spec.SetField(merchant.FieldPublicKey, field.TypeString, value)
-	}
-	if _u.mutation.PublicKeyCleared() {
-		_spec.ClearField(merchant.FieldPublicKey, field.TypeString)
-	}
-	if value, ok := _u.mutation.RefundEnabled(); ok {
-		_spec.SetField(merchant.FieldRefundEnabled, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.TransferEnabled(); ok {
-		_spec.SetField(merchant.FieldTransferEnabled, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.Mode(); ok {
-		_spec.SetField(merchant.FieldMode, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedMode(); ok {
-		_spec.AddField(merchant.FieldMode, field.TypeInt, value)
+		_spec.SetField(user.FieldStatus, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
-		_spec.SetField(merchant.FieldUpdatedAt, field.TypeTime, value)
+		_spec.SetField(user.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ProductsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ProductsTable,
+			Columns: []string{user.ProductsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedProductsIDs(); len(nodes) > 0 && !_u.mutation.ProductsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ProductsTable,
+			Columns: []string{user.ProductsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProductsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ProductsTable,
+			Columns: []string{user.ProductsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.OrdersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.OrdersTable,
-			Columns: []string{merchant.OrdersColumn},
+			Table:   user.OrdersTable,
+			Columns: []string{user.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeUUID),
@@ -520,8 +458,8 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.OrdersTable,
-			Columns: []string{merchant.OrdersColumn},
+			Table:   user.OrdersTable,
+			Columns: []string{user.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeUUID),
@@ -536,8 +474,8 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.OrdersTable,
-			Columns: []string{merchant.OrdersColumn},
+			Table:   user.OrdersTable,
+			Columns: []string{user.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeUUID),
@@ -552,8 +490,8 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.SettlementsTable,
-			Columns: []string{merchant.SettlementsColumn},
+			Table:   user.SettlementsTable,
+			Columns: []string{user.SettlementsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(settlement.FieldID, field.TypeUUID),
@@ -565,8 +503,8 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.SettlementsTable,
-			Columns: []string{merchant.SettlementsColumn},
+			Table:   user.SettlementsTable,
+			Columns: []string{user.SettlementsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(settlement.FieldID, field.TypeUUID),
@@ -581,8 +519,8 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.SettlementsTable,
-			Columns: []string{merchant.SettlementsColumn},
+			Table:   user.SettlementsTable,
+			Columns: []string{user.SettlementsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(settlement.FieldID, field.TypeUUID),
@@ -597,8 +535,8 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.WithdrawsTable,
-			Columns: []string{merchant.WithdrawsColumn},
+			Table:   user.WithdrawsTable,
+			Columns: []string{user.WithdrawsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(withdraw.FieldID, field.TypeUUID),
@@ -610,8 +548,8 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.WithdrawsTable,
-			Columns: []string{merchant.WithdrawsColumn},
+			Table:   user.WithdrawsTable,
+			Columns: []string{user.WithdrawsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(withdraw.FieldID, field.TypeUUID),
@@ -626,8 +564,8 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.WithdrawsTable,
-			Columns: []string{merchant.WithdrawsColumn},
+			Table:   user.WithdrawsTable,
+			Columns: []string{user.WithdrawsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(withdraw.FieldID, field.TypeUUID),
@@ -642,8 +580,8 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.RefundsTable,
-			Columns: []string{merchant.RefundsColumn},
+			Table:   user.RefundsTable,
+			Columns: []string{user.RefundsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeUUID),
@@ -655,8 +593,8 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.RefundsTable,
-			Columns: []string{merchant.RefundsColumn},
+			Table:   user.RefundsTable,
+			Columns: []string{user.RefundsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeUUID),
@@ -671,8 +609,8 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.RefundsTable,
-			Columns: []string{merchant.RefundsColumn},
+			Table:   user.RefundsTable,
+			Columns: []string{user.RefundsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeUUID),
@@ -685,7 +623,7 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
-			err = &NotFoundError{merchant.Label}
+			err = &NotFoundError{user.Label}
 		} else if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -695,56 +633,50 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	return _node, nil
 }
 
-// MerchantUpdateOne is the builder for updating a single Merchant entity.
-type MerchantUpdateOne struct {
+// UserUpdateOne is the builder for updating a single User entity.
+type UserUpdateOne struct {
 	config
 	fields   []string
 	hooks    []Hook
-	mutation *MerchantMutation
+	mutation *UserMutation
 }
 
-// SetPkey sets the "pkey" field.
-func (_u *MerchantUpdateOne) SetPkey(v string) *MerchantUpdateOne {
-	_u.mutation.SetPkey(v)
+// SetEmail sets the "email" field.
+func (_u *UserUpdateOne) SetEmail(v string) *UserUpdateOne {
+	_u.mutation.SetEmail(v)
 	return _u
 }
 
-// SetNillablePkey sets the "pkey" field if the given value is not nil.
-func (_u *MerchantUpdateOne) SetNillablePkey(v *string) *MerchantUpdateOne {
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableEmail(v *string) *UserUpdateOne {
 	if v != nil {
-		_u.SetPkey(*v)
+		_u.SetEmail(*v)
 	}
 	return _u
 }
 
 // SetPasswordHash sets the "password_hash" field.
-func (_u *MerchantUpdateOne) SetPasswordHash(v string) *MerchantUpdateOne {
+func (_u *UserUpdateOne) SetPasswordHash(v string) *UserUpdateOne {
 	_u.mutation.SetPasswordHash(v)
 	return _u
 }
 
 // SetNillablePasswordHash sets the "password_hash" field if the given value is not nil.
-func (_u *MerchantUpdateOne) SetNillablePasswordHash(v *string) *MerchantUpdateOne {
+func (_u *UserUpdateOne) SetNillablePasswordHash(v *string) *UserUpdateOne {
 	if v != nil {
 		_u.SetPasswordHash(*v)
 	}
 	return _u
 }
 
-// ClearPasswordHash clears the value of the "password_hash" field.
-func (_u *MerchantUpdateOne) ClearPasswordHash() *MerchantUpdateOne {
-	_u.mutation.ClearPasswordHash()
-	return _u
-}
-
 // SetName sets the "name" field.
-func (_u *MerchantUpdateOne) SetName(v string) *MerchantUpdateOne {
+func (_u *UserUpdateOne) SetName(v string) *UserUpdateOne {
 	_u.mutation.SetName(v)
 	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (_u *MerchantUpdateOne) SetNillableName(v *string) *MerchantUpdateOne {
+func (_u *UserUpdateOne) SetNillableName(v *string) *UserUpdateOne {
 	if v != nil {
 		_u.SetName(*v)
 	}
@@ -752,14 +684,14 @@ func (_u *MerchantUpdateOne) SetNillableName(v *string) *MerchantUpdateOne {
 }
 
 // SetFeeRate sets the "fee_rate" field.
-func (_u *MerchantUpdateOne) SetFeeRate(v float64) *MerchantUpdateOne {
+func (_u *UserUpdateOne) SetFeeRate(v float64) *UserUpdateOne {
 	_u.mutation.ResetFeeRate()
 	_u.mutation.SetFeeRate(v)
 	return _u
 }
 
 // SetNillableFeeRate sets the "fee_rate" field if the given value is not nil.
-func (_u *MerchantUpdateOne) SetNillableFeeRate(v *float64) *MerchantUpdateOne {
+func (_u *UserUpdateOne) SetNillableFeeRate(v *float64) *UserUpdateOne {
 	if v != nil {
 		_u.SetFeeRate(*v)
 	}
@@ -767,149 +699,54 @@ func (_u *MerchantUpdateOne) SetNillableFeeRate(v *float64) *MerchantUpdateOne {
 }
 
 // AddFeeRate adds value to the "fee_rate" field.
-func (_u *MerchantUpdateOne) AddFeeRate(v float64) *MerchantUpdateOne {
+func (_u *UserUpdateOne) AddFeeRate(v float64) *UserUpdateOne {
 	_u.mutation.AddFeeRate(v)
 	return _u
 }
 
 // SetStatus sets the "status" field.
-func (_u *MerchantUpdateOne) SetStatus(v merchant.Status) *MerchantUpdateOne {
+func (_u *UserUpdateOne) SetStatus(v user.Status) *UserUpdateOne {
 	_u.mutation.SetStatus(v)
 	return _u
 }
 
 // SetNillableStatus sets the "status" field if the given value is not nil.
-func (_u *MerchantUpdateOne) SetNillableStatus(v *merchant.Status) *MerchantUpdateOne {
+func (_u *UserUpdateOne) SetNillableStatus(v *user.Status) *UserUpdateOne {
 	if v != nil {
 		_u.SetStatus(*v)
 	}
 	return _u
 }
 
-// SetNotifyURL sets the "notify_url" field.
-func (_u *MerchantUpdateOne) SetNotifyURL(v string) *MerchantUpdateOne {
-	_u.mutation.SetNotifyURL(v)
-	return _u
-}
-
-// SetNillableNotifyURL sets the "notify_url" field if the given value is not nil.
-func (_u *MerchantUpdateOne) SetNillableNotifyURL(v *string) *MerchantUpdateOne {
-	if v != nil {
-		_u.SetNotifyURL(*v)
-	}
-	return _u
-}
-
-// ClearNotifyURL clears the value of the "notify_url" field.
-func (_u *MerchantUpdateOne) ClearNotifyURL() *MerchantUpdateOne {
-	_u.mutation.ClearNotifyURL()
-	return _u
-}
-
-// SetKeytype sets the "keytype" field.
-func (_u *MerchantUpdateOne) SetKeytype(v int) *MerchantUpdateOne {
-	_u.mutation.ResetKeytype()
-	_u.mutation.SetKeytype(v)
-	return _u
-}
-
-// SetNillableKeytype sets the "keytype" field if the given value is not nil.
-func (_u *MerchantUpdateOne) SetNillableKeytype(v *int) *MerchantUpdateOne {
-	if v != nil {
-		_u.SetKeytype(*v)
-	}
-	return _u
-}
-
-// AddKeytype adds value to the "keytype" field.
-func (_u *MerchantUpdateOne) AddKeytype(v int) *MerchantUpdateOne {
-	_u.mutation.AddKeytype(v)
-	return _u
-}
-
-// SetPublicKey sets the "public_key" field.
-func (_u *MerchantUpdateOne) SetPublicKey(v string) *MerchantUpdateOne {
-	_u.mutation.SetPublicKey(v)
-	return _u
-}
-
-// SetNillablePublicKey sets the "public_key" field if the given value is not nil.
-func (_u *MerchantUpdateOne) SetNillablePublicKey(v *string) *MerchantUpdateOne {
-	if v != nil {
-		_u.SetPublicKey(*v)
-	}
-	return _u
-}
-
-// ClearPublicKey clears the value of the "public_key" field.
-func (_u *MerchantUpdateOne) ClearPublicKey() *MerchantUpdateOne {
-	_u.mutation.ClearPublicKey()
-	return _u
-}
-
-// SetRefundEnabled sets the "refund_enabled" field.
-func (_u *MerchantUpdateOne) SetRefundEnabled(v bool) *MerchantUpdateOne {
-	_u.mutation.SetRefundEnabled(v)
-	return _u
-}
-
-// SetNillableRefundEnabled sets the "refund_enabled" field if the given value is not nil.
-func (_u *MerchantUpdateOne) SetNillableRefundEnabled(v *bool) *MerchantUpdateOne {
-	if v != nil {
-		_u.SetRefundEnabled(*v)
-	}
-	return _u
-}
-
-// SetTransferEnabled sets the "transfer_enabled" field.
-func (_u *MerchantUpdateOne) SetTransferEnabled(v bool) *MerchantUpdateOne {
-	_u.mutation.SetTransferEnabled(v)
-	return _u
-}
-
-// SetNillableTransferEnabled sets the "transfer_enabled" field if the given value is not nil.
-func (_u *MerchantUpdateOne) SetNillableTransferEnabled(v *bool) *MerchantUpdateOne {
-	if v != nil {
-		_u.SetTransferEnabled(*v)
-	}
-	return _u
-}
-
-// SetMode sets the "mode" field.
-func (_u *MerchantUpdateOne) SetMode(v int) *MerchantUpdateOne {
-	_u.mutation.ResetMode()
-	_u.mutation.SetMode(v)
-	return _u
-}
-
-// SetNillableMode sets the "mode" field if the given value is not nil.
-func (_u *MerchantUpdateOne) SetNillableMode(v *int) *MerchantUpdateOne {
-	if v != nil {
-		_u.SetMode(*v)
-	}
-	return _u
-}
-
-// AddMode adds value to the "mode" field.
-func (_u *MerchantUpdateOne) AddMode(v int) *MerchantUpdateOne {
-	_u.mutation.AddMode(v)
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
-func (_u *MerchantUpdateOne) SetUpdatedAt(v time.Time) *MerchantUpdateOne {
+func (_u *UserUpdateOne) SetUpdatedAt(v time.Time) *UserUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
 	return _u
 }
 
+// AddProductIDs adds the "products" edge to the Product entity by IDs.
+func (_u *UserUpdateOne) AddProductIDs(ids ...uuid.UUID) *UserUpdateOne {
+	_u.mutation.AddProductIDs(ids...)
+	return _u
+}
+
+// AddProducts adds the "products" edges to the Product entity.
+func (_u *UserUpdateOne) AddProducts(v ...*Product) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddProductIDs(ids...)
+}
+
 // AddOrderIDs adds the "orders" edge to the Order entity by IDs.
-func (_u *MerchantUpdateOne) AddOrderIDs(ids ...uuid.UUID) *MerchantUpdateOne {
+func (_u *UserUpdateOne) AddOrderIDs(ids ...uuid.UUID) *UserUpdateOne {
 	_u.mutation.AddOrderIDs(ids...)
 	return _u
 }
 
 // AddOrders adds the "orders" edges to the Order entity.
-func (_u *MerchantUpdateOne) AddOrders(v ...*Order) *MerchantUpdateOne {
+func (_u *UserUpdateOne) AddOrders(v ...*Order) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -918,13 +755,13 @@ func (_u *MerchantUpdateOne) AddOrders(v ...*Order) *MerchantUpdateOne {
 }
 
 // AddSettlementIDs adds the "settlements" edge to the Settlement entity by IDs.
-func (_u *MerchantUpdateOne) AddSettlementIDs(ids ...uuid.UUID) *MerchantUpdateOne {
+func (_u *UserUpdateOne) AddSettlementIDs(ids ...uuid.UUID) *UserUpdateOne {
 	_u.mutation.AddSettlementIDs(ids...)
 	return _u
 }
 
 // AddSettlements adds the "settlements" edges to the Settlement entity.
-func (_u *MerchantUpdateOne) AddSettlements(v ...*Settlement) *MerchantUpdateOne {
+func (_u *UserUpdateOne) AddSettlements(v ...*Settlement) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -933,13 +770,13 @@ func (_u *MerchantUpdateOne) AddSettlements(v ...*Settlement) *MerchantUpdateOne
 }
 
 // AddWithdrawIDs adds the "withdraws" edge to the Withdraw entity by IDs.
-func (_u *MerchantUpdateOne) AddWithdrawIDs(ids ...uuid.UUID) *MerchantUpdateOne {
+func (_u *UserUpdateOne) AddWithdrawIDs(ids ...uuid.UUID) *UserUpdateOne {
 	_u.mutation.AddWithdrawIDs(ids...)
 	return _u
 }
 
 // AddWithdraws adds the "withdraws" edges to the Withdraw entity.
-func (_u *MerchantUpdateOne) AddWithdraws(v ...*Withdraw) *MerchantUpdateOne {
+func (_u *UserUpdateOne) AddWithdraws(v ...*Withdraw) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -948,13 +785,13 @@ func (_u *MerchantUpdateOne) AddWithdraws(v ...*Withdraw) *MerchantUpdateOne {
 }
 
 // AddRefundIDs adds the "refunds" edge to the Refund entity by IDs.
-func (_u *MerchantUpdateOne) AddRefundIDs(ids ...uuid.UUID) *MerchantUpdateOne {
+func (_u *UserUpdateOne) AddRefundIDs(ids ...uuid.UUID) *UserUpdateOne {
 	_u.mutation.AddRefundIDs(ids...)
 	return _u
 }
 
 // AddRefunds adds the "refunds" edges to the Refund entity.
-func (_u *MerchantUpdateOne) AddRefunds(v ...*Refund) *MerchantUpdateOne {
+func (_u *UserUpdateOne) AddRefunds(v ...*Refund) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -962,25 +799,46 @@ func (_u *MerchantUpdateOne) AddRefunds(v ...*Refund) *MerchantUpdateOne {
 	return _u.AddRefundIDs(ids...)
 }
 
-// Mutation returns the MerchantMutation object of the builder.
-func (_u *MerchantUpdateOne) Mutation() *MerchantMutation {
+// Mutation returns the UserMutation object of the builder.
+func (_u *UserUpdateOne) Mutation() *UserMutation {
 	return _u.mutation
 }
 
+// ClearProducts clears all "products" edges to the Product entity.
+func (_u *UserUpdateOne) ClearProducts() *UserUpdateOne {
+	_u.mutation.ClearProducts()
+	return _u
+}
+
+// RemoveProductIDs removes the "products" edge to Product entities by IDs.
+func (_u *UserUpdateOne) RemoveProductIDs(ids ...uuid.UUID) *UserUpdateOne {
+	_u.mutation.RemoveProductIDs(ids...)
+	return _u
+}
+
+// RemoveProducts removes "products" edges to Product entities.
+func (_u *UserUpdateOne) RemoveProducts(v ...*Product) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveProductIDs(ids...)
+}
+
 // ClearOrders clears all "orders" edges to the Order entity.
-func (_u *MerchantUpdateOne) ClearOrders() *MerchantUpdateOne {
+func (_u *UserUpdateOne) ClearOrders() *UserUpdateOne {
 	_u.mutation.ClearOrders()
 	return _u
 }
 
 // RemoveOrderIDs removes the "orders" edge to Order entities by IDs.
-func (_u *MerchantUpdateOne) RemoveOrderIDs(ids ...uuid.UUID) *MerchantUpdateOne {
+func (_u *UserUpdateOne) RemoveOrderIDs(ids ...uuid.UUID) *UserUpdateOne {
 	_u.mutation.RemoveOrderIDs(ids...)
 	return _u
 }
 
 // RemoveOrders removes "orders" edges to Order entities.
-func (_u *MerchantUpdateOne) RemoveOrders(v ...*Order) *MerchantUpdateOne {
+func (_u *UserUpdateOne) RemoveOrders(v ...*Order) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -989,19 +847,19 @@ func (_u *MerchantUpdateOne) RemoveOrders(v ...*Order) *MerchantUpdateOne {
 }
 
 // ClearSettlements clears all "settlements" edges to the Settlement entity.
-func (_u *MerchantUpdateOne) ClearSettlements() *MerchantUpdateOne {
+func (_u *UserUpdateOne) ClearSettlements() *UserUpdateOne {
 	_u.mutation.ClearSettlements()
 	return _u
 }
 
 // RemoveSettlementIDs removes the "settlements" edge to Settlement entities by IDs.
-func (_u *MerchantUpdateOne) RemoveSettlementIDs(ids ...uuid.UUID) *MerchantUpdateOne {
+func (_u *UserUpdateOne) RemoveSettlementIDs(ids ...uuid.UUID) *UserUpdateOne {
 	_u.mutation.RemoveSettlementIDs(ids...)
 	return _u
 }
 
 // RemoveSettlements removes "settlements" edges to Settlement entities.
-func (_u *MerchantUpdateOne) RemoveSettlements(v ...*Settlement) *MerchantUpdateOne {
+func (_u *UserUpdateOne) RemoveSettlements(v ...*Settlement) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -1010,19 +868,19 @@ func (_u *MerchantUpdateOne) RemoveSettlements(v ...*Settlement) *MerchantUpdate
 }
 
 // ClearWithdraws clears all "withdraws" edges to the Withdraw entity.
-func (_u *MerchantUpdateOne) ClearWithdraws() *MerchantUpdateOne {
+func (_u *UserUpdateOne) ClearWithdraws() *UserUpdateOne {
 	_u.mutation.ClearWithdraws()
 	return _u
 }
 
 // RemoveWithdrawIDs removes the "withdraws" edge to Withdraw entities by IDs.
-func (_u *MerchantUpdateOne) RemoveWithdrawIDs(ids ...uuid.UUID) *MerchantUpdateOne {
+func (_u *UserUpdateOne) RemoveWithdrawIDs(ids ...uuid.UUID) *UserUpdateOne {
 	_u.mutation.RemoveWithdrawIDs(ids...)
 	return _u
 }
 
 // RemoveWithdraws removes "withdraws" edges to Withdraw entities.
-func (_u *MerchantUpdateOne) RemoveWithdraws(v ...*Withdraw) *MerchantUpdateOne {
+func (_u *UserUpdateOne) RemoveWithdraws(v ...*Withdraw) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -1031,19 +889,19 @@ func (_u *MerchantUpdateOne) RemoveWithdraws(v ...*Withdraw) *MerchantUpdateOne 
 }
 
 // ClearRefunds clears all "refunds" edges to the Refund entity.
-func (_u *MerchantUpdateOne) ClearRefunds() *MerchantUpdateOne {
+func (_u *UserUpdateOne) ClearRefunds() *UserUpdateOne {
 	_u.mutation.ClearRefunds()
 	return _u
 }
 
 // RemoveRefundIDs removes the "refunds" edge to Refund entities by IDs.
-func (_u *MerchantUpdateOne) RemoveRefundIDs(ids ...uuid.UUID) *MerchantUpdateOne {
+func (_u *UserUpdateOne) RemoveRefundIDs(ids ...uuid.UUID) *UserUpdateOne {
 	_u.mutation.RemoveRefundIDs(ids...)
 	return _u
 }
 
 // RemoveRefunds removes "refunds" edges to Refund entities.
-func (_u *MerchantUpdateOne) RemoveRefunds(v ...*Refund) *MerchantUpdateOne {
+func (_u *UserUpdateOne) RemoveRefunds(v ...*Refund) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -1051,27 +909,27 @@ func (_u *MerchantUpdateOne) RemoveRefunds(v ...*Refund) *MerchantUpdateOne {
 	return _u.RemoveRefundIDs(ids...)
 }
 
-// Where appends a list predicates to the MerchantUpdate builder.
-func (_u *MerchantUpdateOne) Where(ps ...predicate.Merchant) *MerchantUpdateOne {
+// Where appends a list predicates to the UserUpdate builder.
+func (_u *UserUpdateOne) Where(ps ...predicate.User) *UserUpdateOne {
 	_u.mutation.Where(ps...)
 	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (_u *MerchantUpdateOne) Select(field string, fields ...string) *MerchantUpdateOne {
+func (_u *UserUpdateOne) Select(field string, fields ...string) *UserUpdateOne {
 	_u.fields = append([]string{field}, fields...)
 	return _u
 }
 
-// Save executes the query and returns the updated Merchant entity.
-func (_u *MerchantUpdateOne) Save(ctx context.Context) (*Merchant, error) {
+// Save executes the query and returns the updated User entity.
+func (_u *UserUpdateOne) Save(ctx context.Context) (*User, error) {
 	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *MerchantUpdateOne) SaveX(ctx context.Context) *Merchant {
+func (_u *UserUpdateOne) SaveX(ctx context.Context) *User {
 	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -1080,64 +938,69 @@ func (_u *MerchantUpdateOne) SaveX(ctx context.Context) *Merchant {
 }
 
 // Exec executes the query on the entity.
-func (_u *MerchantUpdateOne) Exec(ctx context.Context) error {
+func (_u *UserUpdateOne) Exec(ctx context.Context) error {
 	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *MerchantUpdateOne) ExecX(ctx context.Context) {
+func (_u *UserUpdateOne) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *MerchantUpdateOne) defaults() {
+func (_u *UserUpdateOne) defaults() {
 	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := merchant.UpdateDefaultUpdatedAt()
+		v := user.UpdateDefaultUpdatedAt()
 		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *MerchantUpdateOne) check() error {
-	if v, ok := _u.mutation.Pkey(); ok {
-		if err := merchant.PkeyValidator(v); err != nil {
-			return &ValidationError{Name: "pkey", err: fmt.Errorf(`ent: validator failed for field "Merchant.pkey": %w`, err)}
+func (_u *UserUpdateOne) check() error {
+	if v, ok := _u.mutation.Email(); ok {
+		if err := user.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PasswordHash(); ok {
+		if err := user.PasswordHashValidator(v); err != nil {
+			return &ValidationError{Name: "password_hash", err: fmt.Errorf(`ent: validator failed for field "User.password_hash": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.Name(); ok {
-		if err := merchant.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Merchant.name": %w`, err)}
+		if err := user.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "User.name": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.Status(); ok {
-		if err := merchant.StatusValidator(v); err != nil {
-			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Merchant.status": %w`, err)}
+		if err := user.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "User.status": %w`, err)}
 		}
 	}
 	return nil
 }
 
-func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err error) {
+func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(merchant.Table, merchant.Columns, sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewUpdateSpec(user.Table, user.Columns, sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID))
 	id, ok := _u.mutation.ID()
 	if !ok {
-		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Merchant.id" for update`)}
+		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "User.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
 	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, merchant.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, user.FieldID)
 		for _, f := range fields {
-			if !merchant.ValidColumn(f) {
+			if !user.ValidColumn(f) {
 				return nil, &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 			}
-			if f != merchant.FieldID {
+			if f != user.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, f)
 			}
 		}
@@ -1149,66 +1012,78 @@ func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err 
 			}
 		}
 	}
-	if value, ok := _u.mutation.Pkey(); ok {
-		_spec.SetField(merchant.FieldPkey, field.TypeString, value)
+	if value, ok := _u.mutation.Email(); ok {
+		_spec.SetField(user.FieldEmail, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.PasswordHash(); ok {
-		_spec.SetField(merchant.FieldPasswordHash, field.TypeString, value)
-	}
-	if _u.mutation.PasswordHashCleared() {
-		_spec.ClearField(merchant.FieldPasswordHash, field.TypeString)
+		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
-		_spec.SetField(merchant.FieldName, field.TypeString, value)
+		_spec.SetField(user.FieldName, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.FeeRate(); ok {
-		_spec.SetField(merchant.FieldFeeRate, field.TypeFloat64, value)
+		_spec.SetField(user.FieldFeeRate, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedFeeRate(); ok {
-		_spec.AddField(merchant.FieldFeeRate, field.TypeFloat64, value)
+		_spec.AddField(user.FieldFeeRate, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
-		_spec.SetField(merchant.FieldStatus, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.NotifyURL(); ok {
-		_spec.SetField(merchant.FieldNotifyURL, field.TypeString, value)
-	}
-	if _u.mutation.NotifyURLCleared() {
-		_spec.ClearField(merchant.FieldNotifyURL, field.TypeString)
-	}
-	if value, ok := _u.mutation.Keytype(); ok {
-		_spec.SetField(merchant.FieldKeytype, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedKeytype(); ok {
-		_spec.AddField(merchant.FieldKeytype, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.PublicKey(); ok {
-		_spec.SetField(merchant.FieldPublicKey, field.TypeString, value)
-	}
-	if _u.mutation.PublicKeyCleared() {
-		_spec.ClearField(merchant.FieldPublicKey, field.TypeString)
-	}
-	if value, ok := _u.mutation.RefundEnabled(); ok {
-		_spec.SetField(merchant.FieldRefundEnabled, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.TransferEnabled(); ok {
-		_spec.SetField(merchant.FieldTransferEnabled, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.Mode(); ok {
-		_spec.SetField(merchant.FieldMode, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedMode(); ok {
-		_spec.AddField(merchant.FieldMode, field.TypeInt, value)
+		_spec.SetField(user.FieldStatus, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
-		_spec.SetField(merchant.FieldUpdatedAt, field.TypeTime, value)
+		_spec.SetField(user.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if _u.mutation.ProductsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ProductsTable,
+			Columns: []string{user.ProductsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedProductsIDs(); len(nodes) > 0 && !_u.mutation.ProductsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ProductsTable,
+			Columns: []string{user.ProductsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProductsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ProductsTable,
+			Columns: []string{user.ProductsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(product.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.OrdersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.OrdersTable,
-			Columns: []string{merchant.OrdersColumn},
+			Table:   user.OrdersTable,
+			Columns: []string{user.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeUUID),
@@ -1220,8 +1095,8 @@ func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err 
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.OrdersTable,
-			Columns: []string{merchant.OrdersColumn},
+			Table:   user.OrdersTable,
+			Columns: []string{user.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeUUID),
@@ -1236,8 +1111,8 @@ func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err 
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.OrdersTable,
-			Columns: []string{merchant.OrdersColumn},
+			Table:   user.OrdersTable,
+			Columns: []string{user.OrdersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeUUID),
@@ -1252,8 +1127,8 @@ func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err 
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.SettlementsTable,
-			Columns: []string{merchant.SettlementsColumn},
+			Table:   user.SettlementsTable,
+			Columns: []string{user.SettlementsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(settlement.FieldID, field.TypeUUID),
@@ -1265,8 +1140,8 @@ func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err 
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.SettlementsTable,
-			Columns: []string{merchant.SettlementsColumn},
+			Table:   user.SettlementsTable,
+			Columns: []string{user.SettlementsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(settlement.FieldID, field.TypeUUID),
@@ -1281,8 +1156,8 @@ func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err 
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.SettlementsTable,
-			Columns: []string{merchant.SettlementsColumn},
+			Table:   user.SettlementsTable,
+			Columns: []string{user.SettlementsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(settlement.FieldID, field.TypeUUID),
@@ -1297,8 +1172,8 @@ func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err 
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.WithdrawsTable,
-			Columns: []string{merchant.WithdrawsColumn},
+			Table:   user.WithdrawsTable,
+			Columns: []string{user.WithdrawsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(withdraw.FieldID, field.TypeUUID),
@@ -1310,8 +1185,8 @@ func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err 
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.WithdrawsTable,
-			Columns: []string{merchant.WithdrawsColumn},
+			Table:   user.WithdrawsTable,
+			Columns: []string{user.WithdrawsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(withdraw.FieldID, field.TypeUUID),
@@ -1326,8 +1201,8 @@ func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err 
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.WithdrawsTable,
-			Columns: []string{merchant.WithdrawsColumn},
+			Table:   user.WithdrawsTable,
+			Columns: []string{user.WithdrawsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(withdraw.FieldID, field.TypeUUID),
@@ -1342,8 +1217,8 @@ func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err 
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.RefundsTable,
-			Columns: []string{merchant.RefundsColumn},
+			Table:   user.RefundsTable,
+			Columns: []string{user.RefundsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeUUID),
@@ -1355,8 +1230,8 @@ func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err 
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.RefundsTable,
-			Columns: []string{merchant.RefundsColumn},
+			Table:   user.RefundsTable,
+			Columns: []string{user.RefundsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeUUID),
@@ -1371,8 +1246,8 @@ func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err 
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   merchant.RefundsTable,
-			Columns: []string{merchant.RefundsColumn},
+			Table:   user.RefundsTable,
+			Columns: []string{user.RefundsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeUUID),
@@ -1383,12 +1258,12 @@ func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Merchant{config: _u.config}
+	_node = &User{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
 	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
-			err = &NotFoundError{merchant.Label}
+			err = &NotFoundError{user.Label}
 		} else if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}

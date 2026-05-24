@@ -24,7 +24,7 @@ const statusMap: Record<string, { type: 'success' | 'warning' | 'error' | 'defau
 
 const columns: DataTableColumns<any> = [
   { title: 'ID', key: 'id', width: 60 },
-  { title: '商户', key: 'merchant_name', width: 120 },
+  { title: '用户', key: 'user_name', width: 120 },
   {
     title: '金额',
     key: 'amount',
@@ -60,7 +60,7 @@ const columns: DataTableColumns<any> = [
 function confirmApprove(row: any) {
   dialog.warning({
     title: '通过提现申请',
-    content: `确认通过商户「${row.merchant_name || '-'}」的 ¥${Number(row.amount || 0).toFixed(2)} 提现申请？`,
+    content: `确认通过用户「${row.user_name || '-'}」的 ¥${Number(row.amount || 0).toFixed(2)} 提现申请？`,
     positiveText: '通过',
     negativeText: '取消',
     onPositiveClick: () => handleApprove(row),
@@ -70,7 +70,7 @@ function confirmApprove(row: any) {
 function confirmReject(row: any) {
   dialog.warning({
     title: '拒绝提现申请',
-    content: `确认拒绝商户「${row.merchant_name || '-'}」的 ¥${Number(row.amount || 0).toFixed(2)} 提现申请？`,
+    content: `确认拒绝用户「${row.user_name || '-'}」的 ¥${Number(row.amount || 0).toFixed(2)} 提现申请？`,
     positiveText: '拒绝',
     negativeText: '取消',
     onPositiveClick: () => handleReject(row),

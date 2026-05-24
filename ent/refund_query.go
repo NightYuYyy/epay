@@ -4,9 +4,9 @@ package ent
 
 import (
 	"context"
-	"epay/ent/merchant"
 	"epay/ent/predicate"
 	"epay/ent/refund"
+	"epay/ent/user"
 	"fmt"
 	"math"
 
@@ -21,12 +21,12 @@ import (
 // RefundQuery is the builder for querying Refund entities.
 type RefundQuery struct {
 	config
-	ctx          *QueryContext
-	order        []refund.OrderOption
-	inters       []Interceptor
-	predicates   []predicate.Refund
-	withMerchant *MerchantQuery
-	modifiers    []func(*sql.Selector)
+	ctx        *QueryContext
+	order      []refund.OrderOption
+	inters     []Interceptor
+	predicates []predicate.Refund
+	withUser   *UserQuery
+	modifiers  []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -63,9 +63,9 @@ func (_q *RefundQuery) Order(o ...refund.OrderOption) *RefundQuery {
 	return _q
 }
 
-// QueryMerchant chains the current query on the "merchant" edge.
-func (_q *RefundQuery) QueryMerchant() *MerchantQuery {
-	query := (&MerchantClient{config: _q.config}).Query()
+// QueryUser chains the current query on the "user" edge.
+func (_q *RefundQuery) QueryUser() *UserQuery {
+	query := (&UserClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -76,8 +76,8 @@ func (_q *RefundQuery) QueryMerchant() *MerchantQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(refund.Table, refund.FieldID, selector),
-			sqlgraph.To(merchant.Table, merchant.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, refund.MerchantTable, refund.MerchantColumn),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, refund.UserTable, refund.UserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -272,26 +272,26 @@ func (_q *RefundQuery) Clone() *RefundQuery {
 		return nil
 	}
 	return &RefundQuery{
-		config:       _q.config,
-		ctx:          _q.ctx.Clone(),
-		order:        append([]refund.OrderOption{}, _q.order...),
-		inters:       append([]Interceptor{}, _q.inters...),
-		predicates:   append([]predicate.Refund{}, _q.predicates...),
-		withMerchant: _q.withMerchant.Clone(),
+		config:     _q.config,
+		ctx:        _q.ctx.Clone(),
+		order:      append([]refund.OrderOption{}, _q.order...),
+		inters:     append([]Interceptor{}, _q.inters...),
+		predicates: append([]predicate.Refund{}, _q.predicates...),
+		withUser:   _q.withUser.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
 }
 
-// WithMerchant tells the query-builder to eager-load the nodes that are connected to
-// the "merchant" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *RefundQuery) WithMerchant(opts ...func(*MerchantQuery)) *RefundQuery {
-	query := (&MerchantClient{config: _q.config}).Query()
+// WithUser tells the query-builder to eager-load the nodes that are connected to
+// the "user" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *RefundQuery) WithUser(opts ...func(*UserQuery)) *RefundQuery {
+	query := (&UserClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withMerchant = query
+	_q.withUser = query
 	return _q
 }
 
@@ -374,7 +374,7 @@ func (_q *RefundQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Refun
 		nodes       = []*Refund{}
 		_spec       = _q.querySpec()
 		loadedTypes = [1]bool{
-			_q.withMerchant != nil,
+			_q.withUser != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -398,20 +398,20 @@ func (_q *RefundQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Refun
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withMerchant; query != nil {
-		if err := _q.loadMerchant(ctx, query, nodes, nil,
-			func(n *Refund, e *Merchant) { n.Edges.Merchant = e }); err != nil {
+	if query := _q.withUser; query != nil {
+		if err := _q.loadUser(ctx, query, nodes, nil,
+			func(n *Refund, e *User) { n.Edges.User = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (_q *RefundQuery) loadMerchant(ctx context.Context, query *MerchantQuery, nodes []*Refund, init func(*Refund), assign func(*Refund, *Merchant)) error {
+func (_q *RefundQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*Refund, init func(*Refund), assign func(*Refund, *User)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Refund)
 	for i := range nodes {
-		fk := nodes[i].MerchantID
+		fk := nodes[i].UserID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -420,7 +420,7 @@ func (_q *RefundQuery) loadMerchant(ctx context.Context, query *MerchantQuery, n
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(merchant.IDIn(ids...))
+	query.Where(user.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -428,7 +428,7 @@ func (_q *RefundQuery) loadMerchant(ctx context.Context, query *MerchantQuery, n
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "merchant_id" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -465,8 +465,8 @@ func (_q *RefundQuery) querySpec() *sqlgraph.QuerySpec {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
-		if _q.withMerchant != nil {
-			_spec.Node.AddColumnOnce(refund.FieldMerchantID)
+		if _q.withUser != nil {
+			_spec.Node.AddColumnOnce(refund.FieldUserID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

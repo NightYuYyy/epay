@@ -4,8 +4,8 @@ package ent
 
 import (
 	"context"
-	"epay/ent/merchant"
 	"epay/ent/predicate"
+	"epay/ent/user"
 	"epay/ent/withdraw"
 	"errors"
 	"fmt"
@@ -30,16 +30,16 @@ func (_u *WithdrawUpdate) Where(ps ...predicate.Withdraw) *WithdrawUpdate {
 	return _u
 }
 
-// SetMerchantID sets the "merchant_id" field.
-func (_u *WithdrawUpdate) SetMerchantID(v uuid.UUID) *WithdrawUpdate {
-	_u.mutation.SetMerchantID(v)
+// SetUserID sets the "user_id" field.
+func (_u *WithdrawUpdate) SetUserID(v uuid.UUID) *WithdrawUpdate {
+	_u.mutation.SetUserID(v)
 	return _u
 }
 
-// SetNillableMerchantID sets the "merchant_id" field if the given value is not nil.
-func (_u *WithdrawUpdate) SetNillableMerchantID(v *uuid.UUID) *WithdrawUpdate {
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *WithdrawUpdate) SetNillableUserID(v *uuid.UUID) *WithdrawUpdate {
 	if v != nil {
-		_u.SetMerchantID(*v)
+		_u.SetUserID(*v)
 	}
 	return _u
 }
@@ -119,9 +119,9 @@ func (_u *WithdrawUpdate) SetUpdatedAt(v time.Time) *WithdrawUpdate {
 	return _u
 }
 
-// SetMerchant sets the "merchant" edge to the Merchant entity.
-func (_u *WithdrawUpdate) SetMerchant(v *Merchant) *WithdrawUpdate {
-	return _u.SetMerchantID(v.ID)
+// SetUser sets the "user" edge to the User entity.
+func (_u *WithdrawUpdate) SetUser(v *User) *WithdrawUpdate {
+	return _u.SetUserID(v.ID)
 }
 
 // Mutation returns the WithdrawMutation object of the builder.
@@ -129,9 +129,9 @@ func (_u *WithdrawUpdate) Mutation() *WithdrawMutation {
 	return _u.mutation
 }
 
-// ClearMerchant clears the "merchant" edge to the Merchant entity.
-func (_u *WithdrawUpdate) ClearMerchant() *WithdrawUpdate {
-	_u.mutation.ClearMerchant()
+// ClearUser clears the "user" edge to the User entity.
+func (_u *WithdrawUpdate) ClearUser() *WithdrawUpdate {
+	_u.mutation.ClearUser()
 	return _u
 }
 
@@ -183,8 +183,8 @@ func (_u *WithdrawUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Withdraw.status": %w`, err)}
 		}
 	}
-	if _u.mutation.MerchantCleared() && len(_u.mutation.MerchantIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Withdraw.merchant"`)
+	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Withdraw.user"`)
 	}
 	return nil
 }
@@ -222,28 +222,28 @@ func (_u *WithdrawUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(withdraw.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if _u.mutation.MerchantCleared() {
+	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   withdraw.MerchantTable,
-			Columns: []string{withdraw.MerchantColumn},
+			Table:   withdraw.UserTable,
+			Columns: []string{withdraw.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.MerchantIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   withdraw.MerchantTable,
-			Columns: []string{withdraw.MerchantColumn},
+			Table:   withdraw.UserTable,
+			Columns: []string{withdraw.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -271,16 +271,16 @@ type WithdrawUpdateOne struct {
 	mutation *WithdrawMutation
 }
 
-// SetMerchantID sets the "merchant_id" field.
-func (_u *WithdrawUpdateOne) SetMerchantID(v uuid.UUID) *WithdrawUpdateOne {
-	_u.mutation.SetMerchantID(v)
+// SetUserID sets the "user_id" field.
+func (_u *WithdrawUpdateOne) SetUserID(v uuid.UUID) *WithdrawUpdateOne {
+	_u.mutation.SetUserID(v)
 	return _u
 }
 
-// SetNillableMerchantID sets the "merchant_id" field if the given value is not nil.
-func (_u *WithdrawUpdateOne) SetNillableMerchantID(v *uuid.UUID) *WithdrawUpdateOne {
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (_u *WithdrawUpdateOne) SetNillableUserID(v *uuid.UUID) *WithdrawUpdateOne {
 	if v != nil {
-		_u.SetMerchantID(*v)
+		_u.SetUserID(*v)
 	}
 	return _u
 }
@@ -360,9 +360,9 @@ func (_u *WithdrawUpdateOne) SetUpdatedAt(v time.Time) *WithdrawUpdateOne {
 	return _u
 }
 
-// SetMerchant sets the "merchant" edge to the Merchant entity.
-func (_u *WithdrawUpdateOne) SetMerchant(v *Merchant) *WithdrawUpdateOne {
-	return _u.SetMerchantID(v.ID)
+// SetUser sets the "user" edge to the User entity.
+func (_u *WithdrawUpdateOne) SetUser(v *User) *WithdrawUpdateOne {
+	return _u.SetUserID(v.ID)
 }
 
 // Mutation returns the WithdrawMutation object of the builder.
@@ -370,9 +370,9 @@ func (_u *WithdrawUpdateOne) Mutation() *WithdrawMutation {
 	return _u.mutation
 }
 
-// ClearMerchant clears the "merchant" edge to the Merchant entity.
-func (_u *WithdrawUpdateOne) ClearMerchant() *WithdrawUpdateOne {
-	_u.mutation.ClearMerchant()
+// ClearUser clears the "user" edge to the User entity.
+func (_u *WithdrawUpdateOne) ClearUser() *WithdrawUpdateOne {
+	_u.mutation.ClearUser()
 	return _u
 }
 
@@ -437,8 +437,8 @@ func (_u *WithdrawUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Withdraw.status": %w`, err)}
 		}
 	}
-	if _u.mutation.MerchantCleared() && len(_u.mutation.MerchantIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Withdraw.merchant"`)
+	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Withdraw.user"`)
 	}
 	return nil
 }
@@ -493,28 +493,28 @@ func (_u *WithdrawUpdateOne) sqlSave(ctx context.Context) (_node *Withdraw, err 
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(withdraw.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if _u.mutation.MerchantCleared() {
+	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   withdraw.MerchantTable,
-			Columns: []string{withdraw.MerchantColumn},
+			Table:   withdraw.UserTable,
+			Columns: []string{withdraw.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.MerchantIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   withdraw.MerchantTable,
-			Columns: []string{withdraw.MerchantColumn},
+			Table:   withdraw.UserTable,
+			Columns: []string{withdraw.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(merchant.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

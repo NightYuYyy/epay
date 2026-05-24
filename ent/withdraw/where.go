@@ -56,9 +56,9 @@ func IDLTE(id uuid.UUID) predicate.Withdraw {
 	return predicate.Withdraw(sql.FieldLTE(FieldID, id))
 }
 
-// MerchantID applies equality check predicate on the "merchant_id" field. It's identical to MerchantIDEQ.
-func MerchantID(v uuid.UUID) predicate.Withdraw {
-	return predicate.Withdraw(sql.FieldEQ(FieldMerchantID, v))
+// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
+func UserID(v uuid.UUID) predicate.Withdraw {
+	return predicate.Withdraw(sql.FieldEQ(FieldUserID, v))
 }
 
 // Amount applies equality check predicate on the "amount" field. It's identical to AmountEQ.
@@ -86,24 +86,24 @@ func UpdatedAt(v time.Time) predicate.Withdraw {
 	return predicate.Withdraw(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
-// MerchantIDEQ applies the EQ predicate on the "merchant_id" field.
-func MerchantIDEQ(v uuid.UUID) predicate.Withdraw {
-	return predicate.Withdraw(sql.FieldEQ(FieldMerchantID, v))
+// UserIDEQ applies the EQ predicate on the "user_id" field.
+func UserIDEQ(v uuid.UUID) predicate.Withdraw {
+	return predicate.Withdraw(sql.FieldEQ(FieldUserID, v))
 }
 
-// MerchantIDNEQ applies the NEQ predicate on the "merchant_id" field.
-func MerchantIDNEQ(v uuid.UUID) predicate.Withdraw {
-	return predicate.Withdraw(sql.FieldNEQ(FieldMerchantID, v))
+// UserIDNEQ applies the NEQ predicate on the "user_id" field.
+func UserIDNEQ(v uuid.UUID) predicate.Withdraw {
+	return predicate.Withdraw(sql.FieldNEQ(FieldUserID, v))
 }
 
-// MerchantIDIn applies the In predicate on the "merchant_id" field.
-func MerchantIDIn(vs ...uuid.UUID) predicate.Withdraw {
-	return predicate.Withdraw(sql.FieldIn(FieldMerchantID, vs...))
+// UserIDIn applies the In predicate on the "user_id" field.
+func UserIDIn(vs ...uuid.UUID) predicate.Withdraw {
+	return predicate.Withdraw(sql.FieldIn(FieldUserID, vs...))
 }
 
-// MerchantIDNotIn applies the NotIn predicate on the "merchant_id" field.
-func MerchantIDNotIn(vs ...uuid.UUID) predicate.Withdraw {
-	return predicate.Withdraw(sql.FieldNotIn(FieldMerchantID, vs...))
+// UserIDNotIn applies the NotIn predicate on the "user_id" field.
+func UserIDNotIn(vs ...uuid.UUID) predicate.Withdraw {
+	return predicate.Withdraw(sql.FieldNotIn(FieldUserID, vs...))
 }
 
 // AmountEQ applies the EQ predicate on the "amount" field.
@@ -386,21 +386,21 @@ func UpdatedAtLTE(v time.Time) predicate.Withdraw {
 	return predicate.Withdraw(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
-// HasMerchant applies the HasEdge predicate on the "merchant" edge.
-func HasMerchant() predicate.Withdraw {
+// HasUser applies the HasEdge predicate on the "user" edge.
+func HasUser() predicate.Withdraw {
 	return predicate.Withdraw(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, MerchantTable, MerchantColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasMerchantWith applies the HasEdge predicate on the "merchant" edge with a given conditions (other predicates).
-func HasMerchantWith(preds ...predicate.Merchant) predicate.Withdraw {
+// HasUserWith applies the HasEdge predicate on the "user" edge with a given conditions (other predicates).
+func HasUserWith(preds ...predicate.User) predicate.Withdraw {
 	return predicate.Withdraw(func(s *sql.Selector) {
-		step := newMerchantStep()
+		step := newUserStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

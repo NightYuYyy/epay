@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
+import { ref, computed, onMounted, h } from 'vue'
 import { NCard, NForm, NFormItem, NInputNumber, NInput, NButton, NDataTable, NTag } from 'naive-ui'
 import { useMessage } from 'naive-ui'
 import api from '@/api/client'
@@ -16,11 +16,15 @@ const balance = ref(0)
 const withdraws = ref<any[]>([])
 const loading = ref(false)
 const pagination = ref({ page: 1, pageSize: 10, itemCount: 0 })
+const canSubmit = computed(() => Boolean(
+  amount.value && amount.value >= 0.01 && amount.value <= balance.value && accountInfo.value.trim() && !submitting.value,
+))
 
 const statusTagMap: Record<string, any> = {
-  pending: { type: 'warning' as const, text: '待处理' },
-  completed: { type: 'success' as const, text: '已完成' },
-  rejected: { type: 'error' as const, text: '已拒绝' },
+  PENDING: { type: 'warning' as const, text: '待处理' },
+  APPROVED: { type: 'info' as const, text: '已批准' },
+  PAID: { type: 'success' as const, text: '已完成' },
+  REJECTED: { type: 'error' as const, text: '已拒绝' },
 }
 
 const columns = [
@@ -29,7 +33,7 @@ const columns = [
     key: 'amount',
     width: 120,
     render(row: any) {
-      return `¥${(row.amount / 100).toFixed(2)}`
+      return `¥${row.amount.toFixed(2)}`
     },
   },
   { title: '收款信息', key: 'account_info', width: 200, ellipsis: { tooltip: true } },
@@ -59,7 +63,7 @@ const columns = [
 
 async function fetchBalance() {
   try {
-    const { data } = await api.get('/api/merchant/balance')
+    const { data } = await api.get('/api/user/balance')
     if (data.code === 0) {
       balance.value = data.data.balance || 0
     }
@@ -71,14 +75,14 @@ async function fetchBalance() {
 async function fetchWithdraws() {
   loading.value = true
   try {
-    const { data } = await api.get('/api/merchant/withdraws', {
+    const { data } = await api.get('/api/user/withdraws', {
       params: {
         page: pagination.value.page,
-        page_size: pagination.value.pageSize,
+        limit: pagination.value.pageSize,
       },
     })
     if (data.code === 0) {
-      withdraws.value = data.data?.list || data.data || []
+      withdraws.value = data.data?.items || []
       pagination.value.itemCount = data.data?.total || 0
     }
   } catch (err: any) {
@@ -100,17 +104,13 @@ function handlePageSizeChange(pageSize: number) {
 }
 
 async function handleSubmit() {
-  if (!amount.value || amount.value <= 0) {
-    message.error('请输入提现金额')
-    return
-  }
-  if (!accountInfo.value) {
-    message.error('请输入收款信息')
+  if (!canSubmit.value) {
+    message.error(balance.value <= 0 ? '余额不足' : '请填写有效提现金额和收款信息')
     return
   }
   submitting.value = true
   try {
-    const { data } = await api.post('/api/merchant/withdraws', {
+    const { data } = await api.post('/api/user/withdraws', {
       amount: amount.value,
       account_info: accountInfo.value,
     })
@@ -143,14 +143,19 @@ onMounted(() => {
       <n-form label-placement="left" label-width="100" style="max-width: 500px;">
         <n-form-item label="可提现余额">
           <span style="font-size: 18px; font-weight: bold; color: var(--n-color-target);">
-            ¥{{ (balance / 100).toFixed(2) }}
+            ¥{{ balance.toFixed(2) }}
           </span>
         </n-form-item>
+        <p v-if="balance <= 0" style="margin: 0 0 12px 100px; color: var(--n-text-color-3); font-size: 13px;">
+          余额不足，暂不能申请提现。
+        </p>
         <n-form-item label="提现金额">
           <n-input-number
             v-model:value="amount"
             :min="0.01"
-            :max="balance / 100"
+            :step="0.01"
+            :precision="2"
+            :max="balance"
             placeholder="请输入提现金额"
             style="width: 100%"
           >
@@ -165,13 +170,13 @@ onMounted(() => {
           />
         </n-form-item>
       </n-form>
-      <n-button type="primary" :loading="submitting" @click="handleSubmit">
+      <n-button type="primary" :loading="submitting" :disabled="!canSubmit" @click="handleSubmit">
         提交提现申请
       </n-button>
     </n-card>
 
     <n-card title="提现记录">
-      <n-dataTable
+      <n-data-table
         :columns="columns"
         :data="withdraws"
         :loading="loading"

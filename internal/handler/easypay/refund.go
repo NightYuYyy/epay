@@ -2,6 +2,8 @@ package easypay
 
 import (
 	"context"
+	"crypto/rand"
+	"math/big"
 	"net/http"
 	"strconv"
 	"strings"
@@ -83,11 +85,11 @@ func (h *Handler) actRefund(c *gin.Context) {
 	switch {
 	case tradeNo != "":
 		ord, err = h.client.Order.Query().
-			Where(order.MerchantID(m.ID), order.TradeNo(tradeNo)).
+			Where(order.ProductID(m.ID), order.TradeNo(tradeNo)).
 			First(ctx)
 	case outTradeNo != "":
 		ord, err = h.client.Order.Query().
-			Where(order.MerchantID(m.ID), order.OrderNo(outTradeNo)).
+			Where(order.ProductID(m.ID), order.OrderNo(outTradeNo)).
 			First(ctx)
 		if err == nil {
 			tradeNo = ord.TradeNo
@@ -104,28 +106,17 @@ func (h *Handler) actRefund(c *gin.Context) {
 	// Idempotency on out_refund_no.
 	if outRefundNo != "" {
 		existing, err := h.client.Refund.Query().
-			Where(refund.MerchantID(m.ID), refund.OutRefundNo(outRefundNo)).
+			Where(refund.UserID(m.UserID), refund.OutRefundNo(outRefundNo)).
 			First(ctx)
 		if err == nil && existing != nil {
-			if existing.Status == refund.StatusSUCCESS {
-				c.JSON(http.StatusOK, gin.H{
-					"code":          0,
-					"refund_no":     existing.RefundNo,
-					"out_refund_no": existing.OutRefundNo,
-					"trade_no":      existing.TradeNo,
-					"uid":           m.Pid,
-					"money":         formatMoneyTwo(existing.Money),
-					"reducemoney":   formatMoneyTwo(existing.ReduceMoney),
-					"msg":           "已存在相同退款单号！退款金额￥" + formatMoneyTwo(existing.Money),
-				})
-				return
-			}
+			h.writeRefundRecordResponse(c, m.Pid, existing)
+			return
 		}
 	}
 
 	refundNo := generateRefundNo()
 	_, ierr := h.client.Refund.Create().
-		SetMerchantID(m.ID).
+		SetUserID(m.UserID).
 		SetRefundNo(refundNo).
 		SetOutRefundNo(outRefundNo).
 		SetTradeNo(tradeNo).
@@ -136,6 +127,15 @@ func (h *Handler) actRefund(c *gin.Context) {
 		SetFinishedAt(time.Now()).
 		Save(ctx)
 	if ierr != nil {
+		if outRefundNo != "" && ent.IsConstraintError(ierr) {
+			existing, err := h.client.Refund.Query().
+				Where(refund.UserID(m.UserID), refund.OutRefundNo(outRefundNo)).
+				First(ctx)
+			if err == nil && existing != nil {
+				h.writeRefundRecordResponse(c, m.Pid, existing)
+				return
+			}
+		}
 		c.JSON(http.StatusOK, gin.H{"code": -2, "msg": "退款记录创建失败"})
 		return
 	}
@@ -145,6 +145,29 @@ func (h *Handler) actRefund(c *gin.Context) {
 		"refund_no": refundNo,
 		"trade_no":  tradeNo,
 		"money":     formatMoneyTwo(moneyF),
+	})
+}
+
+func (h *Handler) writeRefundRecordResponse(c *gin.Context, pid int, row *ent.Refund) {
+	statusCode := -3
+	msg := "已有相同退款单号，退款失败：" + firstNonEmptyString(row.Message, "暂不支持自动退款，请联系平台手动处理")
+	switch row.Status {
+	case refund.StatusSUCCESS:
+		statusCode = 0
+		msg = "已存在相同退款单号！退款金额￥" + formatMoneyTwo(row.Money)
+	case refund.StatusPENDING:
+		statusCode = 1
+		msg = "已存在相同退款单号，退款处理中"
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code":          statusCode,
+		"refund_no":     row.RefundNo,
+		"out_refund_no": row.OutRefundNo,
+		"trade_no":      row.TradeNo,
+		"uid":           pid,
+		"money":         formatMoneyTwo(row.Money),
+		"reducemoney":   formatMoneyTwo(row.ReduceMoney),
+		"msg":           msg,
 	})
 }
 
@@ -169,7 +192,7 @@ func (h *Handler) actRefundQuery(c *gin.Context) {
 		return
 	}
 
-	q := h.client.Refund.Query().Where(refund.MerchantID(m.ID))
+	q := h.client.Refund.Query().Where(refund.UserID(m.UserID))
 	switch {
 	case refundNo != "":
 		q = q.Where(refund.RefundNo(refundNo))
@@ -182,7 +205,7 @@ func (h *Handler) actRefundQuery(c *gin.Context) {
 		return
 	}
 	// Resolve out_trade_no via trade_no for the response.
-	ord, _ := h.client.Order.Query().Where(order.TradeNo(row.TradeNo)).First(ctx)
+	ord, _ := h.client.Order.Query().Where(order.UserIDEQ(m.UserID), order.TradeNo(row.TradeNo)).First(ctx)
 	outTradeNo := ""
 	if ord != nil {
 		outTradeNo = ord.OrderNo
@@ -220,11 +243,14 @@ func generateRefundNo() string {
 
 func randomDigits(n int) string {
 	const digits = "0123456789"
-	now := time.Now().UnixNano()
 	b := make([]byte, n)
-	for i := 0; i < n; i++ {
-		b[i] = digits[int(now)%10]
-		now /= 10
+	for i := range b {
+		v, err := rand.Int(rand.Reader, big.NewInt(int64(len(digits))))
+		if err != nil {
+			b[i] = '0'
+			continue
+		}
+		b[i] = digits[v.Int64()]
 	}
 	return string(b)
 }

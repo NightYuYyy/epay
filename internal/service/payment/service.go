@@ -11,8 +11,9 @@ import (
 	"time"
 
 	"epay/ent"
-	"epay/ent/merchant"
 	"epay/ent/order"
+	"epay/ent/product"
+	"epay/ent/user"
 	"epay/internal/config"
 	easypay "epay/internal/handler/easypay"
 	"epay/internal/provider"
@@ -29,10 +30,16 @@ const (
 	defaultOrderExpireIn = 30 * time.Minute
 )
 
+func amountDiffAtOrAboveTolerance(a, b float64) bool {
+	return math.Abs(a-b) >= amountTolerance
+}
+
 type settlementApplier interface {
 	ApplySettlement(ctx context.Context, orderID uuid.UUID) error
 }
 
+// NotifyDispatcher is the hook used in tests; production code uses the
+// built-in forwardMerchantCallback path.
 type NotifyDispatcher func(ctx context.Context, ord *ent.Order, notification *provider.PaymentNotification)
 
 type Option func(*PaymentService)
@@ -132,12 +139,19 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		_ = redisutil.ReleaseLock(ctx, s.rdb, lockKey)
 	}()
 
-	m, err := s.ent.Merchant.Query().Where(merchant.PidEQ(req.PID)).Only(ctx)
+	prod, err := s.ent.Product.Query().Where(product.PidEQ(req.PID)).Only(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("load merchant by pid: %w", err)
+		return nil, fmt.Errorf("load product by pid: %w", err)
 	}
-	if m.Status != merchant.StatusActive {
-		return nil, fmt.Errorf("merchant is not active")
+	if prod.Status != product.StatusActive {
+		return nil, fmt.Errorf("product is not active")
+	}
+	usr, err := s.ent.User.Query().Where(user.IDEQ(prod.UserID)).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("load product owner: %w", err)
+	}
+	if usr.Status != user.StatusActive {
+		return nil, fmt.Errorf("product owner is not active")
 	}
 
 	providerKey, entType, err := providerKeyForType(req.Type)
@@ -145,7 +159,7 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		return nil, err
 	}
 	if existing, err := s.ent.Order.Query().Where(order.OrderNoEQ(req.OrderNo)).Only(ctx); err == nil {
-		return s.recreatePendingPayment(ctx, existing, m, req, providerKey, entType)
+		return s.recreatePendingPayment(ctx, existing, prod, req, providerKey, entType)
 	} else if !ent.IsNotFound(err) {
 		return nil, fmt.Errorf("load existing order: %w", err)
 	}
@@ -174,7 +188,8 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	}
 	orderRow, err := s.ent.Order.Create().
 		SetOrderNo(req.OrderNo).
-		SetMerchantID(m.ID).
+		SetProductID(prod.ID).
+		SetUserID(prod.UserID).
 		SetType(entType).
 		SetAmount(req.Amount).
 		SetStatus(order.StatusPENDING).
@@ -198,9 +213,9 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	return &CreateOrderResponse{Order: orderRow, Provider: createResp}, nil
 }
 
-func (s *PaymentService) recreatePendingPayment(ctx context.Context, existing *ent.Order, m *ent.Merchant, req CreateOrderRequest, providerKey string, entType order.Type) (*CreateOrderResponse, error) {
-	if existing.MerchantID != m.ID {
-		return nil, fmt.Errorf("order_no is already used by another merchant")
+func (s *PaymentService) recreatePendingPayment(ctx context.Context, existing *ent.Order, prod *ent.Product, req CreateOrderRequest, providerKey string, entType order.Type) (*CreateOrderResponse, error) {
+	if existing.ProductID != prod.ID {
+		return nil, fmt.Errorf("order_no is already used by another product")
 	}
 	switch existing.Status {
 	case order.StatusPAID, order.StatusSETTLED:
@@ -244,7 +259,7 @@ func (s *PaymentService) recreatePendingPayment(ctx context.Context, existing *e
 
 func sameCreateOrderRequest(existing *ent.Order, req CreateOrderRequest, entType order.Type) error {
 	if existing.Type != entType ||
-		math.Abs(existing.Amount-req.Amount) > amountTolerance ||
+		amountDiffAtOrAboveTolerance(existing.Amount, req.Amount) ||
 		existing.Name != req.Subject ||
 		existing.NotifyURL != req.NotifyURL ||
 		existing.ReturnURL != req.ReturnURL ||
@@ -322,7 +337,7 @@ func (s *PaymentService) HandleCallback(ctx context.Context, paymentType provide
 	if err := verifySnapshot(ord.ProviderSnapshot, providerKey, paymentType); err != nil {
 		return "", err
 	}
-	if math.Abs(notification.Amount-ord.Amount) > amountTolerance {
+	if amountDiffAtOrAboveTolerance(notification.Amount, ord.Amount) {
 		return "", fmt.Errorf("amount mismatch: paid %.2f expected %.2f", notification.Amount, ord.Amount)
 	}
 
@@ -479,7 +494,7 @@ func (s *PaymentService) syncPendingOrder(ctx context.Context, ord *ent.Order, e
 		return ord, nil
 	}
 	if isPaidProviderStatus(queryResp.Status) {
-		if queryResp.Amount > 0 && math.Abs(queryResp.Amount-ord.Amount) > amountTolerance {
+		if queryResp.Amount > 0 && amountDiffAtOrAboveTolerance(queryResp.Amount, ord.Amount) {
 			return nil, fmt.Errorf("amount mismatch: queried %.2f expected %.2f", queryResp.Amount, ord.Amount)
 		}
 		paidAt := parseProviderTime(queryResp.PaidAt)
@@ -526,23 +541,23 @@ func (s *PaymentService) dispatchMerchantCallback(ctx context.Context, ord *ent.
 }
 
 // forwardMerchantCallback dispatches an asynchronous notification to the
-// merchant's notify_url using the rainbow-EasyPay GET + signed-form contract.
-// Signing algorithm is selected by ord.Version (0 → MD5 with merchant.Pkey,
+// caller's notify_url using the rainbow-EasyPay GET + signed-form contract.
+// Signing algorithm is selected by ord.Version (0 → MD5 with product.Pkey,
 // 1 → RSA with the platform private key).
 func (s *PaymentService) forwardMerchantCallback(ctx context.Context, ord *ent.Order, _ *provider.PaymentNotification) {
 	if ord == nil || strings.TrimSpace(ord.NotifyURL) == "" {
 		return
 	}
-	merch, err := s.ent.Merchant.Query().Where(merchant.ID(ord.MerchantID)).First(ctx)
+	prod, err := s.ent.Product.Query().Where(product.ID(ord.ProductID)).First(ctx)
 	if err != nil {
-		log.Printf("[payment] notify lookup merchant %s: %v", ord.OrderNo, err)
+		log.Printf("[payment] notify lookup product %s: %v", ord.OrderNo, err)
 		return
 	}
 	platformPriv := ""
 	if s.cfg != nil {
 		platformPriv = s.cfg.Platform.RSAPrivateKey
 	}
-	fullURL, err := easypay.BuildNotifyURL(ord, merch, platformPriv)
+	fullURL, err := easypay.BuildNotifyURL(ord, prod, platformPriv)
 	if err != nil {
 		log.Printf("[payment] notify build url %s: %v", ord.OrderNo, err)
 		return
@@ -585,14 +600,14 @@ func (s *PaymentService) providerConfig(providerKey string) (map[string]string, 
 	switch providerKey {
 	case "alipay":
 		return map[string]string{
-			"appId":           firstNonEmpty(entries["alipay_app_id"], s.cfg.Alipay.AppID),
-			"privateKey":      firstNonEmpty(entries["alipay_private_key"], s.cfg.Alipay.PrivateKey),
-			"publicKey":       firstNonEmpty(entries["alipay_public_key"], s.cfg.Alipay.PublicKey),
-			"alipayPublicKey": firstNonEmpty(entries["alipay_public_key"], s.cfg.Alipay.PublicKey),
-			"notifyUrl":       firstNonEmpty(entries["alipay_notify_url"], s.cfg.Alipay.NotifyURL),
-			"returnUrl":       firstNonEmpty(entries["alipay_return_url"], s.cfg.Alipay.ReturnURL),
-			"production":      firstNonEmpty(entries["alipay_production"], "false"),
-			"sandboxNewGateway": firstNonEmpty(entries["alipay_sandbox_new_gateway"], "false"),
+			"appId":                firstNonEmpty(entries["alipay_app_id"], s.cfg.Alipay.AppID),
+			"privateKey":           firstNonEmpty(entries["alipay_private_key"], s.cfg.Alipay.PrivateKey),
+			"publicKey":            firstNonEmpty(entries["alipay_public_key"], s.cfg.Alipay.PublicKey),
+			"alipayPublicKey":      firstNonEmpty(entries["alipay_public_key"], s.cfg.Alipay.PublicKey),
+			"notifyUrl":            firstNonEmpty(entries["alipay_notify_url"], s.cfg.Alipay.NotifyURL),
+			"returnUrl":            firstNonEmpty(entries["alipay_return_url"], s.cfg.Alipay.ReturnURL),
+			"production":           firstNonEmpty(entries["alipay_production"], "false"),
+			"sandboxLegacyGateway": firstNonEmpty(entries["alipay_sandbox_legacy_gateway"], "false"),
 		}, nil
 	case "wxpay":
 		return map[string]string{

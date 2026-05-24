@@ -23,30 +23,6 @@ var (
 		Columns:    AdminsColumns,
 		PrimaryKey: []*schema.Column{AdminsColumns[0]},
 	}
-	// MerchantsColumns holds the columns for the "merchants" table.
-	MerchantsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
-		{Name: "pid", Type: field.TypeInt, Unique: true},
-		{Name: "pkey", Type: field.TypeString},
-		{Name: "password_hash", Type: field.TypeString, Nullable: true, Default: ""},
-		{Name: "name", Type: field.TypeString},
-		{Name: "fee_rate", Type: field.TypeFloat64, Default: 1, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "disabled"}, Default: "active"},
-		{Name: "notify_url", Type: field.TypeString, Nullable: true, Default: ""},
-		{Name: "keytype", Type: field.TypeInt, Default: 0},
-		{Name: "public_key", Type: field.TypeString, Nullable: true, Size: 2147483647, Default: ""},
-		{Name: "refund_enabled", Type: field.TypeBool, Default: false},
-		{Name: "transfer_enabled", Type: field.TypeBool, Default: false},
-		{Name: "mode", Type: field.TypeInt, Default: 0},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-	}
-	// MerchantsTable holds the schema information for the "merchants" table.
-	MerchantsTable = &schema.Table{
-		Name:       "merchants",
-		Columns:    MerchantsColumns,
-		PrimaryKey: []*schema.Column{MerchantsColumns[0]},
-	}
 	// OrdersColumns holds the columns for the "orders" table.
 	OrdersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -76,7 +52,8 @@ var (
 		{Name: "version", Type: field.TypeInt, Default: 0},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "merchant_id", Type: field.TypeUUID},
+		{Name: "product_id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
 	}
 	// OrdersTable holds the schema information for the "orders" table.
 	OrdersTable = &schema.Table{
@@ -85,10 +62,26 @@ var (
 		PrimaryKey: []*schema.Column{OrdersColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "orders_merchants_orders",
+				Symbol:     "orders_products_orders",
 				Columns:    []*schema.Column{OrdersColumns[27]},
-				RefColumns: []*schema.Column{MerchantsColumns[0]},
+				RefColumns: []*schema.Column{ProductsColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "orders_users_orders",
+				Columns:    []*schema.Column{OrdersColumns[28]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "order_trade_no",
+				Unique:  true,
+				Columns: []*schema.Column{OrdersColumns[7]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "trade_no <> ''",
+				},
 			},
 		},
 	}
@@ -107,6 +100,40 @@ var (
 		Columns:    ConfigsColumns,
 		PrimaryKey: []*schema.Column{ConfigsColumns[0]},
 	}
+	// ProductsColumns holds the columns for the "products" table.
+	ProductsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "pid", Type: field.TypeInt, Unique: true},
+		{Name: "pkey", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "notify_url", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "return_url", Type: field.TypeString, Nullable: true, Default: ""},
+		{Name: "fee_rate", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "disabled"}, Default: "active"},
+		{Name: "keytype", Type: field.TypeInt, Default: 0},
+		{Name: "public_key", Type: field.TypeString, Nullable: true, Size: 2147483647, Default: ""},
+		{Name: "refund_enabled", Type: field.TypeBool, Default: false},
+		{Name: "transfer_enabled", Type: field.TypeBool, Default: false},
+		{Name: "mode", Type: field.TypeInt, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "user_id", Type: field.TypeUUID},
+	}
+	// ProductsTable holds the schema information for the "products" table.
+	ProductsTable = &schema.Table{
+		Name:       "products",
+		Columns:    ProductsColumns,
+		PrimaryKey: []*schema.Column{ProductsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "products_users_products",
+				Columns:    []*schema.Column{ProductsColumns[16]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// RefundsColumns holds the columns for the "refunds" table.
 	RefundsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -120,7 +147,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "finished_at", Type: field.TypeTime, Nullable: true},
-		{Name: "merchant_id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
 	}
 	// RefundsTable holds the schema information for the "refunds" table.
 	RefundsTable = &schema.Table{
@@ -129,10 +156,20 @@ var (
 		PrimaryKey: []*schema.Column{RefundsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "refunds_merchants_refunds",
+				Symbol:     "refunds_users_refunds",
 				Columns:    []*schema.Column{RefundsColumns[11]},
-				RefColumns: []*schema.Column{MerchantsColumns[0]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "refund_user_id_out_refund_no",
+				Unique:  true,
+				Columns: []*schema.Column{RefundsColumns[11], RefundsColumns[2]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "out_refund_no <> ''",
+				},
 			},
 		},
 	}
@@ -145,7 +182,7 @@ var (
 		{Name: "total_withdrawn", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,2)"}},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "merchant_id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
 	}
 	// SettlementsTable holds the schema information for the "settlements" table.
 	SettlementsTable = &schema.Table{
@@ -154,10 +191,34 @@ var (
 		PrimaryKey: []*schema.Column{SettlementsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "settlements_merchants_settlements",
+				Symbol:     "settlements_users_settlements",
 				Columns:    []*schema.Column{SettlementsColumns[7]},
-				RefColumns: []*schema.Column{MerchantsColumns[0]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// UsersColumns holds the columns for the "users" table.
+	UsersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "email", Type: field.TypeString, Unique: true},
+		{Name: "password_hash", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString},
+		{Name: "fee_rate", Type: field.TypeFloat64, Default: 0.006, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "disabled"}, Default: "active"},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// UsersTable holds the schema information for the "users" table.
+	UsersTable = &schema.Table{
+		Name:       "users",
+		Columns:    UsersColumns,
+		PrimaryKey: []*schema.Column{UsersColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "user_email",
+				Unique:  true,
+				Columns: []*schema.Column{UsersColumns[1]},
 			},
 		},
 	}
@@ -170,7 +231,7 @@ var (
 		{Name: "remark", Type: field.TypeString, Nullable: true, Default: ""},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "merchant_id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
 	}
 	// WithdrawsTable holds the schema information for the "withdraws" table.
 	WithdrawsTable = &schema.Table{
@@ -179,9 +240,9 @@ var (
 		PrimaryKey: []*schema.Column{WithdrawsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "withdraws_merchants_withdraws",
+				Symbol:     "withdraws_users_withdraws",
 				Columns:    []*schema.Column{WithdrawsColumns[7]},
-				RefColumns: []*schema.Column{MerchantsColumns[0]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
@@ -189,21 +250,24 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AdminsTable,
-		MerchantsTable,
 		OrdersTable,
 		ConfigsTable,
+		ProductsTable,
 		RefundsTable,
 		SettlementsTable,
+		UsersTable,
 		WithdrawsTable,
 	}
 )
 
 func init() {
-	OrdersTable.ForeignKeys[0].RefTable = MerchantsTable
+	OrdersTable.ForeignKeys[0].RefTable = ProductsTable
+	OrdersTable.ForeignKeys[1].RefTable = UsersTable
 	ConfigsTable.Annotation = &entsql.Annotation{
 		Table: "configs",
 	}
-	RefundsTable.ForeignKeys[0].RefTable = MerchantsTable
-	SettlementsTable.ForeignKeys[0].RefTable = MerchantsTable
-	WithdrawsTable.ForeignKeys[0].RefTable = MerchantsTable
+	ProductsTable.ForeignKeys[0].RefTable = UsersTable
+	RefundsTable.ForeignKeys[0].RefTable = UsersTable
+	SettlementsTable.ForeignKeys[0].RefTable = UsersTable
+	WithdrawsTable.ForeignKeys[0].RefTable = UsersTable
 }

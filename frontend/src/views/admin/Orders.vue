@@ -9,7 +9,8 @@ import api from '@/api/client'
 interface OrderRow {
   id: string
   order_no: string
-  merchant_name: string
+  user_name: string
+  product_name: string
   type: string            // 'alipay' | 'wxpay'
   amount: number          // decimal yuan
   trade_no: string
@@ -26,9 +27,11 @@ const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
 
-const merchantOptions = ref<SelectOption[]>([])
+const userOptions = ref<SelectOption[]>([])
+const productOptions = ref<SelectOption[]>([])
 const statusFilter = ref<string | null>(null)
-const merchantFilter = ref<string | null>(null)
+const userFilter = ref<string | null>(null)
+const productFilter = ref<string | null>(null)
 const orderNoFilter = ref('')
 
 const statusOptions = [
@@ -40,8 +43,6 @@ const statusOptions = [
   { label: '已取消', value: 'CANCELLED' },
 ]
 
-// Stripe-style tag palette — keeps the page calm; only paid/settled state
-// gets a positive (green) tag, everything else stays neutral.
 const statusMeta: Record<string, { type: 'success' | 'warning' | 'error' | 'default' | 'info'; label: string }> = {
   PENDING:   { type: 'warning', label: '待支付' },
   PAID:      { type: 'success', label: '已支付' },
@@ -57,7 +58,8 @@ function fmtDate(s: string | null) {
 
 const columns: DataTableColumns<OrderRow> = [
   { title: '订单号', key: 'order_no', width: 180, ellipsis: { tooltip: true } },
-  { title: '商户', key: 'merchant_name', width: 160 },
+  { title: '用户', key: 'user_name', width: 140 },
+  { title: '产品', key: 'product_name', width: 140 },
   {
     title: '类型',
     key: 'type',
@@ -98,14 +100,27 @@ const columns: DataTableColumns<OrderRow> = [
   },
 ]
 
-async function fetchMerchants() {
+async function fetchUsers() {
   try {
-    const { data } = await api.get('/api/admin/merchants', { params: { limit: 100 } })
+    const { data } = await api.get('/api/admin/users', { params: { limit: 100 } })
     if (data.code === 0) {
       const list = data.data.items || []
-      merchantOptions.value = [
-        { label: '全部商户', value: '' },
-        ...list.map((m: any) => ({ label: `${m.name} (#${m.pid})`, value: m.id })),
+      userOptions.value = [
+        { label: '全部用户', value: '' },
+        ...list.map((u: any) => ({ label: `${u.name} (${u.email})`, value: u.id })),
+      ]
+    }
+  } catch { /* ignore */ }
+}
+
+async function fetchProducts() {
+  try {
+    const { data } = await api.get('/api/admin/products', { params: { limit: 200 } })
+    if (data.code === 0) {
+      const list = data.data.items || []
+      productOptions.value = [
+        { label: '全部产品', value: '' },
+        ...list.map((p: any) => ({ label: `${p.name} (PID ${p.pid})`, value: p.id })),
       ]
     }
   } catch { /* ignore */ }
@@ -116,7 +131,8 @@ async function fetchOrders() {
   try {
     const params: any = { page: page.value, limit: pageSize.value }
     if (statusFilter.value) params.status = statusFilter.value
-    if (merchantFilter.value) params.merchant_id = merchantFilter.value
+    if (userFilter.value) params.user_id = userFilter.value
+    if (productFilter.value) params.product_id = productFilter.value
     if (orderNoFilter.value) params.order_no = orderNoFilter.value
     const { data } = await api.get('/api/admin/orders', { params })
     if (data.code === 0) {
@@ -147,13 +163,13 @@ function search() {
   fetchOrders()
 }
 
-watch([statusFilter, merchantFilter], () => {
+watch([statusFilter, userFilter, productFilter], () => {
   page.value = 1
   fetchOrders()
 })
 
 onMounted(async () => {
-  await fetchMerchants()
+  await Promise.all([fetchUsers(), fetchProducts()])
   fetchOrders()
 })
 </script>
@@ -177,9 +193,16 @@ onMounted(async () => {
           @keyup.enter="search"
         />
         <n-select
-          v-model:value="merchantFilter"
-          :options="merchantOptions"
-          placeholder="选择商户"
+          v-model:value="userFilter"
+          :options="userOptions"
+          placeholder="选择用户"
+          clearable
+          style="width: 200px"
+        />
+        <n-select
+          v-model:value="productFilter"
+          :options="productOptions"
+          placeholder="选择产品"
           clearable
           style="width: 200px"
         />

@@ -9,20 +9,23 @@ import (
 // Admin is the predicate function for admin builders.
 type Admin func(*sql.Selector)
 
-// Merchant is the predicate function for merchant builders.
-type Merchant func(*sql.Selector)
-
 // Order is the predicate function for order builders.
 type Order func(*sql.Selector)
 
 // PlatformConfig is the predicate function for platformconfig builders.
 type PlatformConfig func(*sql.Selector)
 
+// Product is the predicate function for product builders.
+type Product func(*sql.Selector)
+
 // Refund is the predicate function for refund builders.
 type Refund func(*sql.Selector)
 
 // Settlement is the predicate function for settlement builders.
 type Settlement func(*sql.Selector)
+
+// User is the predicate function for user builders.
+type User func(*sql.Selector)
 
 // Withdraw is the predicate function for withdraw builders.
 type Withdraw func(*sql.Selector)
