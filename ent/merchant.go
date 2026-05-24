@@ -22,6 +22,8 @@ type Merchant struct {
 	Pid int `json:"pid,omitempty"`
 	// Pkey holds the value of the "pkey" field.
 	Pkey string `json:"pkey,omitempty"`
+	// PasswordHash holds the value of the "password_hash" field.
+	PasswordHash string `json:"password_hash,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// FeeRate holds the value of the "fee_rate" field.
@@ -112,7 +114,7 @@ func (*Merchant) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case merchant.FieldPid, merchant.FieldKeytype, merchant.FieldMode:
 			values[i] = new(sql.NullInt64)
-		case merchant.FieldPkey, merchant.FieldName, merchant.FieldStatus, merchant.FieldNotifyURL, merchant.FieldPublicKey:
+		case merchant.FieldPkey, merchant.FieldPasswordHash, merchant.FieldName, merchant.FieldStatus, merchant.FieldNotifyURL, merchant.FieldPublicKey:
 			values[i] = new(sql.NullString)
 		case merchant.FieldCreatedAt, merchant.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -150,6 +152,12 @@ func (_m *Merchant) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field pkey", values[i])
 			} else if value.Valid {
 				_m.Pkey = value.String
+			}
+		case merchant.FieldPasswordHash:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field password_hash", values[i])
+			} else if value.Valid {
+				_m.PasswordHash = value.String
 			}
 		case merchant.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -278,6 +286,9 @@ func (_m *Merchant) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("pkey=")
 	builder.WriteString(_m.Pkey)
+	builder.WriteString(", ")
+	builder.WriteString("password_hash=")
+	builder.WriteString(_m.PasswordHash)
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)

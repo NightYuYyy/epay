@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, shallowRef } from 'vue'
 import {
-  NForm, NFormItem, NInput, NButton, NInputNumber,
+  NForm, NFormItem, NInput, NButton, NInputNumber, NSwitch,
   useMessage,
 } from 'naive-ui'
 import api from '@/api/client'
@@ -17,6 +17,9 @@ const form = ref({
   alipay_app_id: '',
   alipay_private_key: '',
   alipay_public_key: '',
+  alipay_notify_url: '',
+  alipay_return_url: '',
+  alipay_production: false,
   wxpay_app_id: '',
   wxpay_mch_id: '',
   wxpay_api_key: '',
@@ -32,6 +35,9 @@ const NUMERIC_FIELDS = new Set([
   'official_wxpay_rate',
   'default_platform_rate',
 ])
+const BOOLEAN_FIELDS = new Set([
+  'alipay_production',
+])
 
 function hydrateForm(remote: Record<string, string> | null | undefined) {
   if (!remote) return
@@ -40,6 +46,8 @@ function hydrateForm(remote: Record<string, string> | null | undefined) {
     if (NUMERIC_FIELDS.has(k)) {
       const n = Number(raw)
       ;(form.value as any)[k] = Number.isFinite(n) ? n : 0
+    } else if (BOOLEAN_FIELDS.has(k)) {
+      ;(form.value as any)[k] = raw === 'true'
     } else {
       ;(form.value as any)[k] = raw ?? ''
     }
@@ -157,6 +165,24 @@ async function handleSave() {
               :rows="4"
               placeholder="MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."
             />
+          </n-form-item>
+          <n-form-item label="异步通知地址">
+            <n-input
+              v-model:value="form.alipay_notify_url"
+              placeholder="https://your-domain.com/api/alipay/notify"
+            />
+          </n-form-item>
+          <n-form-item label="同步跳转地址">
+            <n-input
+              v-model:value="form.alipay_return_url"
+              placeholder="https://your-domain.com/demo.html"
+            />
+          </n-form-item>
+          <n-form-item label="生产模式">
+            <n-switch v-model:value="form.alipay_production" />
+            <span style="margin-left: 8px; color: #889096; font-size: 13px;">
+              {{ form.alipay_production ? '生产环境 (openapi.alipay.com)' : '沙箱环境 (openapi.alipaydev.com)' }}
+            </span>
           </n-form-item>
         </n-form>
       </section>

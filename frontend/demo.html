@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Epay 支付 Demo</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --primary: #533afd;
+        --primary-dark: #4434d4;
+        --ink: #0d253d;
+        --muted: #64748d;
+        --line: #e3e8ee;
+        --soft: #f6f9fc;
+        --success: #148f64;
+        --error: #d92d20;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at 12% 8%, rgba(83, 58, 253, 0.16), transparent 34%), var(--soft);
+        color: var(--ink);
+      }
+      main {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 42px 0;
+      }
+      .hero {
+        margin-bottom: 22px;
+      }
+      .eyebrow {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: rgba(83, 58, 253, 0.10);
+        color: var(--primary-dark);
+        font-size: 13px;
+        font-weight: 700;
+      }
+      h1 {
+        margin: 14px 0 8px;
+        font-size: clamp(30px, 5vw, 48px);
+        letter-spacing: -0.04em;
+      }
+      .hero p {
+        max-width: 760px;
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+      .warning {
+        margin: 20px 0;
+        padding: 14px 16px;
+        border: 1px solid #ffd08a;
+        border-radius: 12px;
+        background: #fff8eb;
+        color: #7a4b00;
+        line-height: 1.65;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+        gap: 20px;
+        align-items: start;
+      }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 10px 30px -16px rgba(13, 37, 61, 0.24);
+      }
+      .card-header {
+        padding: 20px 22px 0;
+      }
+      .card-header h2 {
+        margin: 0 0 4px;
+        font-size: 20px;
+      }
+      .card-header p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      form {
+        padding: 22px;
+      }
+      .fields {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+      label {
+        display: grid;
+        gap: 7px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      input, select {
+        width: 100%;
+        height: 40px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 0 12px;
+        color: var(--ink);
+        background: #fff;
+        font: inherit;
+      }
+      input:focus, select:focus {
+        outline: 3px solid rgba(83, 58, 253, 0.18);
+        border-color: var(--primary);
+      }
+      .full { grid-column: 1 / -1; }
+      .pay-type {
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(83, 58, 253, 0.10);
+        color: var(--primary-dark);
+        font-weight: 800;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+      }
+      button {
+        height: 40px;
+        border: 0;
+        border-radius: 999px;
+        padding: 0 18px;
+        background: var(--primary);
+        color: #fff;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      button:hover { background: var(--primary-dark); }
+      button:disabled { cursor: wait; opacity: 0.7; }
+      button.secondary {
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink);
+      }
+      button.secondary:hover { background: var(--soft); }
+      #status {
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: #eef2ff;
+        color: var(--primary-dark);
+        line-height: 1.5;
+      }
+      #status[data-type="success"] { background: #eafaf3; color: var(--success); }
+      #status[data-type="error"] { background: #fff1f1; color: var(--error); }
+      .result-body {
+        padding: 22px;
+      }
+      .qr-shell {
+        display: grid;
+        place-items: center;
+        min-height: 292px;
+        margin-bottom: 16px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+      }
+      dl {
+        display: grid;
+        gap: 10px;
+        margin: 0;
+      }
+      dt {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+      }
+      dd {
+        margin: 0;
+        word-break: break-all;
+      }
+      pre {
+        max-height: 220px;
+        overflow: auto;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--soft);
+        color: #273951;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .callback-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .callback-event {
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--soft);
+        font-size: 12px;
+        line-height: 1.55;
+        word-break: break-all;
+      }
+      @media (max-width: 860px) {
+        .grid, .fields { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <span class="eyebrow">Standalone HTML · Alipay only</span>
+        <h1>Epay 二维码支付 Demo</h1>
+        <p>这个页面不挂在商户平台里，不需要商户端登录。填写 PID、PKEY、订单金额等参数后，页面会直接调用当前域名下的 <code>/mapi.php</code> 并在本页生成二维码。</p>
+      </section>
+
+      <div class="warning">
+        回调链路应为：<strong>支付宝 → Epay <code>/api/alipay/notify</code> → 商户 <code>notify_url</code></strong>。
+        下面的 Demo 默认把商户 <code>notify_url</code> 填成同源 <code>/demo/notify</code>，Epay 转发成功后，本页会轮询 <code>/demo/notify-events</code> 展示收到的商户回调；真实商户接入时必须验签后再确认订单成功。
+        平台支付宝异步通知地址必须在支付宝/平台配置里设为公网 <code id="platform_notify_url">/api/alipay/notify</code>。如果从 localhost 打开页面，notify_url 会被 SSRF 防护拒绝，请从 ngrok/公网域名访问本 Demo。
+      </div>
+
+      <div class="grid">
+        <section class="card">
+          <div class="card-header">
+            <h2>支付参数</h2>
+            <p>微信支付不在这个 Demo 范围内，支付方式固定为支付宝。</p>
+          </div>
+          <form id="payment-form" autocomplete="off">
+            <div class="fields">
+              <label>商户 PID<input id="pid" name="pid" inputmode="numeric" placeholder="例如 1001" required /></label>
+              <label>商户 PKEY<input id="pkey" name="pkey" type="password" autocomplete="new-password" placeholder="商户 MD5 密钥" required /></label>
+              <label>支付方式<span class="pay-type"><span class="pill">支付宝</span> 本 Demo 不接入微信支付</span></label>
+              <label>订单金额（元）<input id="money" name="money" type="number" min="0.01" step="0.01" value="1.00" required /></label>
+              <label>商户订单号<input id="out_trade_no" name="out_trade_no" required /></label>
+              <label>商品名称<input id="name" name="name" maxlength="127" value="Epay Demo 测试订单" required /></label>
+              <label class="full">notify_url（商户异步通知）<input id="notify_url" name="notify_url" placeholder="https://pay.example.com/demo/notify" required /></label>
+              <label class="full">return_url（同步返回）<input id="return_url" name="return_url" required /></label>
+              <label>设备<select id="device" name="device"><option value="pc">PC 扫码</option><option value="mobile">手机</option><option value="alipay">支付宝内</option></select></label>
+              <label>支付方法<select id="method" name="method"><option value="">默认</option><option value="web">网页支付</option></select></label>
+              <label>业务回传 param<input id="param" name="param" value="demo" /></label>
+              <label>站点名称 sitename<input id="sitename" name="sitename" value="Epay Demo" /></label>
+            </div>
+            <div class="actions">
+              <button id="submit-button" type="submit">生成二维码支付信息</button>
+              <button id="reset-order" class="secondary" type="button">换一个订单号</button>
+            </div>
+            <div class="actions" style="margin-top: 8px">
+              <button id="sync-button" class="secondary" type="button" hidden>手动同步支付状态</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <h2>本页展示结果与回调</h2>
+            <p>接口返回二维码后继续等待 Epay 转发到商户 notify_url。</p>
+          </div>
+          <div class="result-body">
+            <div id="status" hidden></div>
+            <div id="result" hidden>
+              <div class="qr-shell"><canvas id="qr-code" width="248" height="248"></canvas></div>
+              <dl>
+                <dt>平台交易号</dt><dd id="trade-no">-</dd>
+                <dt>二维码内容</dt><dd id="qr-text">-</dd>
+              </dl>
+              <div class="actions"><button id="copy-qr" class="secondary" type="button">复制二维码内容</button></div>
+              <h3>原始响应</h3>
+              <pre id="raw-response"></pre>
+              <h3>商户回调接收记录</h3>
+              <div id="callback-status">等待支付成功后的 Epay 转发回调。</div>
+              <div id="callback-events" class="callback-list"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="/src/demo/main.ts"></script>
+  </body>
+</html>

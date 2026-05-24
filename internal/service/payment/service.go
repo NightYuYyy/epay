@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -17,6 +16,9 @@ import (
 	"epay/internal/config"
 	easypay "epay/internal/handler/easypay"
 	"epay/internal/provider"
+	redisutil "epay/internal/redis"
+
+	"github.com/google/uuid"
 
 	goredis "github.com/redis/go-redis/v9"
 )
@@ -27,14 +29,42 @@ const (
 	defaultOrderExpireIn = 30 * time.Minute
 )
 
-type PaymentService struct {
-	ent *ent.Client
-	rdb *goredis.Client
-	cfg *config.Config
+type settlementApplier interface {
+	ApplySettlement(ctx context.Context, orderID uuid.UUID) error
 }
 
-func NewPaymentService(ent *ent.Client, rdb *goredis.Client, cfg *config.Config) *PaymentService {
-	return &PaymentService{ent: ent, rdb: rdb, cfg: cfg}
+type NotifyDispatcher func(ctx context.Context, ord *ent.Order, notification *provider.PaymentNotification)
+
+type Option func(*PaymentService)
+
+type PaymentService struct {
+	ent        *ent.Client
+	rdb        *goredis.Client
+	cfg        *config.Config
+	settlement settlementApplier
+	notify     NotifyDispatcher
+}
+
+func WithSettlementApplier(applier settlementApplier) Option {
+	return func(s *PaymentService) {
+		s.settlement = applier
+	}
+}
+
+func WithNotifyDispatcher(dispatcher NotifyDispatcher) Option {
+	return func(s *PaymentService) {
+		s.notify = dispatcher
+	}
+}
+
+func NewPaymentService(ent *ent.Client, rdb *goredis.Client, cfg *config.Config, opts ...Option) *PaymentService {
+	s := &PaymentService{ent: ent, rdb: rdb, cfg: cfg}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(s)
+		}
+	}
+	return s
 }
 
 type CreateOrderRequest struct {
@@ -90,6 +120,18 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		req.Subject = req.OrderNo
 	}
 
+	lockKey := "payment:create:" + req.OrderNo
+	acquired, err := redisutil.AcquireLock(ctx, s.rdb, lockKey, 30*time.Second)
+	if err != nil {
+		return nil, fmt.Errorf("acquire payment creation lock: %w", err)
+	}
+	if !acquired {
+		return nil, fmt.Errorf("payment creation already in progress for order_no %s", req.OrderNo)
+	}
+	defer func() {
+		_ = redisutil.ReleaseLock(ctx, s.rdb, lockKey)
+	}()
+
 	m, err := s.ent.Merchant.Query().Where(merchant.PidEQ(req.PID)).Only(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("load merchant by pid: %w", err)
@@ -102,6 +144,12 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	if err != nil {
 		return nil, err
 	}
+	if existing, err := s.ent.Order.Query().Where(order.OrderNoEQ(req.OrderNo)).Only(ctx); err == nil {
+		return s.recreatePendingPayment(ctx, existing, m, req, providerKey, entType)
+	} else if !ent.IsNotFound(err) {
+		return nil, fmt.Errorf("load existing order: %w", err)
+	}
+
 	configMap, err := s.providerConfig(providerKey)
 	if err != nil {
 		return nil, err
@@ -115,17 +163,7 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		return nil, fmt.Errorf("marshal provider snapshot: %w", err)
 	}
 
-	amount := formatAmount(req.Amount)
-	createResp, err := payProvider.CreatePayment(ctx, provider.CreatePaymentRequest{
-		OrderID:     req.OrderNo,
-		Amount:      amount,
-		PaymentType: req.Type,
-		Subject:     req.Subject,
-		NotifyURL:   callbackURLForProvider(configMap, req.NotifyURL),
-		ReturnURL:   req.ReturnURL,
-		ClientIP:    req.ClientIP,
-		IsMobile:    req.IsMobile,
-	})
+	createResp, err := payProvider.CreatePayment(ctx, buildProviderPaymentRequest(configMap, req))
 	if err != nil {
 		return nil, fmt.Errorf("provider create payment: %w", err)
 	}
@@ -160,7 +198,82 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 	return &CreateOrderResponse{Order: orderRow, Provider: createResp}, nil
 }
 
-func (s *PaymentService) HandleCallback(ctx context.Context, paymentType provider.PaymentType, rawBody string, headers map[string]string) (string, error) {
+func (s *PaymentService) recreatePendingPayment(ctx context.Context, existing *ent.Order, m *ent.Merchant, req CreateOrderRequest, providerKey string, entType order.Type) (*CreateOrderResponse, error) {
+	if existing.MerchantID != m.ID {
+		return nil, fmt.Errorf("order_no is already used by another merchant")
+	}
+	switch existing.Status {
+	case order.StatusPAID, order.StatusSETTLED:
+		return nil, fmt.Errorf("order %s is already paid", existing.OrderNo)
+	case order.StatusPENDING:
+		// Recreate the upstream payment below using the immutable provider snapshot.
+	default:
+		return nil, fmt.Errorf("order %s has status %s and cannot be paid", existing.OrderNo, existing.Status)
+	}
+	if err := sameCreateOrderRequest(existing, req, entType); err != nil {
+		return nil, err
+	}
+	if err := verifySnapshot(existing.ProviderSnapshot, providerKey, req.Type); err != nil {
+		return nil, err
+	}
+	snap, err := parseSnapshot(existing.ProviderSnapshot)
+	if err != nil {
+		return nil, err
+	}
+	factory, ok := provider.Get(snap.ProviderKey)
+	if !ok {
+		return nil, fmt.Errorf("provider factory not found: %s", snap.ProviderKey)
+	}
+	payProvider, err := factory(snap.InstanceID, snap.Config)
+	if err != nil {
+		return nil, fmt.Errorf("new provider from snapshot: %w", err)
+	}
+	createResp, err := payProvider.CreatePayment(ctx, buildProviderPaymentRequest(snap.Config, req))
+	if err != nil {
+		return nil, fmt.Errorf("provider recreate payment: %w", err)
+	}
+	if createResp != nil && strings.TrimSpace(createResp.TradeNo) != "" && createResp.TradeNo != existing.TradeNo {
+		updated, err := s.ent.Order.UpdateOneID(existing.ID).SetTradeNo(createResp.TradeNo).Save(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("update existing order trade_no: %w", err)
+		}
+		existing = updated
+	}
+	return &CreateOrderResponse{Order: existing, Provider: createResp}, nil
+}
+
+func sameCreateOrderRequest(existing *ent.Order, req CreateOrderRequest, entType order.Type) error {
+	if existing.Type != entType ||
+		math.Abs(existing.Amount-req.Amount) > amountTolerance ||
+		existing.Name != req.Subject ||
+		existing.NotifyURL != req.NotifyURL ||
+		existing.ReturnURL != req.ReturnURL ||
+		existing.Param != req.Param ||
+		existing.Clientip != req.ClientIP ||
+		existing.Device != firstNonEmpty(req.Device, "pc") ||
+		existing.Method != req.Method ||
+		existing.SubOpenid != req.SubOpenID ||
+		existing.SubAppid != req.SubAppID ||
+		existing.AuthCode != req.AuthCode {
+		return fmt.Errorf("order %s payment parameters changed", existing.OrderNo)
+	}
+	return nil
+}
+
+func buildProviderPaymentRequest(configMap map[string]string, req CreateOrderRequest) provider.CreatePaymentRequest {
+	return provider.CreatePaymentRequest{
+		OrderID:     req.OrderNo,
+		Amount:      formatAmount(req.Amount),
+		PaymentType: req.Type,
+		Subject:     req.Subject,
+		NotifyURL:   callbackURLForProvider(configMap, req.NotifyURL),
+		ReturnURL:   req.ReturnURL,
+		ClientIP:    req.ClientIP,
+		IsMobile:    req.IsMobile,
+	}
+}
+
+func (s *PaymentService) HandleCallback(ctx context.Context, paymentType provider.PaymentType, rawBody string, headers map[string]string) (response string, err error) {
 	providerKey, _, err := providerKeyForType(paymentType)
 	if err != nil {
 		return "", err
@@ -188,21 +301,19 @@ func (s *PaymentService) HandleCallback(ctx context.Context, paymentType provide
 		return "success", nil
 	}
 
-	if s.rdb != nil {
-		ok, err := s.rdb.SetNX(ctx, "callback:"+outTradeNo, 1, callbackIDTTL).Result()
-		if err != nil {
-			return "", fmt.Errorf("callback idempotency setnx: %w", err)
-		}
-		if !ok {
-			return "success", nil
-		}
-	}
-
 	ord, err := s.ent.Order.Query().Where(order.OrderNoEQ(outTradeNo)).Only(ctx)
 	if err != nil {
 		return "", fmt.Errorf("load order: %w", err)
 	}
-	if ord.Status == order.StatusPAID || ord.Status == order.StatusSETTLED {
+	if ord.Status == order.StatusSETTLED {
+		return "success", nil
+	}
+	if ord.Status == order.StatusPAID {
+		settled, err := s.settlePaidOrder(ctx, ord)
+		if err != nil {
+			return "", err
+		}
+		s.dispatchMerchantCallback(context.Background(), settled, notification)
 		return "success", nil
 	}
 	if ord.Status != order.StatusPENDING {
@@ -215,6 +326,24 @@ func (s *PaymentService) HandleCallback(ctx context.Context, paymentType provide
 		return "", fmt.Errorf("amount mismatch: paid %.2f expected %.2f", notification.Amount, ord.Amount)
 	}
 
+	callbackKey := "callback:" + outTradeNo
+	callbackLocked := false
+	defer func() {
+		if err != nil && callbackLocked && s.rdb != nil {
+			_ = s.rdb.Del(context.Background(), callbackKey).Err()
+		}
+	}()
+	if s.rdb != nil {
+		ok, rerr := s.rdb.SetNX(ctx, callbackKey, 1, callbackIDTTL).Result()
+		if rerr != nil {
+			return "", fmt.Errorf("callback idempotency setnx: %w", rerr)
+		}
+		if !ok {
+			return "success", nil
+		}
+		callbackLocked = true
+	}
+
 	paidAt := time.Now()
 	updated, err := s.ent.Order.UpdateOneID(ord.ID).
 		SetStatus(order.StatusPAID).
@@ -224,8 +353,32 @@ func (s *PaymentService) HandleCallback(ctx context.Context, paymentType provide
 	if err != nil {
 		return "", fmt.Errorf("mark order paid: %w", err)
 	}
-	go s.forwardMerchantCallback(context.Background(), updated, notification)
+	settled, err := s.settlePaidOrder(ctx, updated)
+	if err != nil {
+		return "", err
+	}
+	s.dispatchMerchantCallback(context.Background(), settled, notification)
 	return "success", nil
+}
+
+func (s *PaymentService) settlePaidOrder(ctx context.Context, ord *ent.Order) (*ent.Order, error) {
+	if ord == nil {
+		return nil, fmt.Errorf("order is nil")
+	}
+	if s.settlement == nil || ord.Status == order.StatusSETTLED {
+		return ord, nil
+	}
+	if ord.Status != order.StatusPAID {
+		return nil, fmt.Errorf("order %s has status %s, not PAID", ord.OrderNo, ord.Status)
+	}
+	if err := s.settlement.ApplySettlement(ctx, ord.ID); err != nil {
+		return nil, fmt.Errorf("apply settlement for order %s: %w", ord.OrderNo, err)
+	}
+	updated, err := s.ent.Order.Get(ctx, ord.ID)
+	if err != nil {
+		return nil, fmt.Errorf("reload settled order %s: %w", ord.OrderNo, err)
+	}
+	return updated, nil
 }
 
 func (s *PaymentService) QueryOrder(ctx context.Context, orderNo string) (*ent.Order, error) {
@@ -273,6 +426,32 @@ func (s *PaymentService) scanExpiredOrders(ctx context.Context) {
 			log.Printf("[payment] sync expired order %s: %v", ord.OrderNo, err)
 		}
 	}
+	s.scanPaidOrders(ctx)
+}
+
+func (s *PaymentService) scanPaidOrders(ctx context.Context) {
+	deadline := time.Now().Add(-5 * time.Minute)
+	orders, err := s.ent.Order.Query().
+		Where(order.StatusEQ(order.StatusPAID), order.PaidAtLTE(deadline)).
+		Limit(100).
+		All(ctx)
+	if err != nil {
+		log.Printf("[payment] scan paid orders: %v", err)
+		return
+	}
+	for _, ord := range orders {
+		settled, err := s.settlePaidOrder(ctx, ord)
+		if err != nil {
+			log.Printf("[payment] settle paid order %s: %v", ord.OrderNo, err)
+			continue
+		}
+		s.dispatchMerchantCallback(context.Background(), settled, &provider.PaymentNotification{
+			TradeNo: settled.TradeNo,
+			OrderID: settled.OrderNo,
+			Amount:  settled.Amount,
+			Status:  provider.ProviderStatusSuccess,
+		})
+	}
 }
 
 func (s *PaymentService) syncPendingOrder(ctx context.Context, ord *ent.Order, expireIfUnpaid bool) (*ent.Order, error) {
@@ -316,13 +495,17 @@ func (s *PaymentService) syncPendingOrder(ctx context.Context, ord *ent.Order, e
 		if err != nil {
 			return nil, fmt.Errorf("sync mark paid: %w", err)
 		}
-		go s.forwardMerchantCallback(context.Background(), updated, &provider.PaymentNotification{
+		settled, err := s.settlePaidOrder(ctx, updated)
+		if err != nil {
+			return nil, err
+		}
+		s.dispatchMerchantCallback(context.Background(), settled, &provider.PaymentNotification{
 			TradeNo: queryResp.TradeNo,
 			OrderID: ord.OrderNo,
 			Amount:  ord.Amount,
 			Status:  provider.ProviderStatusSuccess,
 		})
-		return updated, nil
+		return settled, nil
 	}
 	if expireIfUnpaid {
 		updated, err := s.ent.Order.UpdateOneID(ord.ID).SetStatus(order.StatusEXPIRED).Save(ctx)
@@ -332,6 +515,14 @@ func (s *PaymentService) syncPendingOrder(ctx context.Context, ord *ent.Order, e
 		return updated, nil
 	}
 	return ord, nil
+}
+
+func (s *PaymentService) dispatchMerchantCallback(ctx context.Context, ord *ent.Order, notification *provider.PaymentNotification) {
+	if s.notify != nil {
+		s.notify(ctx, ord, notification)
+		return
+	}
+	go s.forwardMerchantCallback(ctx, ord, notification)
 }
 
 // forwardMerchantCallback dispatches an asynchronous notification to the
@@ -356,7 +547,7 @@ func (s *PaymentService) forwardMerchantCallback(ctx context.Context, ord *ent.O
 		log.Printf("[payment] notify build url %s: %v", ord.OrderNo, err)
 		return
 	}
-	easypay.DispatchNotify(ctx, &http.Client{Timeout: 10 * time.Second}, fullURL, ord.OrderNo)
+	easypay.DispatchNotify(ctx, nil, fullURL, ord.OrderNo)
 }
 
 func (s *PaymentService) newProvider(providerKey string, paymentType provider.PaymentType, configMap map[string]string) (provider.Provider, providerSnapshot, error) {
@@ -401,6 +592,7 @@ func (s *PaymentService) providerConfig(providerKey string) (map[string]string, 
 			"notifyUrl":       firstNonEmpty(entries["alipay_notify_url"], s.cfg.Alipay.NotifyURL),
 			"returnUrl":       firstNonEmpty(entries["alipay_return_url"], s.cfg.Alipay.ReturnURL),
 			"production":      firstNonEmpty(entries["alipay_production"], "false"),
+			"sandboxNewGateway": firstNonEmpty(entries["alipay_sandbox_new_gateway"], "false"),
 		}, nil
 	case "wxpay":
 		return map[string]string{
@@ -513,11 +705,4 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
-}
-
-func notificationTradeNo(n *provider.PaymentNotification) string {
-	if n == nil {
-		return ""
-	}
-	return n.TradeNo
 }

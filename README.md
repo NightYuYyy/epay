@@ -42,41 +42,41 @@
 
 ## 快速开始
 
-### 方式一：Docker Compose（推荐）
+### 方式一：本地开发（推荐）
 
 ```bash
-# 1. 复制配置文件并修改
-cp config.example.yaml config.yaml
-# 修改 config.yaml 中的数据库密码、JWT Secret 等
-
-# 2. 启动所有服务
+# 1. 只用 Docker 启动必要依赖：PostgreSQL + Redis
 docker compose up -d
+# 等价：make infra
 
-# 3. 访问服务
-# 管理后台: http://localhost:3002/admin/login（默认账号 admin/admin123）
-# 商户端:   http://localhost:3001/merchant/login
-# API:      http://localhost:8080/mapi.php
-# 健康检查: http://localhost:8080/health
-```
+# 2. 本机启动后端（连接上面的 Docker 依赖）
+make run-local
+# 后端运行在 http://localhost:8080
 
-### 方式二：本地开发
-
-```bash
-# 1. 启动依赖服务
-docker compose up -d postgres redis
-
-# 2. 启动后端
-cp config.example.yaml config.yaml
-# 编辑 config.yaml 配置数据库连接
-make run
-
-# 3. 启动前端
+# 3. 另开终端启动前端
 cd frontend
 npm install
 npm run dev
 # 前端开发服务器运行在 http://localhost:5173
-# 会自动代理 /api 请求到后端 http://localhost:8080
+# 会自动代理 /api、/mapi.php 到后端 http://localhost:8080
 ```
+
+> 默认 `docker compose up -d` 只启动数据库和 Redis，不启动 Go 后端和 Vue 前端。
+
+### 方式二：完整 Docker Compose 部署
+
+```bash
+# 必须显式提供 JWT_SECRET；这会额外构建并启动 epay 后端镜像
+JWT_SECRET=your-jwt-secret-at-least-32-chars-long docker compose --profile app up -d
+
+# 访问服务
+# 管理后台: http://localhost:8080/admin/login（默认账号 admin/admin123）
+# 商户端:   http://localhost:8080/merchant/login
+# API:      http://localhost:8080/mapi.php
+# 健康检查: http://localhost:8080/health
+```
+
+> 完整 Docker 模式用于部署/验收；日常开发建议使用方式一。
 
 ### 初始化默认管理员
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -96,7 +97,7 @@ func BuildNotifyURL(ord *ent.Order, merch *ent.Merchant, platformPrivKey string)
 // returned HTTP 2xx with body == "success" (rainbow contract).
 func DispatchNotify(ctx context.Context, client *http.Client, fullURL string, orderRef string) bool {
 	if client == nil {
-		client = &http.Client{Timeout: 10 * time.Second}
+		client = safeNotifyHTTPClient(10 * time.Second)
 	}
 	for attempt := 0; attempt <= len(MerchantNotifyRetryIntervals); attempt++ {
 		if attempt > 0 {
@@ -125,6 +126,41 @@ func DispatchNotify(ctx context.Context, client *http.Client, fullURL string, or
 			orderRef, attempt+1, resp.StatusCode, truncate(string(body), 200))
 	}
 	return false
+}
+
+func safeNotifyHTTPClient(timeout time.Duration) *http.Client {
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DialContext = safeNotifyDialContext
+	return &http.Client{Timeout: timeout, Transport: transport}
+}
+
+func safeNotifyDialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	host, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return nil, err
+	}
+	ips, err := net.DefaultResolver.LookupIP(ctx, "ip", host)
+	if err != nil {
+		return nil, err
+	}
+	if len(ips) == 0 {
+		return nil, fmt.Errorf("notify_url host %s resolved no addresses", host)
+	}
+	for _, ip := range ips {
+		if isPrivateIP(ip) {
+			return nil, fmt.Errorf("notify_url resolved to private address %s", ip.String())
+		}
+	}
+	dialer := &net.Dialer{Timeout: 5 * time.Second, KeepAlive: 30 * time.Second}
+	var lastErr error
+	for _, ip := range ips {
+		conn, err := dialer.DialContext(ctx, network, net.JoinHostPort(ip.String(), port))
+		if err == nil {
+			return conn, nil
+		}
+		lastErr = err
+	}
+	return nil, lastErr
 }
 
 // appendQueryParams concatenates the params (already-signed, in canonical map

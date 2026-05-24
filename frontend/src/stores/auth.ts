@@ -15,7 +15,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(username: string, password: string, isAdmin = true) {
     const url = isAdmin ? '/api/admin/login' : '/api/merchant/login'
-    const { data } = await api.post(url, { username, password })
+	const payload = isAdmin ? { username, password } : { pid: username, password }
+	const { data } = await api.post(url, payload)
     if (data.code === 0) {
       setAuth(data.data.token, data.data)
     }

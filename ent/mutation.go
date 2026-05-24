@@ -543,6 +543,7 @@ type MerchantMutation struct {
 	pid                *int
 	addpid             *int
 	pkey               *string
+	password_hash      *string
 	name               *string
 	fee_rate           *float64
 	addfee_rate        *float64
@@ -769,6 +770,55 @@ func (m *MerchantMutation) OldPkey(ctx context.Context) (v string, err error) {
 // ResetPkey resets all changes to the "pkey" field.
 func (m *MerchantMutation) ResetPkey() {
 	m.pkey = nil
+}
+
+// SetPasswordHash sets the "password_hash" field.
+func (m *MerchantMutation) SetPasswordHash(s string) {
+	m.password_hash = &s
+}
+
+// PasswordHash returns the value of the "password_hash" field in the mutation.
+func (m *MerchantMutation) PasswordHash() (r string, exists bool) {
+	v := m.password_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPasswordHash returns the old "password_hash" field's value of the Merchant entity.
+// If the Merchant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MerchantMutation) OldPasswordHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPasswordHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPasswordHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPasswordHash: %w", err)
+	}
+	return oldValue.PasswordHash, nil
+}
+
+// ClearPasswordHash clears the value of the "password_hash" field.
+func (m *MerchantMutation) ClearPasswordHash() {
+	m.password_hash = nil
+	m.clearedFields[merchant.FieldPasswordHash] = struct{}{}
+}
+
+// PasswordHashCleared returns if the "password_hash" field was cleared in this mutation.
+func (m *MerchantMutation) PasswordHashCleared() bool {
+	_, ok := m.clearedFields[merchant.FieldPasswordHash]
+	return ok
+}
+
+// ResetPasswordHash resets all changes to the "password_hash" field.
+func (m *MerchantMutation) ResetPasswordHash() {
+	m.password_hash = nil
+	delete(m.clearedFields, merchant.FieldPasswordHash)
 }
 
 // SetName sets the "name" field.
@@ -1503,12 +1553,15 @@ func (m *MerchantMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MerchantMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 14)
 	if m.pid != nil {
 		fields = append(fields, merchant.FieldPid)
 	}
 	if m.pkey != nil {
 		fields = append(fields, merchant.FieldPkey)
+	}
+	if m.password_hash != nil {
+		fields = append(fields, merchant.FieldPasswordHash)
 	}
 	if m.name != nil {
 		fields = append(fields, merchant.FieldName)
@@ -1555,6 +1608,8 @@ func (m *MerchantMutation) Field(name string) (ent.Value, bool) {
 		return m.Pid()
 	case merchant.FieldPkey:
 		return m.Pkey()
+	case merchant.FieldPasswordHash:
+		return m.PasswordHash()
 	case merchant.FieldName:
 		return m.Name()
 	case merchant.FieldFeeRate:
@@ -1590,6 +1645,8 @@ func (m *MerchantMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldPid(ctx)
 	case merchant.FieldPkey:
 		return m.OldPkey(ctx)
+	case merchant.FieldPasswordHash:
+		return m.OldPasswordHash(ctx)
 	case merchant.FieldName:
 		return m.OldName(ctx)
 	case merchant.FieldFeeRate:
@@ -1634,6 +1691,13 @@ func (m *MerchantMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPkey(v)
+		return nil
+	case merchant.FieldPasswordHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPasswordHash(v)
 		return nil
 	case merchant.FieldName:
 		v, ok := value.(string)
@@ -1793,6 +1857,9 @@ func (m *MerchantMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *MerchantMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(merchant.FieldPasswordHash) {
+		fields = append(fields, merchant.FieldPasswordHash)
+	}
 	if m.FieldCleared(merchant.FieldNotifyURL) {
 		fields = append(fields, merchant.FieldNotifyURL)
 	}
@@ -1813,6 +1880,9 @@ func (m *MerchantMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *MerchantMutation) ClearField(name string) error {
 	switch name {
+	case merchant.FieldPasswordHash:
+		m.ClearPasswordHash()
+		return nil
 	case merchant.FieldNotifyURL:
 		m.ClearNotifyURL()
 		return nil
@@ -1832,6 +1902,9 @@ func (m *MerchantMutation) ResetField(name string) error {
 		return nil
 	case merchant.FieldPkey:
 		m.ResetPkey()
+		return nil
+	case merchant.FieldPasswordHash:
+		m.ResetPasswordHash()
 		return nil
 	case merchant.FieldName:
 		m.ResetName()

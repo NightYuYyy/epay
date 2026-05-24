@@ -85,8 +85,8 @@ func MerchantAuth(cfg *config.Config) gin.HandlerFunc {
 			return
 		}
 
-		// Inject merchant info into context
-		c.Set("merchant_id", claims.AdminID) // reusing AdminID for pid; merchant roles use Subject field
+		// Inject merchant info into context. Handlers read merchant_id as a string.
+		c.Set("merchant_id", claims.AdminID.String())
 		c.Set("merchant_role", claims.Role)
 
 		c.Next()

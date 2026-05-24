@@ -37,6 +37,20 @@ func (_c *MerchantCreate) SetPkey(v string) *MerchantCreate {
 	return _c
 }
 
+// SetPasswordHash sets the "password_hash" field.
+func (_c *MerchantCreate) SetPasswordHash(v string) *MerchantCreate {
+	_c.mutation.SetPasswordHash(v)
+	return _c
+}
+
+// SetNillablePasswordHash sets the "password_hash" field if the given value is not nil.
+func (_c *MerchantCreate) SetNillablePasswordHash(v *string) *MerchantCreate {
+	if v != nil {
+		_c.SetPasswordHash(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *MerchantCreate) SetName(v string) *MerchantCreate {
 	_c.mutation.SetName(v)
@@ -292,6 +306,10 @@ func (_c *MerchantCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *MerchantCreate) defaults() {
+	if _, ok := _c.mutation.PasswordHash(); !ok {
+		v := merchant.DefaultPasswordHash
+		_c.mutation.SetPasswordHash(v)
+	}
 	if _, ok := _c.mutation.FeeRate(); !ok {
 		v := merchant.DefaultFeeRate
 		_c.mutation.SetFeeRate(v)
@@ -430,6 +448,10 @@ func (_c *MerchantCreate) createSpec() (*Merchant, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Pkey(); ok {
 		_spec.SetField(merchant.FieldPkey, field.TypeString, value)
 		_node.Pkey = value
+	}
+	if value, ok := _c.mutation.PasswordHash(); ok {
+		_spec.SetField(merchant.FieldPasswordHash, field.TypeString, value)
+		_node.PasswordHash = value
 	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(merchant.FieldName, field.TypeString, value)

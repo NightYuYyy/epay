@@ -50,44 +50,48 @@ func init() {
 	merchantDescPkey := merchantFields[2].Descriptor()
 	// merchant.PkeyValidator is a validator for the "pkey" field. It is called by the builders before save.
 	merchant.PkeyValidator = merchantDescPkey.Validators[0].(func(string) error)
+	// merchantDescPasswordHash is the schema descriptor for password_hash field.
+	merchantDescPasswordHash := merchantFields[3].Descriptor()
+	// merchant.DefaultPasswordHash holds the default value on creation for the password_hash field.
+	merchant.DefaultPasswordHash = merchantDescPasswordHash.Default.(string)
 	// merchantDescName is the schema descriptor for name field.
-	merchantDescName := merchantFields[3].Descriptor()
+	merchantDescName := merchantFields[4].Descriptor()
 	// merchant.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	merchant.NameValidator = merchantDescName.Validators[0].(func(string) error)
 	// merchantDescFeeRate is the schema descriptor for fee_rate field.
-	merchantDescFeeRate := merchantFields[4].Descriptor()
+	merchantDescFeeRate := merchantFields[5].Descriptor()
 	// merchant.DefaultFeeRate holds the default value on creation for the fee_rate field.
 	merchant.DefaultFeeRate = merchantDescFeeRate.Default.(float64)
 	// merchantDescNotifyURL is the schema descriptor for notify_url field.
-	merchantDescNotifyURL := merchantFields[6].Descriptor()
+	merchantDescNotifyURL := merchantFields[7].Descriptor()
 	// merchant.DefaultNotifyURL holds the default value on creation for the notify_url field.
 	merchant.DefaultNotifyURL = merchantDescNotifyURL.Default.(string)
 	// merchantDescKeytype is the schema descriptor for keytype field.
-	merchantDescKeytype := merchantFields[7].Descriptor()
+	merchantDescKeytype := merchantFields[8].Descriptor()
 	// merchant.DefaultKeytype holds the default value on creation for the keytype field.
 	merchant.DefaultKeytype = merchantDescKeytype.Default.(int)
 	// merchantDescPublicKey is the schema descriptor for public_key field.
-	merchantDescPublicKey := merchantFields[8].Descriptor()
+	merchantDescPublicKey := merchantFields[9].Descriptor()
 	// merchant.DefaultPublicKey holds the default value on creation for the public_key field.
 	merchant.DefaultPublicKey = merchantDescPublicKey.Default.(string)
 	// merchantDescRefundEnabled is the schema descriptor for refund_enabled field.
-	merchantDescRefundEnabled := merchantFields[9].Descriptor()
+	merchantDescRefundEnabled := merchantFields[10].Descriptor()
 	// merchant.DefaultRefundEnabled holds the default value on creation for the refund_enabled field.
 	merchant.DefaultRefundEnabled = merchantDescRefundEnabled.Default.(bool)
 	// merchantDescTransferEnabled is the schema descriptor for transfer_enabled field.
-	merchantDescTransferEnabled := merchantFields[10].Descriptor()
+	merchantDescTransferEnabled := merchantFields[11].Descriptor()
 	// merchant.DefaultTransferEnabled holds the default value on creation for the transfer_enabled field.
 	merchant.DefaultTransferEnabled = merchantDescTransferEnabled.Default.(bool)
 	// merchantDescMode is the schema descriptor for mode field.
-	merchantDescMode := merchantFields[11].Descriptor()
+	merchantDescMode := merchantFields[12].Descriptor()
 	// merchant.DefaultMode holds the default value on creation for the mode field.
 	merchant.DefaultMode = merchantDescMode.Default.(int)
 	// merchantDescCreatedAt is the schema descriptor for created_at field.
-	merchantDescCreatedAt := merchantFields[12].Descriptor()
+	merchantDescCreatedAt := merchantFields[13].Descriptor()
 	// merchant.DefaultCreatedAt holds the default value on creation for the created_at field.
 	merchant.DefaultCreatedAt = merchantDescCreatedAt.Default.(func() time.Time)
 	// merchantDescUpdatedAt is the schema descriptor for updated_at field.
-	merchantDescUpdatedAt := merchantFields[13].Descriptor()
+	merchantDescUpdatedAt := merchantFields[14].Descriptor()
 	// merchant.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	merchant.DefaultUpdatedAt = merchantDescUpdatedAt.Default.(func() time.Time)
 	// merchant.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

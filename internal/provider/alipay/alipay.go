@@ -82,7 +82,20 @@ func (a *AlipayProvider) getClient() (*alipay.Client, error) {
 			production = parsed
 		}
 	}
-	client, err := alipay.New(a.config["appId"], a.config["privateKey"], production)
+	var opts []alipay.OptionFunc
+	if !production {
+		// Default SDK behavior connects to the new sandbox gateway
+		// (openapi-sandbox.dl.alipaydev.com), which has unreliable async
+		// notification delivery. Switch to the legacy sandbox gateway
+		// (openapi.alipaydev.com) which reliably sends notify_url callbacks.
+		// Operators can opt out by setting alipay_sandbox_new_gateway=true.
+		if strings.EqualFold(strings.TrimSpace(a.config["sandboxNewGateway"]), "true") {
+			opts = append(opts, alipay.WithNewSandboxGateway())
+		} else {
+			opts = append(opts, alipay.WithPastSandboxGateway())
+		}
+	}
+	client, err := alipay.New(a.config["appId"], a.config["privateKey"], production, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("alipay init client: %w", err)
 	}

@@ -28,6 +28,7 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "pid", Type: field.TypeInt, Unique: true},
 		{Name: "pkey", Type: field.TypeString},
+		{Name: "password_hash", Type: field.TypeString, Nullable: true, Default: ""},
 		{Name: "name", Type: field.TypeString},
 		{Name: "fee_rate", Type: field.TypeFloat64, Default: 1, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "disabled"}, Default: "active"},

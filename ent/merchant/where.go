@@ -66,6 +66,11 @@ func Pkey(v string) predicate.Merchant {
 	return predicate.Merchant(sql.FieldEQ(FieldPkey, v))
 }
 
+// PasswordHash applies equality check predicate on the "password_hash" field. It's identical to PasswordHashEQ.
+func PasswordHash(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldEQ(FieldPasswordHash, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Merchant {
 	return predicate.Merchant(sql.FieldEQ(FieldName, v))
@@ -219,6 +224,81 @@ func PkeyEqualFold(v string) predicate.Merchant {
 // PkeyContainsFold applies the ContainsFold predicate on the "pkey" field.
 func PkeyContainsFold(v string) predicate.Merchant {
 	return predicate.Merchant(sql.FieldContainsFold(FieldPkey, v))
+}
+
+// PasswordHashEQ applies the EQ predicate on the "password_hash" field.
+func PasswordHashEQ(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldEQ(FieldPasswordHash, v))
+}
+
+// PasswordHashNEQ applies the NEQ predicate on the "password_hash" field.
+func PasswordHashNEQ(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldNEQ(FieldPasswordHash, v))
+}
+
+// PasswordHashIn applies the In predicate on the "password_hash" field.
+func PasswordHashIn(vs ...string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldIn(FieldPasswordHash, vs...))
+}
+
+// PasswordHashNotIn applies the NotIn predicate on the "password_hash" field.
+func PasswordHashNotIn(vs ...string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldNotIn(FieldPasswordHash, vs...))
+}
+
+// PasswordHashGT applies the GT predicate on the "password_hash" field.
+func PasswordHashGT(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldGT(FieldPasswordHash, v))
+}
+
+// PasswordHashGTE applies the GTE predicate on the "password_hash" field.
+func PasswordHashGTE(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldGTE(FieldPasswordHash, v))
+}
+
+// PasswordHashLT applies the LT predicate on the "password_hash" field.
+func PasswordHashLT(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldLT(FieldPasswordHash, v))
+}
+
+// PasswordHashLTE applies the LTE predicate on the "password_hash" field.
+func PasswordHashLTE(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldLTE(FieldPasswordHash, v))
+}
+
+// PasswordHashContains applies the Contains predicate on the "password_hash" field.
+func PasswordHashContains(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldContains(FieldPasswordHash, v))
+}
+
+// PasswordHashHasPrefix applies the HasPrefix predicate on the "password_hash" field.
+func PasswordHashHasPrefix(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldHasPrefix(FieldPasswordHash, v))
+}
+
+// PasswordHashHasSuffix applies the HasSuffix predicate on the "password_hash" field.
+func PasswordHashHasSuffix(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldHasSuffix(FieldPasswordHash, v))
+}
+
+// PasswordHashIsNil applies the IsNil predicate on the "password_hash" field.
+func PasswordHashIsNil() predicate.Merchant {
+	return predicate.Merchant(sql.FieldIsNull(FieldPasswordHash))
+}
+
+// PasswordHashNotNil applies the NotNil predicate on the "password_hash" field.
+func PasswordHashNotNil() predicate.Merchant {
+	return predicate.Merchant(sql.FieldNotNull(FieldPasswordHash))
+}
+
+// PasswordHashEqualFold applies the EqualFold predicate on the "password_hash" field.
+func PasswordHashEqualFold(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldEqualFold(FieldPasswordHash, v))
+}
+
+// PasswordHashContainsFold applies the ContainsFold predicate on the "password_hash" field.
+func PasswordHashContainsFold(v string) predicate.Merchant {
+	return predicate.Merchant(sql.FieldContainsFold(FieldPasswordHash, v))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.

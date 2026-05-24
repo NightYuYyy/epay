@@ -145,7 +145,8 @@ type registerReq struct {
 	Password string `json:"password"`
 }
 
-// Register creates a new merchant account and returns the generated pid and pkey.
+// Register creates a self-service merchant account. The password is used for
+// merchant-center login; pkey remains the EasyPay API signing key.
 func (h *MerchantHandler) Register(c *gin.Context) {
 	var req registerReq
 	if err := c.ShouldBindJSON(&req); err != nil || req.Name == "" || req.Password == "" {
@@ -158,7 +159,7 @@ func (h *MerchantHandler) Register(c *gin.Context) {
 
 	// Use default platform rate from config
 	feeRate := h.cfg.Default.DefaultPlatformRate
-	m, err := h.merchantSvc.CreateMerchant(ctx, req.Name, feeRate, "")
+	m, err := h.merchantSvc.CreateSelfRegisteredMerchant(ctx, req.Name, req.Password, feeRate, "")
 	if err != nil {
 		respErr(c, err.Error())
 		return

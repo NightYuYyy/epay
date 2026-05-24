@@ -26,6 +26,9 @@ func (Merchant) Fields() []ent.Field {
 			Immutable(),
 		field.String("pkey").
 			NotEmpty(),
+		field.String("password_hash").
+			Optional().
+			Default(""),
 		field.String("name").
 			NotEmpty(),
 		field.Float("fee_rate").

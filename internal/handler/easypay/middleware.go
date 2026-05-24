@@ -4,15 +4,25 @@ import (
 	"fmt"
 	"net"
 	"net/url"
-	"strings"
 )
 
 // Private IP ranges to block for SSRF prevention.
 var privateCIDRs = []string{
-	"127.0.0.0/8",
+	"0.0.0.0/8",
+	"100.64.0.0/10",
 	"10.0.0.0/8",
+	"127.0.0.0/8",
+	"169.254.0.0/16",
 	"172.16.0.0/12",
 	"192.168.0.0/16",
+	"224.0.0.0/4",
+	"240.0.0.0/4",
+	"255.255.255.255/32",
+	"::/128",
+	"::1/128",
+	"fc00::/7",
+	"fe80::/10",
+	"ff00::/8",
 }
 
 var privateNetworks []*net.IPNet
@@ -37,6 +47,9 @@ func ValidateNotifyURL(rawURL string) string {
 	if err != nil || u.Host == "" {
 		return "notify_url格式无效"
 	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return "notify_url仅支持http或https"
+	}
 
 	// Reject URLs with query parameters
 	if u.RawQuery != "" {
@@ -60,9 +73,7 @@ func ValidateNotifyURL(rawURL string) string {
 	// DNS resolution: resolve hostname and check all returned IPs
 	ips, err := net.LookupIP(host)
 	if err != nil {
-		// If DNS resolution fails, allow the URL (the upstream will fail too).
-		// We don't want to block legitimate URLs just because of transient DNS issues.
-		return ""
+		return "notify_url域名无法解析"
 	}
 
 	for _, ip := range ips {
@@ -82,9 +93,4 @@ func isPrivateIP(ip net.IP) bool {
 		}
 	}
 	return false
-}
-
-// sanitizeURL strips leading/trailing whitespace from a URL string.
-func sanitizeURL(s string) string {
-	return strings.TrimSpace(s)
 }

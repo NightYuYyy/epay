@@ -9,7 +9,7 @@
 # -----------------------------------------------------------------------------
 # Stage 1: Frontend build
 # -----------------------------------------------------------------------------
-FROM node:20-alpine AS frontend
+FROM node:24-alpine AS frontend
 
 WORKDIR /app/frontend
 
@@ -24,7 +24,7 @@ RUN npm run build
 # -----------------------------------------------------------------------------
 # Stage 2: Go build
 # -----------------------------------------------------------------------------
-FROM golang:1.23-alpine AS backend
+FROM golang:1.26-alpine AS backend
 
 WORKDIR /app
 
@@ -50,8 +50,15 @@ RUN CGO_ENABLED=0 go build \
 # -----------------------------------------------------------------------------
 FROM alpine:3.19
 
-# Install runtime dependencies
-RUN apk add --no-cache ca-certificates tzdata
+# Install runtime dependencies and create non-root runtime user
+RUN apk add --no-cache ca-certificates tzdata \
+    && adduser -D -H app
+
+COPY --from=backend /app/epay /app/epay
+COPY --from=frontend /app/frontend/dist /app/frontend/dist
+ENV SPA_DIR=/app/frontend/dist
+WORKDIR /app
+USER app
 
 # Expose port
 EXPOSE 8080
@@ -61,4 +68,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget -q -T 5 -O /dev/null http://localhost:8080/health || exit 1
 
 ENTRYPOINT ["/app/epay"]
-COPY --from=backend /app/epay /app/epay

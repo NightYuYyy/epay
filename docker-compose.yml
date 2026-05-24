@@ -32,6 +32,7 @@ services:
       retries: 5
 
   epay:
+    profiles: ["app"]
     build: .
     container_name: epay-server
     restart: unless-stopped
@@ -40,13 +41,14 @@ services:
     environment:
       PORT: "8080"
       GIN_MODE: ${GIN_MODE:-release}
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_USER: ${POSTGRES_USER:-epay}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-epay_pass}
-      DB_NAME: ${POSTGRES_DB:-epay}
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_USER: ${POSTGRES_USER:-epay}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-epay_pass}
+      DATABASE_DBNAME: ${POSTGRES_DB:-epay}
+      DATABASE_SSLMODE: disable
       REDIS_ADDR: redis:6379
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       ADMIN_DEFAULT_PASSWORD: ${ADMIN_DEFAULT_PASSWORD:-admin123}
     depends_on:
       postgres:

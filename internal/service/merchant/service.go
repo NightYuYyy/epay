@@ -15,6 +15,7 @@ import (
 	"epay/ent/merchant"
 
 	"entgo.io/ent/dialect/sql"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/google/uuid"
 )
@@ -95,6 +96,45 @@ func (s *Service) CreateMerchant(ctx context.Context, name string, feeRate float
 		CreatedAt: m.CreatedAt,
 		UpdatedAt: m.UpdatedAt,
 	}, nil
+}
+
+// CreateSelfRegisteredMerchant creates a merchant account that logs in with a password.
+// The generated pkey remains the EasyPay API signing key and is returned once.
+func (s *Service) CreateSelfRegisteredMerchant(ctx context.Context, name, password string, feeRate float64, notifyURL string) (*MerchantInfo, error) {
+	passwordHash, err := hashPassword(password)
+	if err != nil {
+		return nil, err
+	}
+	pid, err := s.generateUniquePid(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("generate pid: %w", err)
+	}
+	pkey := generatePkey()
+
+	m, err := s.client.Merchant.Create().
+		SetPid(pid).
+		SetPkey(pkey).
+		SetPasswordHash(passwordHash).
+		SetName(name).
+		SetFeeRate(feeRate).
+		SetNotifyURL(notifyURL).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("create merchant: %w", err)
+	}
+
+	_, err = s.client.Settlement.Create().
+		SetMerchantID(m.ID).
+		SetBalance(0).
+		SetFrozen(0).
+		SetTotalIncome(0).
+		SetTotalWithdrawn(0).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("create settlement: %w", err)
+	}
+
+	return toMerchantInfo(m, false), nil
 }
 
 // GetMerchant returns a merchant by UUID id or integer pid.
@@ -205,6 +245,21 @@ func (s *Service) RegeneratePkey(ctx context.Context, id uuid.UUID) (string, err
 	return newPkey, nil
 }
 
+func hashPassword(password string) (string, error) {
+	if password == "" {
+		return "", ErrInvalidCredential
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", fmt.Errorf("hash password: %w", err)
+	}
+	return string(hash), nil
+}
+
+func verifyPassword(hash, password string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
+}
+
 // VerifyCredential verifies that a merchant with the given pid exists and the
 // provided key matches the stored pkey. Used for merchant API authentication.
 func (s *Service) VerifyCredential(ctx context.Context, pid int, key string) (*MerchantInfo, error) {
@@ -222,7 +277,11 @@ func (s *Service) VerifyCredential(ctx context.Context, pid int, key string) (*M
 		return nil, ErrMerchantDisabled
 	}
 
-	if m.Pkey != key {
+	if m.PasswordHash != "" {
+		if !verifyPassword(m.PasswordHash, key) {
+			return nil, ErrInvalidCredential
+		}
+	} else if m.Pkey != key {
 		return nil, ErrInvalidCredential
 	}
 
@@ -288,5 +347,3 @@ var (
 	ErrInvalidCredential = errors.New("invalid pid or key")
 	ErrMerchantDisabled  = errors.New("merchant is disabled")
 )
-
-

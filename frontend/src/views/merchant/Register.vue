@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { NForm, NFormItem, NInput, NButton, NCard, NDivider, NModal } from 'naive-ui'
 import { useMessage } from 'naive-ui'
 import api from '@/api/client'
@@ -10,6 +11,7 @@ interface RegisterResult {
 }
 
 const message = useMessage()
+const router = useRouter()
 
 const name = ref('')
 const password = ref('')
@@ -43,6 +45,7 @@ async function handleRegister() {
 
 function handleOk() {
   showResult.value = false
+  router.push('/merchant/login')
 }
 </script>
 
@@ -83,11 +86,11 @@ function handleOk() {
           <strong>商户PID：</strong><code style="background: var(--n-color-target); padding: 2px 8px; border-radius: 4px;">{{ result.pid }}</code>
         </div>
         <div style="margin-bottom: 12px; font-size: 14px;">
-          <strong>商户密钥（PKEY）：</strong><br />
+          <strong>API 密钥（PKEY）：</strong><br />
           <code style="background: var(--n-color-target); padding: 4px 8px; border-radius: 4px; word-break: break-all; display: inline-block; margin-top: 4px;">{{ result.pkey }}</code>
         </div>
         <p style="color: var(--n-text-color-3); font-size: 13px; margin-top: 8px;">
-          请妥善保管商户PID和密钥，密钥仅显示一次。
+          使用商户 PID 和注册密码登录商户中心；PKEY 是 EasyPay 接口签名密钥，仅显示一次，请妥善保管。
         </p>
         <n-button type="primary" block @click="handleOk">知道了</n-button>
       </n-card>

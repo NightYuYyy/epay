@@ -20,6 +20,8 @@ const (
 	FieldPid = "pid"
 	// FieldPkey holds the string denoting the pkey field in the database.
 	FieldPkey = "pkey"
+	// FieldPasswordHash holds the string denoting the password_hash field in the database.
+	FieldPasswordHash = "password_hash"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldFeeRate holds the string denoting the fee_rate field in the database.
@@ -87,6 +89,7 @@ var Columns = []string{
 	FieldID,
 	FieldPid,
 	FieldPkey,
+	FieldPasswordHash,
 	FieldName,
 	FieldFeeRate,
 	FieldStatus,
@@ -113,6 +116,8 @@ func ValidColumn(column string) bool {
 var (
 	// PkeyValidator is a validator for the "pkey" field. It is called by the builders before save.
 	PkeyValidator func(string) error
+	// DefaultPasswordHash holds the default value on creation for the "password_hash" field.
+	DefaultPasswordHash string
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
 	// DefaultFeeRate holds the default value on creation for the "fee_rate" field.
@@ -181,6 +186,11 @@ func ByPid(opts ...sql.OrderTermOption) OrderOption {
 // ByPkey orders the results by the pkey field.
 func ByPkey(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPkey, opts...).ToFunc()
+}
+
+// ByPasswordHash orders the results by the password_hash field.
+func ByPasswordHash(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPasswordHash, opts...).ToFunc()
 }
 
 // ByName orders the results by the name field.

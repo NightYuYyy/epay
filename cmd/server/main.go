@@ -16,6 +16,7 @@ import (
 	"epay/internal/database"
 	admin "epay/internal/handler/admin"
 	"epay/internal/handler/easypay"
+	demo "epay/internal/handler/demo"
 	merchant "epay/internal/handler/merchant"
 	"epay/internal/handler/middleware"
 	"epay/internal/provider"
@@ -23,6 +24,7 @@ import (
 	_ "epay/internal/provider/wxpay"
 	redisutil "epay/internal/redis"
 	adminSvc "epay/internal/service/admin"
+	feeSvc "epay/internal/service/fee"
 	merchantSvc "epay/internal/service/merchant"
 	paymentSvc "epay/internal/service/payment"
 	settlementSvc "epay/internal/service/settlement"
@@ -70,9 +72,13 @@ func main() {
 		log.Println("[main] redis connected")
 	}
 
-	// Initialize settlement service
+	// Initialize settlement and payment services
 	settlementService := settlementSvc.New(dbClient, rdb)
-	paymentService := paymentSvc.NewPaymentService(dbClient, rdb, cfg)
+	feeService := feeSvc.New(dbClient, rdb)
+	paymentService := paymentSvc.NewPaymentService(dbClient, rdb, cfg, paymentSvc.WithSettlementApplier(feeService))
+	paymentCtx, stopPaymentWorkers := context.WithCancel(context.Background())
+	defer stopPaymentWorkers()
+	paymentService.StartExpiryScanner(paymentCtx)
 
 	// Initialize admin handler
 	adminHandler := admin.NewHandler(dbClient, adminService, merchantService, settlementService)
@@ -88,6 +94,25 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{
 			"status": "ok",
 		})
+	})
+
+	demo.RegisterRoutes(r, demo.NewNotifyStore(200))
+	// Demo: manual sync endpoint — queries Alipay TradeQuery API and syncs order status
+	r.GET("/demo/sync", func(c *gin.Context) {
+		outTradeNo := strings.TrimSpace(c.Query("out_trade_no"))
+		if outTradeNo == "" {
+			c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "out_trade_no is required"})
+			return
+		}
+		ord, err := paymentService.QueryOrder(c.Request.Context(), outTradeNo)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "sync failed: " + err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "msg": "ok", "data": gin.H{
+			"status":  string(ord.Status),
+			"paid_at": ord.PaidAt,
+		}})
 	})
 
 	// ========================

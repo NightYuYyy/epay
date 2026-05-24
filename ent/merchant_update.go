@@ -47,6 +47,26 @@ func (_u *MerchantUpdate) SetNillablePkey(v *string) *MerchantUpdate {
 	return _u
 }
 
+// SetPasswordHash sets the "password_hash" field.
+func (_u *MerchantUpdate) SetPasswordHash(v string) *MerchantUpdate {
+	_u.mutation.SetPasswordHash(v)
+	return _u
+}
+
+// SetNillablePasswordHash sets the "password_hash" field if the given value is not nil.
+func (_u *MerchantUpdate) SetNillablePasswordHash(v *string) *MerchantUpdate {
+	if v != nil {
+		_u.SetPasswordHash(*v)
+	}
+	return _u
+}
+
+// ClearPasswordHash clears the value of the "password_hash" field.
+func (_u *MerchantUpdate) ClearPasswordHash() *MerchantUpdate {
+	_u.mutation.ClearPasswordHash()
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *MerchantUpdate) SetName(v string) *MerchantUpdate {
 	_u.mutation.SetName(v)
@@ -432,6 +452,12 @@ func (_u *MerchantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Pkey(); ok {
 		_spec.SetField(merchant.FieldPkey, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.PasswordHash(); ok {
+		_spec.SetField(merchant.FieldPasswordHash, field.TypeString, value)
+	}
+	if _u.mutation.PasswordHashCleared() {
+		_spec.ClearField(merchant.FieldPasswordHash, field.TypeString)
+	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(merchant.FieldName, field.TypeString, value)
 	}
@@ -688,6 +714,26 @@ func (_u *MerchantUpdateOne) SetNillablePkey(v *string) *MerchantUpdateOne {
 	if v != nil {
 		_u.SetPkey(*v)
 	}
+	return _u
+}
+
+// SetPasswordHash sets the "password_hash" field.
+func (_u *MerchantUpdateOne) SetPasswordHash(v string) *MerchantUpdateOne {
+	_u.mutation.SetPasswordHash(v)
+	return _u
+}
+
+// SetNillablePasswordHash sets the "password_hash" field if the given value is not nil.
+func (_u *MerchantUpdateOne) SetNillablePasswordHash(v *string) *MerchantUpdateOne {
+	if v != nil {
+		_u.SetPasswordHash(*v)
+	}
+	return _u
+}
+
+// ClearPasswordHash clears the value of the "password_hash" field.
+func (_u *MerchantUpdateOne) ClearPasswordHash() *MerchantUpdateOne {
+	_u.mutation.ClearPasswordHash()
 	return _u
 }
 
@@ -1105,6 +1151,12 @@ func (_u *MerchantUpdateOne) sqlSave(ctx context.Context) (_node *Merchant, err 
 	}
 	if value, ok := _u.mutation.Pkey(); ok {
 		_spec.SetField(merchant.FieldPkey, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.PasswordHash(); ok {
+		_spec.SetField(merchant.FieldPasswordHash, field.TypeString, value)
+	}
+	if _u.mutation.PasswordHashCleared() {
+		_spec.ClearField(merchant.FieldPasswordHash, field.TypeString)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(merchant.FieldName, field.TypeString, value)

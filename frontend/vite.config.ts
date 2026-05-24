@@ -11,6 +11,18 @@ export default defineConfig({
     },
   },
   server: {
-    proxy: { '/api': 'http://localhost:8080' },
+    proxy: {
+      '/api': 'http://localhost:8080',
+      '/mapi.php': { target: 'http://localhost:8080', changeOrigin: true },
+      '/demo': { target: 'http://localhost:8080', changeOrigin: true },
+    },
   },
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        demo: resolve(__dirname, 'demo.html'),
+      },
+    },
+  }
 })
